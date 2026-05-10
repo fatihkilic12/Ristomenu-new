@@ -1,0 +1,186 @@
+{
+  "common": {
+    "locale": {
+      "tr": "Turkçe",
+      "nl": "Nederlands",
+      "en": "English",
+      "fr": "Francais",
+      "de": "Deutsch"
+    },
+    "sold_out": "Ausverkauft",
+    "change_language": "Sprache ändern",
+    "continue_with_order": "Mit der Bestellung fortfahren",
+    "login": "Anmelden",
+    "no_address_found": "Keine Adresse gefunden",
+    "register": "Registrieren",
+    "delivery": "Lieferung",
+    "pickup": "Abholung",
+    "restaurant": "Restaurant",
+    "restaurants": "Restaurants",
+    "not_deliver": "{{company}} liefert nicht in dieses Gebiet",
+    "cuisines": {
+      "pizza-1": "Pizza",
+      "pasta-1": "Pasta",
+      "pita-1": "Pita"
+    },
+    "cart": {
+      "changes": {
+        "title": "Warenkorbanpassung",
+        "cancel": "Abbrechen",
+        "accept": "Zu {{method}} wechseln"
+      },
+      "deleted_items": {
+        "title": "Gelöschte Artikel",
+        "disclaimer": "Die folgenden Artikel sind für {{method}} nicht verfügbar"
+      },
+      "price_changes": {
+        "title": "Preisänderung",
+        "disclaimer": "Die Preise der folgenden Artikel sind für {{method}} unterschiedlich"
+      }
+    },
+    "days": {
+      "1": "Montag",
+      "2": "Dienstag",
+      "3": "Mittwoch",
+      "4": "Donnerstag",
+      "5": "Freitag",
+      "6": "Samstag",
+      "7": "Sonntag"
+    },
+    "address": {
+      "title": "Geben Sie Ihre Adresse ein"
+    },
+    "search": "Suchen",
+    "restriction": {
+      "title": "Sind Sie {{age}} oder älter?",
+      "description": "Bestätigen Sie, dass Sie {{age}} oder älter sind, um dieses Produkt im jeweiligen Land zu kaufen.",
+      "confirm": "Fortfahren",
+      "cancel": "Abbrechen"
+    },
+    "common_error": "Ein Fehler ist aufgetreten, bitte versuchen Sie es später erneut",
+    "price_from": "ab {{price}}",
+    "price_exact": "{{price}}",
+    "free": "Kostenlos",
+    "table": "Tisch {{number}}",
+    "table_number": "Tischnummer",
+    "continue": "Weiter",
+    "item": "Artikel",
+    "items": "Artikel",
+    "view_order": "Bestellung ansehen",
+    "not_found": "Nicht gefunden",
+    "add": "Hinzufügen",
+    "update": "Aktualisieren",
+    "special_requests": "Sonderwünsche...",
+    "enter_name": "Geben Sie Ihren Namen ein, um zu bestellen",
+    "your_name": "Ihr Name",
+    "start_ordering": "Bestellung starten",
+    "tap_to_start": "Tippen Sie, um zu starten"
+  },
+  "restaurants": {
+    "vat-number": "Umsatzsteuer-Identifikationsnummer",
+    "number_per_item": "+ {{total_price}} ({{price}} pro Einheit)",
+    "pickup-times": "Abholzeiten",
+    "delivery-times": "Lieferzeiten",
+    "company-disclaimer": "Wenn Sie gegen bestimmte Lebensmittel allergisch sind oder spezielle Ernährungsbedürfnisse haben, kontaktieren Sie bitte das Restaurant vor der Bestellung.",
+    "not_supported": "Dieses Restaurant unterstützt die aktuelle Methode nicht",
+    "closed": "Geschlossen",
+    "currently_closed": "Momentan geschlossen",
+    "search": "Nach einem Restaurant suchen",
+    "required": "Erforderlich",
+    "min_required": "Sie müssen mindestens {{min}} Option(en) auswählen",
+    "max_exceeded": "Sie können maximal {{max}} Optionen auswählen",
+    "empty_required": "Wert darf nicht leer sein",
+    "no_restaurants_found": "Keine Restaurants gefunden",
+    "change_address": "Ändern Sie Ihre Adresse",
+    "single": {
+      "search": "Nach Produkten suchen",
+      "about": "Über",
+      "free-shipping": "Kostenloser Versand",
+      "shipping": "Lieferung {{price}}",
+      "time-span": "{{time1}}-{{time2}} Min.",
+      "time-pickup": "{{time}} Min.",
+      "minimum-price": "Mindestbetrag {{price}}"
+    },
+    "items": {
+      "no_items_found": "Keine Produkte gefunden"
+    },
+    "waiter": {
+      "title": "Kellner rufen",
+      "description": "Rufen Sie einen Kellner, um Ihre Bestellung zu bearbeiten."
+    },
+    "placed": {
+      "title": "Bestellung aufgegeben",
+      "description": "Ihre Bestellung wurde erfolgreich aufgegeben"
+    },
+    "options": {
+      "required": "Erforderlich",
+      "choose_max": "Wählen Sie bis zu {{max}} Option(en)",
+      "choose_from": "Wählen Sie zwischen {{min}} und {{max}} Optionen"
+    },
+    "cart": {
+      "title": "Warenkorb",
+      "closed_for_order": "Das Restaurant ist derzeit für Online-Bestellungen geschlossen",
+      "closed_for_method": "Wir sind für die aktuelle Methode geschlossen",
+      "closed": "Wir sind bis {{till}} geschlossen",
+      "empty": "Ihr Warenkorb ist leer",
+      "subtotal": "Zwischensumme",
+      "delivery_fee": "Liefergebühr",
+      "total": "Gesamt",
+      "cancel": "Abbrechen",
+      "ok": "Bestätigen",
+      "minimum_alert": {
+        "title": "Mindestbestellwert",
+        "text": "Der Mindestbestellwert bei {{company}} beträgt {{price}}. Sie fehlen noch {{rest}}."
+      },
+      "confirm": "Warenkorb bestätigen",
+      "place_order": "Sind Sie sicher, dass Sie diese Bestellung aufgeben möchten?",
+      "back": "Zurück",
+      "switch": "Wechseln zu {{method}}",
+      "note": {
+        "title": "Notiz",
+        "delete": "Löschen",
+        "cancel": "Abbrechen",
+        "save": "Speichern",
+        "add": "Notiz hinzufügen"
+      }
+    },
+    "note": "Notiz"
+  },
+  "header": {
+    "orders": "Bestellungen",
+    "addresses": "Adressen",
+    "my_info": "Meine Informationen",
+    "verify_phone": "Telefonnummer verifizieren",
+    "logout": "Abmelden"
+  },
+  "order": {
+    "title": "Bestellungen",
+    "no_orders": "Sie haben keine Bestellungen",
+    "card": {
+      "items": "{{count}} Artikel - {{price}}",
+      "button": "Bestellung ansehen"
+    },
+    "stepper": {
+      "preparing": "In Vorbereitung",
+      "on_its_way": "Unterwegs",
+      "delivered": "Geliefert",
+      "ready": "Bereit",
+      "picked_up": "Abgeholt"
+    },
+    "awaiting": {
+      "title": "Zahlung nicht erhalten",
+      "description": "Es sieht so aus, als wäre Ihre Zahlung noch nicht eingegangen. Bitte aktualisieren Sie die Seite.",
+      "button": "Neu laden"
+    },
+    "cancelled": {
+      "title": "Bestellung storniert",
+      "description": "Ihre Bestellung wurde vom Restaurant storniert.",
+      "online": "Der bezahlte Betrag wird innerhalb von 2 Werktagen zurückerstattet.",
+      "description_2": "Für Fragen wenden Sie sich bitte an {{store}}."
+    }
+  },
+  "countries": {
+    "BE": "Belgien",
+    "NL": "Niederlande"
+  }
+}

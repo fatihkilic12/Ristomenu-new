@@ -1,0 +1,138 @@
+@import "tailwindcss";
+
+:root {
+  --color-primary: #000000;
+  --color-primary-hover: #1a1a1a;
+  --color-bg: #ffffff;
+  --color-text: #111827;
+  --color-header: #000000;
+  --color-header-text: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-2: #f4f4f5;
+  --color-border: #e5e7eb;
+  --color-muted: #6b7280;
+}
+
+.theme-kiosk {
+  --color-bg: #1a1a2e;
+  --color-text: #ffffff;
+  --color-surface: #16213e;
+  --color-border: #0f3460;
+  --color-header: #0f3460;
+  --color-header-text: #ffffff;
+  --color-muted: #94a3b8;
+}
+
+/* takeaway.com-style theme for delivery/pickup ordering — supports light + dark.
+   Accents follow the restaurant's brand colour (--color-primary) so each store
+   gets its own look; --color-promo stays a neutral highlight yellow. */
+.theme-order {
+  --color-accent: var(--color-primary);
+  --color-accent-hover: var(--color-primary-hover);
+  --color-promo: #f5b40a;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.theme-order.theme-order-dark {
+  --color-bg: #0f0f10;
+  --color-text: #ffffff;
+  --color-surface: #1a1a1c;
+  --color-surface-2: #232325;
+  --color-border: #2a2a2d;
+  --color-header: #0a0a0b;
+  --color-header-text: #ffffff;
+  --color-muted: #9ca3af;
+}
+
+.theme-order.theme-order-light {
+  --color-bg: #fafafa;
+  --color-text: #18181b;
+  --color-surface: #ffffff;
+  --color-surface-2: #f4f4f5;
+  --color-border: #e4e4e7;
+  --color-header: #ffffff;
+  --color-header-text: #18181b;
+  --color-muted: #71717a;
+}
+
+
+/* Fluid scaling for kiosk: design reference is 1440px wide.
+   Root font-size scales with viewport so all rem-based sizes
+   (Tailwind's text-xl, p-4, w-16, …) adapt to the actual screen. */
+html.kiosk-fluid {
+  font-size: clamp(12px, calc(100vw / 90), 28px);
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+#root {
+  min-height: 100dvh;
+  overflow-x: clip;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.input-field {
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.input-field:focus {
+  border-color: var(--color-primary);
+}
+
+/* ─── Kiosk animations ─────────────────────────── */
+@keyframes kiosk-float {
+  0%, 100% { transform: translateY(0) }
+  50%      { transform: translateY(-12px) }
+}
+@keyframes kiosk-pulse-soft {
+  0%, 100% { transform: scale(1);    opacity: 1 }
+  50%      { transform: scale(1.04); opacity: 0.92 }
+}
+@keyframes kiosk-pulse-ring {
+  0%   { transform: scale(0.85); opacity: 0.55 }
+  100% { transform: scale(1.6);  opacity: 0 }
+}
+@keyframes kiosk-shine {
+  0%   { transform: translateX(-120%) }
+  100% { transform: translateX(220%)  }
+}
+@keyframes kiosk-tap {
+  0%, 100% { transform: translateY(0)  scale(1)    }
+  50%      { transform: translateY(-6px) scale(1.02) }
+}
+@keyframes kiosk-blob {
+  0%, 100% { transform: translate(0,0) scale(1)   }
+  33%      { transform: translate(30px,-20px) scale(1.08) }
+  66%      { transform: translate(-20px,25px) scale(0.95) }
+}
+@keyframes kiosk-fade-in-up {
+  from { opacity: 0; transform: translateY(16px) }
+  to   { opacity: 1; transform: translateY(0)    }
+}
+
+.kiosk-anim-float        { animation: kiosk-float 5s ease-in-out infinite }
+.kiosk-anim-pulse-soft   { animation: kiosk-pulse-soft 2.4s ease-in-out infinite }
+.kiosk-anim-pulse-ring   { animation: kiosk-pulse-ring 2.4s ease-out infinite }
+.kiosk-anim-shine        { animation: kiosk-shine 3.5s ease-in-out infinite }
+.kiosk-anim-tap          { animation: kiosk-tap 1.8s ease-in-out infinite }
+.kiosk-anim-blob         { animation: kiosk-blob 14s ease-in-out infinite }
+.kiosk-anim-fade-in-up   { animation: kiosk-fade-in-up 0.5s ease-out both }

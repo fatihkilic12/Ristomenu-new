@@ -1,0 +1,160 @@
+{
+  "common": {
+    "locale": {
+      "tr": "Turkçe",
+      "nl": "Nederlands",
+      "en": "English",
+      "fr": "Francais",
+      "de": "Deutsch"
+    },
+    "sold_out": "Uitverkocht",
+    "change_language": "Verander Taal",
+    "continue_with_order": "Ga verder met bestellen",
+    "login": "Log in",
+    "no_address_found": "Geen adres gevonden",
+    "register": "Registreer",
+    "delivery": "Levering",
+    "pickup": "Afhalen",
+    "restaurant": "Restaurant",
+    "restaurants": "Restaurants",
+    "not_deliver": "{{company}} levert niet naar deze regio",
+    "cuisines": {
+      "pizza-1": "Pizza",
+      "pasta-1": "Pasta",
+      "pita-1": "Pita"
+    },
+    "cart": {
+      "changes": {
+        "title": "Wijziging van je winkelmandje",
+        "cancel": "Annuleren",
+        "accept": "Verander naar {{method}}"
+      },
+      "deleted_items": {
+        "title": "Verwijderde items",
+        "disclaimer": "De volgende items zijn niet beschikbaar voor {{method}}"
+      },
+      "price_changes": {
+        "title": "Prijs wijziging",
+        "disclaimer": "De prijzen voor de volgende items zijn anders voor {{method}}"
+      }
+    },
+    "days": {
+      "1": "Maandag",
+      "2": "Dinsdag",
+      "3": "Woensdag",
+      "4": "Donderdag",
+      "5": "Vrijdag",
+      "6": "Zaterdag",
+      "7": "Zondag"
+    },
+    "address": {
+      "title": "Voer uw adres in"
+    },
+    "search": "Zoek",
+    "restriction": {
+      "title": "Ben je {{age}} jaar of ouder?",
+      "description": "Bevestig dat je {{age}} jaar of ouder bent om dit item te kopen in het land van aankoop.",
+      "confirm": "Ga verder",
+      "cancel": "Annuleren"
+    },
+    "common_error": "Er ging iets mis probeer het later opnieuw",
+    "price_from": "vanaf {{price}}",
+    "price_exact": "{{price}}",
+    "free": "Gratis",
+    "table": "Tafel {{number}}",
+    "table_number": "Tafelnummer",
+    "continue": "Doorgaan",
+    "item": "item",
+    "items": "items",
+    "view_order": "Bekijk bestelling",
+    "not_found": "Niet gevonden",
+    "add": "Toevoegen",
+    "update": "Bijwerken",
+    "special_requests": "Speciale verzoeken...",
+    "enter_name": "Voer je naam in om te beginnen met bestellen",
+    "your_name": "Je naam",
+    "start_ordering": "Begin met bestellen",
+    "tap_to_start": "Tik om te starten"
+  },
+  "restaurants": {
+    "vat-number": "BTW nummer",
+    "number_per_item": "+ {{total_price}} ({{price}} per stuk)",
+    "pickup-times": "Afhaaltijden",
+    "delivery-times": "Bezorgtijden",
+    "company-disclaimer": "Als je allergisch bent voor bepaalde voedingsmiddelen of speciale dieetbehoeften hebt, neem dan vóór het bestellen contact op met het restaurant.",
+    "not_supported": "Dit restaurant ondersteunt de huidige methode niet",
+    "closed": "Gesloten",
+    "currently_closed": "Momenteel Gesloten",
+    "search": "Zoek Restaurant",
+    "required": "Vereist",
+    "min_required": "U moet minstens {{min}} optie(s) selecteren",
+    "max_exceeded": "U mag maximaal {{max}} opties selecteren",
+    "empty_required": "Waarde kan niet leeg zijn",
+    "no_restaurants_found": "Geen restaurants gevonden",
+    "change_address": "Verander uw adres",
+    "single": {
+      "search": "Zoek producten",
+      "about": "Over",
+      "free-shipping": "Gratis Verzending",
+      "shipping": "Verzending {{price}}",
+      "time-span": "{{time1}}-{{time2}} min",
+      "time-pickup": "{{time}} min",
+      "minimum-price": "{{price}} minimum"
+    },
+    "items": {
+      "no_items_found": "Geen producten gevonden"
+    },
+    "waiter": {
+      "title": "Roep Ober",
+      "description": "Roep een ober voor behandelen van uw bestelling."
+    },
+    "placed": {
+      "title": "Bestelling Geplaatst",
+      "description": "Uw bestelling werd succesvol geplaatst"
+    },
+    "options": {
+      "required": "Vereist",
+      "choose_max": "Kies tot maximaal {{max}} optie(s)",
+      "choose_from": "Kies {{min}} tot {{max}} opties"
+    },
+    "cart": {
+      "title": "Winkelmandje",
+      "closed_for_order": "Restaurant is momenteel gesloten voor online bestellingen",
+      "closed_for_method": "Wij zijn gesloten voor de huidige methode",
+      "closed": "Wij zijn gesloten tot  {{till}}",
+      "empty": "Je winkelwagen is leeg",
+      "subtotal": "Subtotaal",
+      "delivery_fee": "Leveringskosten",
+      "total": "Totaal",
+      "cancel": "Annuleren",
+      "ok": "Bevestigen",
+      "minimum_alert": {
+        "title": "Minimum Bestelwaarde",
+        "text": "Het minimum bestelbedrag bij {{company}} is {{price}}. Je komt nog {{rest}} tekort."
+      },
+      "confirm": "Bevestig Winkelmandje",
+      "place_order": "Weet je zeker dat je deze bestelling wilt plaatsen?",
+      "back": "Ga terug",
+      "switch": "Schakel naar {{method}}",
+      "note": {
+        "title": "Notitie",
+        "delete": "Verwijder",
+        "cancel": "Annuleren",
+        "save": "Opslaan",
+        "add": "Notitie Toevoegen"
+      }
+    },
+    "note": "Notitie"
+  },
+  "header": {
+    "orders": "Bestellingen",
+    "addresses": "Adressen",
+    "my_info": "Mijn Gegevens",
+    "verify_phone": "Verifieer Telefoonnummer",
+    "logout": "Uitloggen"
+  },
+  "countries": {
+    "BE": "België",
+    "NL": "Nederland"
+  }
+}

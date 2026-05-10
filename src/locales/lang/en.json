@@ -1,0 +1,186 @@
+{
+  "common": {
+    "locale": {
+      "tr": "Turkçe",
+      "nl": "Nederlands",
+      "en": "English",
+      "fr": "Francais",
+      "de": "Deutsch"
+    },
+    "sold_out": "Sold out",
+    "change_language": "Change language",
+    "continue_with_order": "Continue with order",
+    "login": "Login",
+    "no_address_found": "No address found",
+    "register": "Register",
+    "delivery": "Delivery",
+    "pickup": "Pickup",
+    "restaurant": "Restaurant",
+    "restaurants": "Restaurants",
+    "not_deliver": "{{company}} does not deliver to this area",
+    "cuisines": {
+      "pizza-1": "Pizza",
+      "pasta-1": "Pasta",
+      "pita-1": "Pita"
+    },
+    "cart": {
+      "changes": {
+        "title": "Cart modification",
+        "cancel": "Cancel",
+        "accept": "Change to {{method}}"
+      },
+      "deleted_items": {
+        "title": "Deleted items",
+        "disclaimer": "The following items are not available for {{method}}"
+      },
+      "price_changes": {
+        "title": "Price change",
+        "disclaimer": "The prices of the following items are different for {{method}}"
+      }
+    },
+    "days": {
+      "1": "Monday",
+      "2": "Tuesday",
+      "3": "Wednesday",
+      "4": "Thursday",
+      "5": "Friday",
+      "6": "Saturday",
+      "7": "Sunday"
+    },
+    "address": {
+      "title": "Enter your address"
+    },
+    "search": "Search",
+    "restriction": {
+      "title": "Are you {{age}} or older?",
+      "description": "Confirm that you are {{age}} or older to purchase this item in the country of purchase.",
+      "confirm": "Continue",
+      "cancel": "Cancel"
+    },
+    "common_error": "An error occurred, please try again later",
+    "price_from": "from {{price}}",
+    "price_exact": "{{price}}",
+    "free": "Free",
+    "table": "Table {{number}}",
+    "table_number": "Table number",
+    "continue": "Continue",
+    "item": "item",
+    "items": "items",
+    "view_order": "View order",
+    "not_found": "Not Found",
+    "add": "Add",
+    "update": "Update",
+    "special_requests": "Special requests...",
+    "enter_name": "Enter your name to start ordering",
+    "your_name": "Your name",
+    "start_ordering": "Start ordering",
+    "tap_to_start": "Tap to start"
+  },
+  "restaurants": {
+    "vat-number": "VAT number",
+    "number_per_item": "+ {{total_price}} ({{price}} per unit)",
+    "pickup-times": "Pickup times",
+    "delivery-times": "Delivery times",
+    "company-disclaimer": "If you are allergic to certain foods or have dietary needs, please contact the restaurant before ordering.",
+    "not_supported": "This restaurant does not support the current method",
+    "closed": "Closed",
+    "currently_closed": "Currently closed",
+    "search": "Search for a restaurant",
+    "required": "Required",
+    "min_required": "You must select at least {{min}} option(s)",
+    "max_exceeded": "You can select a maximum of {{max}} options",
+    "empty_required": "Value cannot be empty",
+    "no_restaurants_found": "No restaurants found",
+    "change_address": "Change your address",
+    "single": {
+      "search": "Search for products",
+      "about": "About",
+      "free-shipping": "Free shipping",
+      "shipping": "Delivery {{price}}",
+      "time-span": "{{time1}}-{{time2}} min",
+      "time-pickup": "{{time}} min",
+      "minimum-price": "Minimum {{price}}"
+    },
+    "items": {
+      "no_items_found": "No products found"
+    },
+    "waiter": {
+      "title": "Call a waiter",
+      "description": "Call a waiter to handle your order."
+    },
+    "placed": {
+      "title": "Order placed",
+      "description": "Your order has been successfully placed"
+    },
+    "options": {
+      "required": "Required",
+      "choose_max": "Choose up to {{max}} option(s)",
+      "choose_from": "Choose from {{min}} to {{max}} options"
+    },
+    "cart": {
+      "title": "Cart",
+      "closed_for_order": "The restaurant is currently closed for online orders",
+      "closed_for_method": "We are closed for the current method",
+      "closed": "We are closed until {{till}}",
+      "empty": "Your cart is empty",
+      "subtotal": "Subtotal",
+      "delivery_fee": "Delivery fee",
+      "total": "Total",
+      "cancel": "Cancel",
+      "ok": "Confirm",
+      "minimum_alert": {
+        "title": "Minimum order amount",
+        "text": "The minimum order amount at {{company}} is {{price}}. You are still {{rest}} short."
+      },
+      "confirm": "Confirm cart",
+      "place_order": "Are you sure you want to place this order?",
+      "back": "Back",
+      "switch": "Switch to {{method}}",
+      "note": {
+        "title": "Note",
+        "delete": "Delete",
+        "cancel": "Cancel",
+        "save": "Save",
+        "add": "Add a note"
+      }
+    },
+    "note": "Note"
+  },
+  "header": {
+    "orders": "Orders",
+    "addresses": "Addresses",
+    "my_info": "My information",
+    "verify_phone": "Verify phone number",
+    "logout": "Logout"
+  },
+  "order": {
+    "title": "Orders",
+    "no_orders": "You have no orders",
+    "card": {
+      "items": "{{count}} items - {{price}}",
+      "button": "View your order"
+    },
+    "stepper": {
+      "preparing": "Preparing",
+      "on_its_way": "On its way",
+      "delivered": "Delivered",
+      "ready": "Ready",
+      "picked_up": "Picked up"
+    },
+    "awaiting": {
+      "title": "Payment not received",
+      "description": "It looks like your payment has not been recorded yet. Please refresh the page.",
+      "button": "Reload"
+    },
+    "cancelled": {
+      "title": "Order cancelled",
+      "description": "Your order has been cancelled by the restaurant.",
+      "online": "The paid amount will be refunded within 2 business days.",
+      "description_2": "For any questions, please contact {{store}}."
+    }
+  },
+  "countries": {
+    "BE": "Belgium",
+    "NL": "Netherlands"
+  }
+}

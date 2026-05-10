@@ -1,0 +1,180 @@
+{
+  "common": {
+   "locale": {
+      "tr": "Turkçe",
+      "nl": "Nederlands",
+      "en": "English",
+      "fr": "Francais",
+      "de": "Deutsch"
+    },
+    "sold_out": "Tükendi",
+    "change_language": "Dili Değiştir",
+    "continue_with_order": "Siparişe Devam Et",
+    "login": "Giriş Yap",
+    "no_address_found": "Adres bulunamadı",
+    "register": "Kayıt Ol",
+    "delivery": "Teslimat",
+    "pickup": "Gel Al",
+    "restaurant": "Restoran",
+    "restaurants": "Restoranlar",
+    "not_deliver": "{{company}} bu bölgeye teslimat yapmıyor",
+    "cuisines": {
+      "pizza-1": "Pizza",
+      "pasta-1": "Makarna",
+      "pita-1": "Pide"
+    },
+    "cart": {
+      "changes": {
+        "title": "Sepet Değişikliği",
+        "cancel": "İptal",
+        "accept": "{{method}} olarak değiştir"
+      },
+      "deleted_items": {
+        "title": "Silinen Ürünler",
+        "disclaimer": "Aşağıdaki ürünler {{method}} için mevcut değil"
+      },
+      "price_changes": {
+        "title": "Fiyat Değişikliği",
+        "disclaimer": "Aşağıdaki ürünlerin fiyatları {{method}} için farklıdır"
+      }
+    },
+    "days": {
+      "1": "Pazartesi",
+      "2": "Salı",
+      "3": "Çarşamba",
+      "4": "Perşembe",
+      "5": "Cuma",
+      "6": "Cumartesi",
+      "7": "Pazar"
+    },
+    "address": {
+      "title": "Adresinizi girin"
+    },
+    "search": "Ara",
+    "restriction": {
+      "title": "{{age}} yaşında veya daha büyük müsünüz?",
+      "description": "Satın alma ülkesinde bu ürünü almak için {{age}} yaşında veya daha büyük olduğunuzu onaylayın.",
+      "confirm": "Devam et",
+      "cancel": "İptal"
+    },
+    "common_error": "Bir hata oluştu, lütfen daha sonra tekrar deneyin",
+    "price_from": "{{price}} itibaren",
+    "price_exact": "{{price}}",
+    "free": "Ücretsiz",
+    "table": "Masa {{number}}",
+    "table_number": "Masa numarası",
+    "continue": "Devam et",
+    "item": "ürün",
+    "items": "ürün",
+    "view_order": "Siparişi gör",
+    "not_found": "Bulunamadı",
+    "add": "Ekle",
+    "update": "Güncelle",
+    "special_requests": "Özel istekler...",
+    "enter_name": "Sipariş vermek için adınızı girin",
+    "your_name": "Adınız",
+    "start_ordering": "Siparişe başla",
+    "tap_to_start": "Başlamak için dokunun"
+  },
+  "restaurants": {
+    "vat-number": "KDV Numarası",
+    "number_per_item": "+ {{total_price}} ({{price}} adet başına)",
+    "pickup-times": "Gel Al Saatleri",
+    "delivery-times": "Teslimat Saatleri",
+    "company-disclaimer": "Belirli gıdalara alerjiniz varsa veya özel diyet gereksinimleriniz varsa, sipariş vermeden önce restoranla iletişime geçin.",
+    "not_supported": "Bu restoran mevcut yöntemi desteklemiyor",
+    "closed": "Kapalı",
+    "currently_closed": "Şu anda Kapalı",
+    "search": "Restoran Ara",
+    "required": "Gerekli",
+    "min_required": "En az {{min}} seçenek seçmelisiniz",
+    "max_exceeded": "En fazla {{max}} seçenek seçebilirsiniz",
+    "empty_required": "Değer boş olamaz",
+    "no_restaurants_found": "Restoran bulunamadı",
+    "change_address": "Adresinizi değiştirin",
+    "single": {
+      "search": "Ürünleri Ara",
+      "about": "Hakkında",
+      "free-shipping": "Ücretsiz Kargo",
+      "shipping": "Kargo {{price}}",
+      "time-span": "{{time1}}-{{time2}} dk",
+      "time-pickup": "{{time}} dk",
+      "minimum-price": "Minimum {{price}}"
+    },
+    "items": {
+      "no_items_found": "Ürün bulunamadı"
+    },
+    "waiter": {
+      "title": "Garson Çağır",
+      "description": "Siparişiniz için bir garson çağırın."
+    },
+    "placed": {
+      "title": "Sipariş Verildi",
+      "description": "Siparişiniz başarıyla verildi"
+    },
+    "options": {
+      "required": "Gerekli",
+      "choose_max": "En fazla {{max}} seçenek seçin",
+      "choose_from": "{{min}} ile {{max}} arasında seçenek seçin"
+    },
+    "cart": {
+      "title": "Sepet",
+      "closed_for_order": "Restoran şu anda çevrimiçi siparişlere kapalı",
+      "closed_for_method": "Mevcut yöntem için kapalıyız",
+      "closed": "{{till}} saatine kadar kapalıyız",
+      "empty": "Sepetiniz boş",
+      "subtotal": "Ara Toplam",
+      "delivery_fee": "Teslimat Ücreti",
+      "total": "Toplam",
+      "cancel": "İptal",
+      "ok": "Onayla",
+      "minimum_alert": {
+        "title": "Minimum Sipariş Tutarı",
+        "text": "{{company}} için minimum sipariş tutarı {{price}}. Eksik miktar: {{rest}}."
+      },
+      "confirm": "Sepeti Onayla",
+      "place_order": "Bu siparişi vermek istediğinizden emin misiniz?",
+      "back": "Geri Dön",
+      "switch": "{{method}} yöntemine geç",
+      "note": {
+        "title": "Not",
+        "delete": "Sil",
+        "cancel": "İptal",
+        "save": "Kaydet",
+        "add": "Not Ekle"
+      }
+    },
+    "note": "Not"
+  },
+  "header": {
+    "orders": "Siparişler",
+    "addresses": "Adresler",
+    "my_info": "Bilgilerim",
+    "verify_phone": "Telefon Numarasını Doğrula",
+    "logout": "Çıkış Yap"
+  },
+  "order": {
+    "title": "Siparişler",
+    "no_orders": "Siparişiniz yok",
+    "card": {
+      "items": "{{count}} ürün - {{price}}",
+      "button": "Siparişini Gör"
+    },
+    "stepper": {
+      "preparing": "Hazırlanıyor",
+      "on_its_way": "Yolda",
+      "delivered": "Teslim Edildi",
+      "ready": "Hazır",
+      "picked_up": "Teslim Alındı"
+    },
+    "awaiting": {
+      "title": "Ödeme henüz alınmadı",
+      "description": "Ödemeniz henüz sistemimize kaydedilmemiş gibi görünüyor. Lütfen sayfayı yenileyin.",
+      "button": "Yenile"
+    }
+  },
+  "countries": {
+    "BE": "Belçika",
+    "NL": "Hollanda"
+  }
+}
