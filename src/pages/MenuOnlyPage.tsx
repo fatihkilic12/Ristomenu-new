@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { getDeliveryMenu } from '@/actions/store';
 import { StoreConfigProvider, useStoreConfig } from '@/context/StoreConfigContext';
 import { EURO, IMAGE_ADDRESS, IMAGE_SERVER_ADDRESS, PICKUP } from '@/config/constants';
+import { collectMenuImageUrls, precacheImages } from '@/lib/imageCache';
 import LanguageSelector from '@/components/shared/LanguageSelector';
 import CategoryNav from '@/components/shared/CategoryNav';
 import ProductCard from '@/components/shared/ProductCard';
@@ -53,6 +54,12 @@ function MenuOnlyContent() {
       setActiveCategory(categories[0].id);
     }
   }, [categories, activeCategory]);
+
+  // Once the menu is loaded, warm the image cache so the menu stays usable if
+  // the restaurant's Wi-Fi drops mid-browse.
+  useEffect(() => {
+    if (menu) precacheImages(collectMenuImageUrls(menu));
+  }, [menu]);
 
   // IntersectionObserver — same flicker-free scroll-to-category as the other menus
   useEffect(() => {
@@ -271,6 +278,17 @@ function ProductInfoModal({ product, onClose }: { product: Record<string, any>; 
               </div>
             )}
           </div>
+        </div>
+
+        {/* Sticky footer — same position as the dine-in "Add to cart" button */}
+        <div className="p-4 border-t border-gray-100 bg-white shrink-0">
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full py-3.5 rounded-xl font-semibold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] transition-colors text-[15px]"
+          >
+            ← {t('menu_only.back_to_menu', 'Back to menu')}
+          </button>
         </div>
       </div>
     </div>

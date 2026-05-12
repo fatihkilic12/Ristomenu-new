@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -6,6 +6,7 @@ import { getCompanyMenu } from '@/actions/store';
 import { CartProvider, useCart } from '@/context/CartContext';
 import { StoreConfigProvider, useStoreConfig } from '@/context/StoreConfigContext';
 import { DINE_IN } from '@/config/constants';
+import { collectMenuImageUrls, precacheImages } from '@/lib/imageCache';
 import MenuView from '@/components/menu/MenuView';
 import LanguageSelector from '@/components/shared/LanguageSelector';
 import OrderResultModal from '@/components/shared/OrderResultModal';
@@ -22,6 +23,12 @@ function DineInContent() {
     queryFn: () => getCompanyMenu(storeId!, table!),
     enabled: !!storeId && !!table,
   });
+
+  // Pre-cache product images as soon as the menu lands so the table can keep
+  // browsing if the restaurant's Wi-Fi blips out.
+  useEffect(() => {
+    if (menu) precacheImages(collectMenuImageUrls(menu));
+  }, [menu]);
 
   const handleConfirm = async () => {
     try {

@@ -7,6 +7,7 @@ import { CartProvider, useCart } from '@/context/CartContext';
 import { StoreConfigProvider, useStoreConfig } from '@/context/StoreConfigContext';
 import { DELIVERY, PICKUP, EURO } from '@/config/constants';
 import { COMPANY_CHECKOUT } from '@/config/paths';
+import { collectMenuImageUrls, precacheImages } from '@/lib/imageCache';
 import LanguageSelector from '@/components/shared/LanguageSelector';
 import OrderMenuView, { triggerOrderEditItem } from '@/components/order/OrderMenuView';
 import OrderCartPanel from '@/components/order/OrderCartPanel';
@@ -64,6 +65,11 @@ function OrderContent() {
     queryFn: () => getDeliveryMenu(storeId!, effectiveType),
     enabled: !!storeId && !configLoading,
   });
+
+  // Warm the image cache for offline resilience.
+  useEffect(() => {
+    if (menu) precacheImages(collectMenuImageUrls(menu));
+  }, [menu]);
 
   if (configLoading) {
     return (
