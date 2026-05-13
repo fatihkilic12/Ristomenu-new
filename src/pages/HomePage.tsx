@@ -10,7 +10,7 @@ export default function HomePage() {
       <nav className="fixed top-0 left-0 right-0 z-40 backdrop-blur-xl bg-[#faf9f7]/70 border-b border-[#1c1917]/5">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <a href="/" className="text-lg tracking-tight" style={{ fontFamily: "'DM Serif Display', Georgia, serif" }}>
-            Risto<span className="text-[#b45309]">Menu</span>
+            Menu<span className="text-[#b45309]">Wela</span>
           </a>
           <div className="hidden md:flex items-center gap-8 text-[13px] font-medium tracking-wide uppercase text-[#78716c]">
             <a href="#features" className="hover:text-[#1c1917] transition-colors">Features</a>
@@ -18,7 +18,7 @@ export default function HomePage() {
             <a href="#contact" className="hover:text-[#1c1917] transition-colors">Contact</a>
           </div>
           <a
-            href="https://admin.ristomenu.be"
+            href="https://portal.menuwela.com/sign-in?redirectUrl=/login"
             className="px-5 py-2 text-[13px] font-semibold tracking-wide rounded-full bg-[#1c1917] text-white hover:bg-[#292524] transition-colors"
           >
             Dashboard
@@ -168,11 +168,11 @@ export default function HomePage() {
       {/* Footer */}
       <footer className="py-8 px-6 border-t border-[#1c1917]/5 bg-[#faf9f7]">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <span className="text-[13px] text-[#a8a29e]">© {new Date().getFullYear()} RistoMenu</span>
+          <span className="text-[13px] text-[#a8a29e]">© {new Date().getFullYear()} MenuWela</span>
           <div className="flex items-center gap-5 text-[13px] text-[#a8a29e]">
             <a href="/privacy" className="hover:text-[#57534e] transition-colors">Privacy</a>
             <a href="/terms" className="hover:text-[#57534e] transition-colors">Terms</a>
-            <a href="mailto:info@ristomenu.be" className="hover:text-[#57534e] transition-colors">info@ristomenu.be</a>
+            <a href="mailto:info@menuwela.com" className="hover:text-[#57534e] transition-colors">info@menuwela.com</a>
           </div>
         </div>
       </footer>
