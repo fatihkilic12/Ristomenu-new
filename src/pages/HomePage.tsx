@@ -1,3 +1,7 @@
+const PORTAL_SIGNUP = 'https://portal.menuwela.com/sign-up';
+const PORTAL_LOGIN = 'https://portal.menuwela.com/sign-in?redirectUrl=/login';
+const DEMO_MENU = '/company/test/menu';
+
 export default function HomePage() {
   return (
     <div className="min-h-dvh bg-[#faf9f7] text-[#1c1917] overflow-hidden">
@@ -14,61 +18,94 @@ export default function HomePage() {
           </a>
           <div className="hidden md:flex items-center gap-8 text-[13px] font-medium tracking-wide uppercase text-[#78716c]">
             <a href="#features" className="hover:text-[#1c1917] transition-colors">Features</a>
+            <a href="#demo" className="hover:text-[#1c1917] transition-colors">Demo</a>
             <a href="#pricing" className="hover:text-[#1c1917] transition-colors">Pricing</a>
-            <a href="#contact" className="hover:text-[#1c1917] transition-colors">Contact</a>
+            <a href="#faq" className="hover:text-[#1c1917] transition-colors">FAQ</a>
           </div>
-          <a
-            href="https://portal.menuwela.com/sign-in?redirectUrl=/login"
-            className="px-5 py-2 text-[13px] font-semibold tracking-wide rounded-full bg-[#1c1917] text-white hover:bg-[#292524] transition-colors"
-          >
-            Dashboard
-          </a>
+          <div className="flex items-center gap-2">
+            <a
+              href={PORTAL_LOGIN}
+              className="hidden sm:inline-flex px-4 py-2 text-[13px] font-semibold tracking-wide rounded-full text-[#1c1917] hover:bg-[#1c1917]/5 transition-colors"
+            >
+              Sign in
+            </a>
+            <a
+              href={PORTAL_SIGNUP}
+              className="px-5 py-2 text-[13px] font-semibold tracking-wide rounded-full bg-[#1c1917] text-white hover:bg-[#292524] transition-colors"
+            >
+              Start free
+            </a>
+          </div>
         </div>
       </nav>
 
       {/* Hero */}
-      <section className="relative pt-32 pb-20 px-6">
+      <section className="relative pt-32 pb-16 px-6">
         <div className="absolute top-20 right-0 w-[600px] h-[600px] rounded-full bg-[#fbbf24]/10 blur-[120px] -z-10" />
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full bg-[#b45309]/5 blur-[100px] -z-10" />
 
-        <div className="max-w-5xl mx-auto">
-          <p className="text-[13px] font-semibold tracking-[0.2em] uppercase text-[#b45309] mb-6">
-            Restaurant ordering platform
-          </p>
-          <h1
-            className="text-5xl sm:text-7xl lg:text-8xl font-normal leading-[0.9] tracking-tight text-[#1c1917]"
-            style={{ fontFamily: "'DM Serif Display', Georgia, serif" }}
-          >
-            Your menu,<br />
-            everywhere<span className="text-[#b45309]">.</span>
-          </h1>
-          <p className="mt-8 text-lg sm:text-xl text-[#78716c] max-w-xl leading-relaxed">
-            QR codes, tablets, kiosk terminals, online pickup — one platform, zero commissions. Set up in minutes, not days.
-          </p>
-          <div className="mt-12 flex flex-wrap gap-4">
-            <a
-              href="#contact"
-              className="px-8 py-4 rounded-full text-[15px] font-semibold text-white bg-[#1c1917] hover:bg-[#292524] transition-all hover:shadow-xl hover:shadow-[#1c1917]/10 hover:-translate-y-0.5"
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-[1.15fr_1fr] gap-12 items-center">
+          <div>
+            <p className="text-[13px] font-semibold tracking-[0.2em] uppercase text-[#b45309] mb-6">
+              Restaurant ordering platform
+            </p>
+            <h1
+              className="text-5xl sm:text-7xl lg:text-[5.5rem] font-normal leading-[0.92] tracking-tight text-[#1c1917]"
+              style={{ fontFamily: "'DM Serif Display', Georgia, serif" }}
             >
-              Start 14-day trial
-            </a>
-            <a
-              href="#features"
-              className="px-8 py-4 rounded-full text-[15px] font-semibold text-[#1c1917] border border-[#1c1917]/15 hover:border-[#1c1917]/30 transition-colors"
-            >
-              Explore features
-            </a>
-          </div>
+              Your menu,<br />
+              everywhere<span className="text-[#b45309]">.</span>
+            </h1>
+            <p className="mt-7 text-lg sm:text-xl text-[#78716c] max-w-xl leading-relaxed">
+              QR codes, tablets, kiosk terminals, online pickup — one platform, zero commissions. Set up in minutes, not days.
+            </p>
+            <div className="mt-10 flex flex-wrap gap-3">
+              <a
+                href={PORTAL_SIGNUP}
+                className="px-7 py-3.5 rounded-full text-[15px] font-semibold text-white bg-[#1c1917] hover:bg-[#292524] transition-all hover:shadow-xl hover:shadow-[#1c1917]/10 hover:-translate-y-0.5"
+              >
+                Start 14-day trial
+              </a>
+              <a
+                href={DEMO_MENU}
+                className="px-7 py-3.5 rounded-full text-[15px] font-semibold text-[#1c1917] border border-[#1c1917]/15 hover:border-[#1c1917]/30 hover:bg-[#1c1917]/5 transition-all inline-flex items-center gap-2"
+              >
+                See it live <span aria-hidden>→</span>
+              </a>
+            </div>
 
-          {/* Trust line */}
-          <div className="mt-10 pt-6 border-t border-[#1c1917]/5">
-            <p className="text-[12px] tracking-[0.15em] uppercase text-[#a8a29e] mb-4">Trusted by</p>
-            <div className="flex items-center gap-8 flex-wrap">
-              <span className="text-[#57534e] font-semibold text-lg" style={{ fontFamily: "'DM Serif Display', Georgia, serif" }}>Matiate</span>
-              <span className="text-[#57534e] font-semibold text-lg" style={{ fontFamily: "'DM Serif Display', Georgia, serif" }}>Mevlana</span>
-              <span className="text-[#57534e] font-semibold text-lg" style={{ fontFamily: "'DM Serif Display', Georgia, serif" }}>La Dolce Pita</span>
+            {/* Trust line — concrete numbers instead of decorative names */}
+            <div className="mt-10 pt-6 border-t border-[#1c1917]/5 flex flex-wrap gap-8 text-[#57534e]">
+              <Stat value="0%" label="Commission" />
+              <Stat value="5 min" label="Setup time" />
+              <Stat value="24/7" label="Support" />
             </div>
           </div>
+
+          {/* Hero visual — phone mockup with a styled menu preview */}
+          <div className="relative hidden lg:block">
+            <PhoneMockup />
+          </div>
+        </div>
+      </section>
+
+      {/* Demo strip — single visible CTA pointing at a real working menu */}
+      <section id="demo" className="px-6 pt-6 pb-20">
+        <div className="max-w-6xl mx-auto bg-[#1c1917] text-white rounded-[2rem] p-8 sm:p-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 relative overflow-hidden">
+          <div className="absolute -top-10 -right-10 w-64 h-64 rounded-full bg-[#b45309]/20 blur-3xl pointer-events-none" />
+          <div className="relative">
+            <p className="text-[12px] tracking-[0.2em] uppercase text-[#fbbf24] mb-2">Try it now</p>
+            <h2 className="text-2xl sm:text-3xl font-normal tracking-tight" style={{ fontFamily: "'DM Serif Display', Georgia, serif" }}>
+              See exactly what your customers see.
+            </h2>
+            <p className="text-[#a8a29e] mt-2 text-sm">No signup required — open the live demo menu.</p>
+          </div>
+          <a
+            href={DEMO_MENU}
+            className="relative shrink-0 px-6 py-3 rounded-full text-sm font-semibold bg-[#fbbf24] text-[#1c1917] hover:bg-[#f59e0b] transition-colors inline-flex items-center gap-2"
+          >
+            Open demo menu <span aria-hidden>→</span>
+          </a>
         </div>
       </section>
 
@@ -89,12 +126,36 @@ export default function HomePage() {
           </h2>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-px bg-white/5 rounded-2xl overflow-hidden">
-            <Feature title="QR Ordering" desc="Scan, browse, order. No downloads. Works on every phone." accent="📱" />
-            <Feature title="Tablet Menus" desc="Fixed tablets on tables. Self-pairing setup. €1/tablet." accent="📟" />
-            <Feature title="Kiosk Mode" desc="Self-service terminal with auto table assignment and POS sync." accent="🖥️" />
-            <Feature title="Online Pickup" desc="Your own branded page. Customers order ahead, you prepare." accent="🛍️" />
-            <Feature title="POS Connected" desc="Direct Untill integration. Prices and orders sync both ways." accent="🔗" />
-            <Feature title="Your Brand" desc="Colors, logo, style. Every store looks like their own." accent="🎨" />
+            <Feature
+              title="QR Ordering"
+              desc="Scan, browse, order. No downloads. Works on every phone."
+              icon={<IconQr />}
+            />
+            <Feature
+              title="Tablet Menus"
+              desc="Fixed tablets on tables. Self-pairing setup. €1/tablet."
+              icon={<IconTablet />}
+            />
+            <Feature
+              title="Kiosk Mode"
+              desc="Self-service terminal with auto table assignment and POS sync."
+              icon={<IconKiosk />}
+            />
+            <Feature
+              title="Online Pickup"
+              desc="Your own branded page. Customers order ahead, you prepare."
+              icon={<IconBag />}
+            />
+            <Feature
+              title="POS Connected"
+              desc="Direct Untill integration. Prices and orders sync both ways."
+              icon={<IconPlug />}
+            />
+            <Feature
+              title="Your Brand"
+              desc="Colors, logo, style. Every store looks like their own."
+              icon={<IconPalette />}
+            />
           </div>
         </div>
       </section>
@@ -141,10 +202,50 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* FAQ */}
+      <section id="faq" className="py-20 px-6 bg-[#faf9f7]">
+        <div className="max-w-3xl mx-auto">
+          <p className="text-[12px] tracking-[0.2em] uppercase text-[#b45309] mb-4 text-center">Questions</p>
+          <h2
+            className="text-4xl sm:text-5xl font-normal tracking-tight text-center mb-12"
+            style={{ fontFamily: "'DM Serif Display', Georgia, serif" }}
+          >
+            Frequently asked
+          </h2>
+
+          <div className="divide-y divide-[#1c1917]/10 rounded-2xl bg-white border border-[#1c1917]/5 overflow-hidden">
+            <FaqItem
+              q="How fast can I set this up?"
+              a="If you've already got your menu in a spreadsheet, the import takes under 10 minutes. Designing categories, uploading photos and printing QR codes is usually done within an afternoon."
+            />
+            <FaqItem
+              q="Do I need any special hardware?"
+              a="No. QR ordering and online pickup run on customers' own phones. Tablets and kiosks are optional add-ons — you can use any Android tablet (we provide a setup app) or use our recommended kiosk hardware."
+            />
+            <FaqItem
+              q="Does it work with my point-of-sale?"
+              a="We integrate directly with Untill. Orders land in your POS like any in-house order, and price changes you make in the POS sync back to your menu. Other POS systems on request."
+            />
+            <FaqItem
+              q="What if my internet drops mid-service?"
+              a="Menus are cached on each device, so customers can keep browsing and adding to cart even when Wi-Fi blips. Orders queue and submit as soon as you're back online."
+            />
+            <FaqItem
+              q="Are there any commissions or hidden fees?"
+              a="None. You pay a fixed monthly fee and keep 100% of your revenue. Online payment processing is at standard PSP rates (Mollie / Stripe — you pick)."
+            />
+            <FaqItem
+              q="Can I cancel anytime?"
+              a="Yes. No contracts, no cancellation fees. You can pause or stop your subscription from the dashboard at any time."
+            />
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section id="contact" className="py-28 px-6 bg-[#1c1917] relative overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] rounded-full bg-[#b45309]/10 blur-[120px] -z-0" />
-        <div className="max-w-xl mx-auto text-center relative">
+        <div className="max-w-2xl mx-auto text-center relative">
           <h2
             className="text-4xl sm:text-5xl font-normal tracking-tight text-white"
             style={{ fontFamily: "'DM Serif Display', Georgia, serif" }}
@@ -153,15 +254,22 @@ export default function HomePage() {
           </h2>
           <p className="mt-4 text-[#a8a29e] text-lg">14 days free. No credit card. Takes 5 minutes.</p>
           <div className="mt-10 flex flex-col sm:flex-row gap-3 justify-center">
-            <input
-              type="email"
-              placeholder="your@email.com"
-              className="px-5 py-3.5 rounded-full text-sm bg-white/5 border border-white/10 text-white placeholder-[#78716c] focus:outline-none focus:border-[#b45309]/50 w-full sm:w-72"
-            />
-            <button className="px-7 py-3.5 rounded-full text-sm font-semibold text-[#1c1917] bg-[#fbbf24] hover:bg-[#f59e0b] transition-colors">
-              Start free trial
-            </button>
+            <a
+              href={PORTAL_SIGNUP}
+              className="px-8 py-3.5 rounded-full text-sm font-semibold text-[#1c1917] bg-[#fbbf24] hover:bg-[#f59e0b] transition-colors inline-flex items-center justify-center gap-2"
+            >
+              Create your account <span aria-hidden>→</span>
+            </a>
+            <a
+              href={DEMO_MENU}
+              className="px-8 py-3.5 rounded-full text-sm font-semibold text-white border border-white/15 hover:bg-white/5 transition-colors inline-flex items-center justify-center"
+            >
+              See the demo first
+            </a>
           </div>
+          <p className="mt-6 text-xs text-[#78716c]">
+            Already have an account? <a href={PORTAL_LOGIN} className="text-[#fbbf24] hover:underline">Sign in</a>
+          </p>
         </div>
       </section>
 
@@ -180,11 +288,19 @@ export default function HomePage() {
   );
 }
 
+function Stat({ value, label }: { value: string; label: string }) {
+  return (
+    <div>
+      <p className="text-2xl font-semibold text-[#1c1917]" style={{ fontFamily: "'DM Serif Display', Georgia, serif" }}>{value}</p>
+      <p className="text-[11px] tracking-[0.15em] uppercase text-[#a8a29e] mt-0.5">{label}</p>
+    </div>
+  );
+}
 
-function Feature({ title, desc, accent }: { title: string; desc: string; accent: string }) {
+function Feature({ title, desc, icon }: { title: string; desc: string; icon: React.ReactNode }) {
   return (
     <div className="p-8 bg-[#1c1917] hover:bg-[#292524] transition-colors group">
-      <span className="text-2xl block mb-4 group-hover:scale-110 transition-transform">{accent}</span>
+      <span className="block w-10 h-10 mb-5 text-[#fbbf24] group-hover:scale-110 transition-transform">{icon}</span>
       <h3 className="font-semibold text-white text-[15px] mb-2">{title}</h3>
       <p className="text-[14px] text-[#a8a29e] leading-relaxed">{desc}</p>
     </div>
@@ -219,13 +335,159 @@ function PriceCard({ tier, price, desc, features, featured = false }: {
           </li>
         ))}
       </ul>
-      <button className={`w-full mt-7 py-3 rounded-full text-[14px] font-semibold transition-colors ${
-        featured
-          ? 'bg-[#fbbf24] text-[#1c1917] hover:bg-[#f59e0b]'
-          : 'bg-[#1c1917] text-white hover:bg-[#292524]'
-      }`}>
+      <a
+        href={PORTAL_SIGNUP}
+        className={`w-full mt-7 py-3 rounded-full text-[14px] font-semibold transition-colors text-center ${
+          featured
+            ? 'bg-[#fbbf24] text-[#1c1917] hover:bg-[#f59e0b]'
+            : 'bg-[#1c1917] text-white hover:bg-[#292524]'
+        }`}
+      >
         Start trial
-      </button>
+      </a>
     </div>
+  );
+}
+
+function FaqItem({ q, a }: { q: string; a: string }) {
+  return (
+    <details className="group p-6 sm:p-7">
+      <summary className="flex items-start justify-between gap-4 cursor-pointer list-none">
+        <span className="text-[16px] sm:text-[17px] font-semibold text-[#1c1917]">{q}</span>
+        <span className="shrink-0 mt-1 text-[#b45309] transition-transform group-open:rotate-45 text-2xl leading-none">+</span>
+      </summary>
+      <p className="mt-3 text-[14px] sm:text-[15px] text-[#57534e] leading-relaxed">{a}</p>
+    </details>
+  );
+}
+
+/* ─── Phone mockup ─────────────────────────────────────────
+ * Pure-CSS preview of the product. Gives the hero a concrete
+ * thing to point at without needing a real screenshot.
+ * ──────────────────────────────────────────────────────────*/
+function PhoneMockup() {
+  return (
+    <div className="relative mx-auto w-[300px] aspect-[9/19] rounded-[3rem] bg-[#1c1917] p-3 shadow-2xl shadow-[#1c1917]/30 rotate-[2deg]">
+      {/* Notch */}
+      <div className="absolute top-3 left-1/2 -translate-x-1/2 w-24 h-6 rounded-full bg-[#1c1917] z-10" />
+      {/* Floating order badge */}
+      <div className="absolute -left-12 top-1/3 bg-white rounded-2xl shadow-xl p-3 w-44 -rotate-6 z-20 ring-1 ring-[#1c1917]/5">
+        <p className="text-[10px] tracking-[0.15em] uppercase text-[#a8a29e]">Order #4F2C</p>
+        <p className="text-[13px] font-semibold mt-1">Mixed grill platter</p>
+        <p className="text-[#b45309] text-[13px] font-bold mt-0.5">€18.50</p>
+      </div>
+      {/* Floating live badge */}
+      <div className="absolute -right-6 bottom-12 bg-[#1c1917] text-white rounded-full pl-3 pr-4 py-2 shadow-xl flex items-center gap-2 rotate-3 z-20">
+        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+        <span className="text-xs font-semibold">12 ordering now</span>
+      </div>
+      {/* Phone screen */}
+      <div className="w-full h-full rounded-[2.4rem] bg-[#faf9f7] overflow-hidden flex flex-col">
+        {/* Status bar */}
+        <div className="h-8 shrink-0" />
+        {/* Restaurant header */}
+        <div className="px-4 pb-3 border-b border-[#1c1917]/5">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#b45309] to-[#fbbf24]" />
+            <p className="text-[13px] font-bold">Bistro Aurora</p>
+          </div>
+        </div>
+        {/* Category pills */}
+        <div className="px-4 py-3 flex gap-1.5 overflow-hidden border-b border-[#1c1917]/5">
+          <span className="shrink-0 px-2.5 py-1 rounded-full bg-[#1c1917] text-white text-[10px] font-bold">Starters</span>
+          <span className="shrink-0 px-2.5 py-1 rounded-full bg-white text-[#57534e] text-[10px] font-bold border border-[#1c1917]/10">Mains</span>
+          <span className="shrink-0 px-2.5 py-1 rounded-full bg-white text-[#57534e] text-[10px] font-bold border border-[#1c1917]/10">Sides</span>
+          <span className="shrink-0 px-2.5 py-1 rounded-full bg-white text-[#57534e] text-[10px] font-bold border border-[#1c1917]/10">Drinks</span>
+        </div>
+        {/* Products */}
+        <div className="flex-1 px-3 py-2 space-y-2 overflow-hidden">
+          <MockProduct name="Burrata di Puglia" desc="Heirloom tomato, basil, olive oil" price="12.50" gradient="from-emerald-200 to-green-300" />
+          <MockProduct name="Beef carpaccio" desc="Parmesan, rocket, truffle" price="14.00" gradient="from-rose-200 to-orange-300" />
+          <MockProduct name="Roasted beet salad" desc="Goat cheese, walnut, honey" price="10.50" gradient="from-fuchsia-200 to-pink-300" />
+        </div>
+        {/* Cart bar */}
+        <div className="m-3 mt-1 rounded-2xl bg-[#1c1917] text-white px-3 py-2.5 flex items-center justify-between shadow-lg">
+          <span className="flex items-center gap-2">
+            <span className="w-6 h-6 rounded-full bg-white/15 flex items-center justify-center text-[10px] font-bold">3</span>
+            <span className="text-[11px] font-bold">View order</span>
+          </span>
+          <span className="text-[11px] font-extrabold">€37.00</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MockProduct({ name, desc, price, gradient }: { name: string; desc: string; price: string; gradient: string }) {
+  return (
+    <div className="flex gap-2 p-2 rounded-xl bg-white shadow-sm">
+      <div className="flex-1 min-w-0">
+        <p className="text-[11px] font-bold text-[#1c1917] truncate">{name}</p>
+        <p className="text-[9px] text-[#a8a29e] truncate mt-0.5">{desc}</p>
+        <p className="text-[11px] font-extrabold text-[#1c1917] mt-1">€{price}</p>
+      </div>
+      <div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${gradient} shrink-0 relative`}>
+        <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-[#b45309] text-white text-xs font-bold flex items-center justify-center shadow">+</span>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Icons ─────────────────────────────────────────────── */
+const baseIcon = "w-full h-full";
+
+function IconQr() {
+  return (
+    <svg className={baseIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="7" height="7" rx="1" />
+      <rect x="14" y="3" width="7" height="7" rx="1" />
+      <rect x="3" y="14" width="7" height="7" rx="1" />
+      <path d="M14 14h3v3M21 14v3M17 17v4h4M14 21v-1" />
+    </svg>
+  );
+}
+function IconTablet() {
+  return (
+    <svg className={baseIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="5" y="2" width="14" height="20" rx="2" />
+      <line x1="12" y1="18" x2="12" y2="18" />
+    </svg>
+  );
+}
+function IconKiosk() {
+  return (
+    <svg className={baseIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="13" rx="2" />
+      <line x1="8" y1="21" x2="16" y2="21" />
+      <line x1="12" y1="17" x2="12" y2="21" />
+    </svg>
+  );
+}
+function IconBag() {
+  return (
+    <svg className={baseIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 7h12l-1 13a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 7Z" />
+      <path d="M9 7V5a3 3 0 0 1 6 0v2" />
+    </svg>
+  );
+}
+function IconPlug() {
+  return (
+    <svg className={baseIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 2v6M15 2v6" />
+      <path d="M6 8h12v3a6 6 0 0 1-12 0V8Z" />
+      <line x1="12" y1="17" x2="12" y2="22" />
+    </svg>
+  );
+}
+function IconPalette() {
+  return (
+    <svg className={baseIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22a10 10 0 1 1 10-10c0 2-1.5 3-3.5 3H17a2 2 0 0 0-1.5 3.3 2 2 0 0 1-1.5 3.3Z" />
+      <circle cx="6.5" cy="11.5" r="1" />
+      <circle cx="9.5" cy="7.5" r="1" />
+      <circle cx="14.5" cy="7.5" r="1" />
+      <circle cx="17.5" cy="11.5" r="1" />
+    </svg>
   );
 }
