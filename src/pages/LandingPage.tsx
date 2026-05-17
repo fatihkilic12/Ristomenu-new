@@ -92,9 +92,13 @@ function LandingContent() {
           <div className="p-5">
             <h2 className="text-[13px] font-semibold uppercase tracking-wider text-gray-400 mb-4">Order</h2>
             <div className="space-y-2.5">
+              {/* All options use `replace: true` so the back button on an
+                  inner page never lands back on this picker. Once a mode is
+                  chosen, the only way back is the store's own website (if
+                  configured) or typing /company/:storeId/ directly. */}
               {supportsDelivery && (
                 <OrderOption
-                  onClick={() => navigate(COMPANY_ORDER(storeId!) + '?type=delivery')}
+                  onClick={() => navigate(COMPANY_ORDER(storeId!) + '?type=delivery', { replace: true })}
                   icon="🚴‍♂️"
                   title="Delivery"
                   subtitle={`${ds?.duration_min || 20}–${ds?.duration_max || 45} min${ds?.default_delivery_fee > 0 ? ` · ${EURO}${(ds.default_delivery_fee / 100).toFixed(2)}` : ''}`}
@@ -102,7 +106,7 @@ function LandingContent() {
               )}
               {supportsPickup && (
                 <OrderOption
-                  onClick={() => navigate(COMPANY_ORDER(storeId!) + '?type=pickup')}
+                  onClick={() => navigate(COMPANY_ORDER(storeId!) + '?type=pickup', { replace: true })}
                   icon="🛍️"
                   title="Takeaway"
                   subtitle={`±${ps?.duration || 20} min · Free`}
@@ -110,20 +114,20 @@ function LandingContent() {
               )}
               {supportsKiosk && (
                 <OrderOption
-                  onClick={() => navigate(COMPANY_KIOSK(storeId!))}
+                  onClick={() => navigate(COMPANY_KIOSK(storeId!), { replace: true })}
                   icon="🖥️"
                   title="Kiosk"
                   subtitle="Self-service"
                 />
               )}
               <OrderOption
-                onClick={() => navigate(COMPANY_TABLE(storeId!))}
+                onClick={() => navigate(COMPANY_TABLE(storeId!), { replace: true })}
                 icon="🍽️"
                 title="Dine in"
                 subtitle="Order at your table"
               />
               <OrderOption
-                onClick={() => navigate(COMPANY_MENU_ONLY(storeId!))}
+                onClick={() => navigate(COMPANY_MENU_ONLY(storeId!), { replace: true })}
                 icon="📖"
                 title="View menu"
                 subtitle="Browse without ordering"

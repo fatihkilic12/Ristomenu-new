@@ -174,14 +174,15 @@ function CheckoutContent({ orderType }: { orderType: string }) {
         style={{ background: `${headerBg}f2`, color: headerText }}
       >
         <div className="max-w-5xl mx-auto h-16 px-4 flex items-center justify-between gap-3">
-          {/* Brand: back to menu */}
+          {/* Brand: explicit back to the menu (not browser history) — this way
+              we never accidentally bounce the customer to the LandingPage. */}
           <button
             type="button"
-            onClick={() => navigate(-1)}
+            onClick={() => navigate(COMPANY_ORDER(storeId!) + `?type=${orderType}`)}
             className={`flex items-center gap-3 -ml-1.5 px-1.5 py-1 rounded-lg min-w-0 ${
               themeMode === 'dark' ? 'hover:bg-white/10' : 'hover:bg-black/5'
             }`}
-            aria-label="Back"
+            aria-label={t('checkout.back_to_menu', 'Back to menu')}
           >
             <span className="text-lg" aria-hidden>←</span>
             {company?.img && (

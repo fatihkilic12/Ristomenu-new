@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { getDeliveryMenu } from '@/actions/store';
@@ -21,7 +21,6 @@ function MenuOnlyContent() {
   const { storeId } = useParams<{ storeId: string }>();
   const { company, loading: configLoading } = useStoreConfig();
   const { i18n, t } = useTranslation();
-  const navigate = useNavigate();
 
   const websiteUrl: string | undefined =
     company?.storefront_settings?.website_url ||
@@ -128,14 +127,10 @@ function MenuOnlyContent() {
               {websiteHostname && <span className="opacity-70 hidden md:inline">· {websiteHostname}</span>}
             </button>
           ) : (
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="inline-flex items-center justify-center w-10 h-10 rounded-lg hover:bg-white/10 text-lg"
-              aria-label="Back"
-            >
-              ←
-            </button>
+            // No back button without a website URL — we don't want users
+            // navigating back to the LandingPage from here. Empty span keeps
+            // the 3-column grid balanced so the logo stays centred.
+            <span aria-hidden />
           )}
         </div>
         {/* Middle: logo only */}

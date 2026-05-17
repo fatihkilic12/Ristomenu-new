@@ -108,30 +108,25 @@ function OrderContent() {
         style={{ background: `${headerBg}f2`, color: headerText }}
       >
         <div className="max-w-7xl mx-auto h-16 px-4 flex items-center justify-between gap-3">
-          {/* Brand: logo + name */}
-          <button
-            type="button"
-            onClick={websiteUrl ? goToWebsite : () => navigate(-1)}
-            className={`flex items-center gap-3 -ml-1.5 px-1.5 py-1 rounded-lg min-w-0 ${
-              themeMode === 'dark' ? 'hover:bg-white/10' : 'hover:bg-black/5'
-            }`}
-            aria-label={websiteUrl ? t('common.back_to_website', 'Back to website') : 'Back'}
-          >
-            {company?.img ? (
-              <img
-                src={company.img}
-                alt=""
-                className="w-9 h-9 rounded-lg object-cover ring-1 ring-black/10"
-              />
-            ) : (
-              <span className="w-9 h-9 rounded-lg bg-[var(--color-accent)]/20 flex items-center justify-center text-base font-extrabold capitalize" aria-hidden>
-                {(company?.name?.trim().charAt(0) || '?').toUpperCase()}
-              </span>
-            )}
-            <span className="font-extrabold text-base truncate capitalize">
-              {company?.name || ''}
-            </span>
-          </button>
+          {/* Brand: logo + name. Clickable only when the store configured a
+              website URL — otherwise it's a static label (we don't want users
+              navigating back to the LandingPage from here). */}
+          {websiteUrl ? (
+            <button
+              type="button"
+              onClick={goToWebsite}
+              className={`flex items-center gap-3 -ml-1.5 px-1.5 py-1 rounded-lg min-w-0 ${
+                themeMode === 'dark' ? 'hover:bg-white/10' : 'hover:bg-black/5'
+              }`}
+              aria-label={t('common.back_to_website', 'Back to website')}
+            >
+              <BrandContent company={company} />
+            </button>
+          ) : (
+            <div className="flex items-center gap-3 -ml-1.5 px-1.5 py-1 min-w-0">
+              <BrandContent company={company} />
+            </div>
+          )}
 
           {/* Right cluster: back-to-website (if set), theme toggle, language */}
           <div className="flex items-center gap-1.5 shrink-0">
@@ -266,6 +261,27 @@ function OrderContent() {
         menu={menu}
       />
     </div>
+  );
+}
+
+function BrandContent({ company }: { company: any }) {
+  return (
+    <>
+      {company?.img ? (
+        <img
+          src={company.img}
+          alt=""
+          className="w-9 h-9 rounded-lg object-cover ring-1 ring-black/10"
+        />
+      ) : (
+        <span className="w-9 h-9 rounded-lg bg-[var(--color-accent)]/20 flex items-center justify-center text-base font-extrabold capitalize" aria-hidden>
+          {(company?.name?.trim().charAt(0) || '?').toUpperCase()}
+        </span>
+      )}
+      <span className="font-extrabold text-base truncate capitalize">
+        {company?.name || ''}
+      </span>
+    </>
   );
 }
 
