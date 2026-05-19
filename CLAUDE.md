@@ -4,6 +4,22 @@
 
 Customer-facing ordering frontend for RistoMenu — a restaurant ordering platform. Built from scratch with React 19 + Tailwind CSS (no UI library). Replaces the old Mantine-based `RistoMenu-react` project.
 
+## Sibling repos + API contract
+
+This is one of four repos that together form RistoMenu:
+- `../Server/` — Django backend, **canonical API**
+- `../PartnerPortal/` — operator admin
+- `../PartnerApp/` — kitchen/operator Electron app
+- `../RistoMenu-new/` — this repo (customer storefront)
+
+Storefront endpoints we consume live under `/api/v2/store/<slug>/*`. The full
+contract is in `../Server/contracts/openapi.json` (committed OpenAPI 3.0.3
+snapshot). Grep it before assuming an endpoint exists. Live docs at
+`http://localhost:8000/api/schema/swagger/` while Django runs locally.
+
+The meta-workspace `../CLAUDE.md` explains the cross-repo workflow when a
+feature spans frontend + backend.
+
 ## Tech Stack
 
 - **React 19** + TypeScript
