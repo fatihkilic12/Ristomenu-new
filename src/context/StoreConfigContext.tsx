@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { getCompanyInfo } from '@/actions/store';
+import { getCompanyInfo, getStoreConfig } from '@/actions/store';
 import { getBranding } from '@/lib/branding';
 
 type StoreConfig = {
@@ -27,34 +27,55 @@ export function StoreConfigProvider({ storeId, children }: { storeId: string; ch
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getCompanyInfo(storeId).then(data => {
-      setCompany(data);
-      if (!data) return;
+    let cancelled = false;
 
-      const b = getBranding(data);
-      const root = document.documentElement;
+    // Fetch both endpoints in parallel:
+    //   /store/{slug}/         — languages, menu_settings, hours, location, supports_*, delivery_settings, pickup_settings
+    //   /store/{slug}/config/  — full branding (StorefrontSettings), banner_image, social links, payment_methods, regions
+    // cachedGet swallows errors → null on failure, so the page still renders
+    // from whichever response succeeded.
+    Promise.all([getCompanyInfo(storeId), getStoreConfig(storeId)])
+      .then(([info, config]) => {
+        if (cancelled) return;
+        const merged = info ? { ...info } : {};
+        if (config?.store) Object.assign(merged, config.store);
+        if (config?.branding) merged.branding = config.branding;
+        if (config?.payment_methods) merged.payment_methods = config.payment_methods;
+        if (config?.regions) merged.regions = config.regions;
+        if (config?.opening_hours) merged.opening_hours = config.opening_hours;
+        if (config?.active_modules) merged.active_modules = config.active_modules;
+        if (config?.kiosk_settings) merged.kiosk_settings = config.kiosk_settings;
 
-      if (b.primary_color) {
-        root.style.setProperty('--color-primary', b.primary_color);
-        root.style.setProperty('--color-primary-hover', adjustColor(b.primary_color, -20));
-      }
-      if (b.secondary_color) {
-        root.style.setProperty('--color-secondary', b.secondary_color);
-      }
-      if (b.background_color) {
-        root.style.setProperty('--color-background', b.background_color);
-        root.style.setProperty('--color-bg', b.background_color);
-      }
-      if (b.text_color) {
-        root.style.setProperty('--color-text', b.text_color);
-      }
-      if (b.header_color) {
-        root.style.setProperty('--color-header', b.header_color);
-        root.style.setProperty('--color-header-text', getContrastText(b.header_color));
-      }
-    }).finally(() => setLoading(false));
+        const data = Object.keys(merged).length > 0 ? merged : null;
+        setCompany(data);
+        if (!data) return;
+
+        const b = getBranding(data);
+        const root = document.documentElement;
+
+        if (b.primary_color) {
+          root.style.setProperty('--color-primary', b.primary_color);
+          root.style.setProperty('--color-primary-hover', adjustColor(b.primary_color, -20));
+        }
+        if (b.secondary_color) {
+          root.style.setProperty('--color-secondary', b.secondary_color);
+        }
+        if (b.background_color) {
+          root.style.setProperty('--color-background', b.background_color);
+          root.style.setProperty('--color-bg', b.background_color);
+        }
+        if (b.text_color) {
+          root.style.setProperty('--color-text', b.text_color);
+        }
+        if (b.header_color) {
+          root.style.setProperty('--color-header', b.header_color);
+          root.style.setProperty('--color-header-text', getContrastText(b.header_color));
+        }
+      })
+      .finally(() => { if (!cancelled) setLoading(false); });
 
     return () => {
+      cancelled = true;
       const root = document.documentElement;
       MANAGED_PROPS.forEach(p => root.style.removeProperty(p));
     };

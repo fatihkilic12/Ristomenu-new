@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { fetchGuestOrder } from '@/actions/order';
 import { StoreConfigProvider, useStoreConfig } from '@/context/StoreConfigContext';
 import { EURO } from '@/config/constants';
@@ -24,38 +25,38 @@ type OrderStatus =
 
 const TERMINAL = new Set<OrderStatus>(['DELIVERED', 'PICKED_UP', 'CANCELLED', 'FAILED']);
 
-function pickupSteps(status: OrderStatus): { key: OrderStatus; label: string; passed: boolean; current: boolean }[] {
+function pickupSteps(status: OrderStatus, t: TFunction): { key: OrderStatus; label: string; passed: boolean; current: boolean }[] {
   const order: OrderStatus[] = ['PENDING', 'PREPARING', 'READY_FOR_PICKUP', 'PICKED_UP'];
   const idx = order.indexOf(status);
   return [
-    { key: 'PENDING',          label: 'Order received',  passed: idx >= 0, current: status === 'PENDING' },
-    { key: 'PREPARING',        label: 'Being prepared',  passed: idx >= 1, current: status === 'PREPARING' },
-    { key: 'READY_FOR_PICKUP', label: 'Ready for pickup', passed: idx >= 2, current: status === 'READY_FOR_PICKUP' },
-    { key: 'PICKED_UP',        label: 'Picked up',       passed: idx >= 3, current: status === 'PICKED_UP' },
+    { key: 'PENDING',          label: t('tracking.steps.received', 'Order received'),      passed: idx >= 0, current: status === 'PENDING' },
+    { key: 'PREPARING',        label: t('tracking.steps.preparing', 'Being prepared'),     passed: idx >= 1, current: status === 'PREPARING' },
+    { key: 'READY_FOR_PICKUP', label: t('tracking.steps.ready_pickup', 'Ready for pickup'), passed: idx >= 2, current: status === 'READY_FOR_PICKUP' },
+    { key: 'PICKED_UP',        label: t('tracking.steps.picked_up', 'Picked up'),          passed: idx >= 3, current: status === 'PICKED_UP' },
   ];
 }
 
-function deliverySteps(status: OrderStatus): { key: OrderStatus; label: string; passed: boolean; current: boolean }[] {
+function deliverySteps(status: OrderStatus, t: TFunction): { key: OrderStatus; label: string; passed: boolean; current: boolean }[] {
   const order: OrderStatus[] = ['PENDING', 'PREPARING', 'OUT_FOR_DELIVERY', 'DELIVERED'];
   const idx = order.indexOf(status);
   return [
-    { key: 'PENDING',          label: 'Order received',  passed: idx >= 0, current: status === 'PENDING' },
-    { key: 'PREPARING',        label: 'Being prepared',  passed: idx >= 1, current: status === 'PREPARING' },
-    { key: 'OUT_FOR_DELIVERY', label: 'On its way',      passed: idx >= 2, current: status === 'OUT_FOR_DELIVERY' },
-    { key: 'DELIVERED',        label: 'Delivered',       passed: idx >= 3, current: status === 'DELIVERED' },
+    { key: 'PENDING',          label: t('tracking.steps.received', 'Order received'),   passed: idx >= 0, current: status === 'PENDING' },
+    { key: 'PREPARING',        label: t('tracking.steps.preparing', 'Being prepared'),  passed: idx >= 1, current: status === 'PREPARING' },
+    { key: 'OUT_FOR_DELIVERY', label: t('tracking.steps.on_its_way', 'On its way'),     passed: idx >= 2, current: status === 'OUT_FOR_DELIVERY' },
+    { key: 'DELIVERED',        label: t('tracking.steps.delivered', 'Delivered'),       passed: idx >= 3, current: status === 'DELIVERED' },
   ];
 }
 
-function timeAgo(timestamp: string | number): string {
+function timeAgo(timestamp: string | number, t: TFunction): string {
   const ts = typeof timestamp === 'string' ? parseInt(timestamp, 10) : timestamp;
   if (!ts) return '';
   const ms = ts > 1e12 ? ts : ts * 1000;
   const diffSec = Math.max(0, Math.floor((Date.now() - ms) / 1000));
-  if (diffSec < 60) return 'just now';
+  if (diffSec < 60) return t('tracking.time.just_now', 'just now');
   const min = Math.floor(diffSec / 60);
-  if (min < 60) return `${min} min ago`;
+  if (min < 60) return t('tracking.time.minutes_ago', '{{count}} min ago', { count: min });
   const h = Math.floor(min / 60);
-  return `${h}h ago`;
+  return t('tracking.time.hours_ago', '{{count}}h ago', { count: h });
 }
 
 function TrackingContent() {
@@ -130,12 +131,12 @@ function TrackingContent() {
   const isAwaitingPayment = order.status === 'AWAITING_PAYMENT';
   const isComplete = TERMINAL.has(order.status);
 
-  const steps = isDelivery ? deliverySteps(order.status) : pickupSteps(order.status);
+  const steps = isDelivery ? deliverySteps(order.status, t) : pickupSteps(order.status, t);
   const eta = isPickup
     ? `±${company?.pickup_settings?.duration || 20} min`
     : `${company?.delivery_settings?.duration_min || 20}–${company?.delivery_settings?.duration_max || 45} min`;
 
-  const placedAt = timeAgo(order.created_on);
+  const placedAt = timeAgo(order.created_on, t);
 
   // Hero copy adapts to status
   const heroTitle = isCancelled

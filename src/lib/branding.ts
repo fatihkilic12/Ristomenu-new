@@ -57,7 +57,7 @@ export function getBranding(company: any): Branding {
     background_color: pick(b.background_color),
     text_color:       pick(b.text_color),
     header_color:     pick(b.header_color,     m.header_color),
-    logo:             pick(b.logo,             company.img),
+    logo:             pick(b.logo,             m.logo, company.img),
     banner_image:     pick(b.banner_image,     company.header_img),
     welcome_message:  pick(b.welcome_message,  s.welcome_message),
     footer_text:      pick(b.footer_text,      s.footer_text),
