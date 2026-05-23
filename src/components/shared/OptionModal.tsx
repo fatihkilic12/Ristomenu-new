@@ -2,6 +2,8 @@ import { useState, useCallback, useEffect, useMemo, forwardRef, useImperativeHan
 import { useTranslation } from 'react-i18next';
 import { EURO, ADD, EDIT, IMAGE_ADDRESS, IMAGE_SERVER_ADDRESS } from '@/config/constants';
 import { useCart } from '@/context/CartContext';
+import { useStoreConfig } from '@/context/StoreConfigContext';
+import { getBranding } from '@/lib/branding';
 
 type ModalState = {
   open: boolean;
@@ -17,6 +19,8 @@ export type OptionModalRef = {
 
 const OptionModal = forwardRef(function OptionModal(_props: {}, ref: Ref<OptionModalRef>) {
   const { addToCart, updateCart } = useCart();
+  const { company } = useStoreConfig();
+  const branding = getBranding(company);
   const { t } = useTranslation();
   const [state, setState] = useState<ModalState>({ open: false, product: null, options: [], mode: ADD, item: null });
   const [quantity, setQuantity] = useState(1);
@@ -194,7 +198,7 @@ const OptionModal = forwardRef(function OptionModal(_props: {}, ref: Ref<OptionM
             )}
 
             {/* Allergens */}
-            {product.allergens?.length > 0 && (
+            {branding.show_allergens && product.allergens?.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-3">
                 {product.allergens.map((a: string) => (
                   <span key={a} className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 font-medium">{a}</span>
@@ -289,18 +293,20 @@ const OptionModal = forwardRef(function OptionModal(_props: {}, ref: Ref<OptionM
               );
             })}
 
-            {/* Note */}
-            <div className="mt-5">
-              <label className="text-xs font-medium text-[var(--color-muted)] block mb-1">{t('restaurants.note', 'Note')}</label>
-              <input
-                type="text"
-                value={note}
-                onChange={e => setNote(e.target.value)}
-                placeholder={t('common.special_requests', 'Special requests...')}
-                maxLength={160}
-                className="w-full px-3 py-2.5 border border-[var(--color-border)] rounded-xl text-sm focus:outline-none focus:border-[var(--color-primary)] bg-[var(--color-surface-2)] text-[var(--color-text)] placeholder:text-[var(--color-muted)]"
-              />
-            </div>
+            {/* Note — only when the store allows per-item notes */}
+            {branding.allow_notes && (
+              <div className="mt-5">
+                <label className="text-xs font-medium text-[var(--color-muted)] block mb-1">{t('restaurants.note', 'Note')}</label>
+                <input
+                  type="text"
+                  value={note}
+                  onChange={e => setNote(e.target.value)}
+                  placeholder={t('common.special_requests', 'Special requests...')}
+                  maxLength={160}
+                  className="w-full px-3 py-2.5 border border-[var(--color-border)] rounded-xl text-sm focus:outline-none focus:border-[var(--color-primary)] bg-[var(--color-surface-2)] text-[var(--color-text)] placeholder:text-[var(--color-muted)]"
+                />
+              </div>
+            )}
           </div>
         </div>
 

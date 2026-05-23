@@ -47,11 +47,15 @@ export default memo(function KioskCategoryNav({ categories, activeId, onSelect }
                   : 'border-transparent bg-gray-50 hover:bg-gray-100'
               }`}
             >
-              <div className="w-24 h-24 rounded-2xl overflow-hidden flex items-center justify-center bg-white">
+              <div className="w-24 h-24 rounded-2xl overflow-hidden flex items-center justify-center bg-white ring-1 ring-inset ring-gray-100">
                 {img ? (
                   <img src={img} alt="" className="w-full h-full object-cover" />
                 ) : (
-                  <span className="text-5xl opacity-60">🍽</span>
+                  <svg className="w-10 h-10 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 2v7a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V2" />
+                    <path d="M6 11v11" />
+                    <path d="M19 15V2a4 4 0 0 0-4 4v6a2 2 0 0 0 2 2h2v8" />
+                  </svg>
                 )}
               </div>
               <span className={`text-lg font-bold leading-tight text-center max-w-40 line-clamp-2 ${

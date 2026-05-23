@@ -2,6 +2,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { StoreConfigProvider, useStoreConfig } from '@/context/StoreConfigContext';
 import { COMPANY_ORDER, COMPANY_KIOSK, COMPANY_TABLE, COMPANY_MENU_ONLY } from '@/config/paths';
 import { EURO } from '@/config/constants';
+import { getBranding } from '@/lib/branding';
+import StoreFooter from '@/components/shared/StoreFooter';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -35,6 +37,9 @@ function LandingContent() {
     );
   }
 
+  const branding = getBranding(company);
+  const bannerImage = branding.banner_image;
+  const logo = branding.logo;
   const supportsDelivery = company.supports_delivery;
   const supportsPickup = company.supports_pickup;
   const supportsKiosk = company.supports_kiosk;
@@ -53,17 +58,17 @@ function LandingContent() {
     <div className="min-h-dvh bg-[#fafafa]">
       {/* Hero */}
       <div className="relative h-56 sm:h-64 bg-gradient-to-b from-black/80 to-black/40 overflow-hidden">
-        {company.header_img ? (
-          <img src={company.header_img} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        {bannerImage ? (
+          <img src={bannerImage} alt="" className="absolute inset-0 w-full h-full object-cover" />
         ) : (
           <div className="absolute inset-0 bg-[var(--color-header)]" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
 
         <div className="relative h-full flex flex-col items-center justify-end pb-6 px-4">
-          {company.img && (
+          {logo && (
             <img
-              src={company.img}
+              src={logo}
               alt={company.name}
               className="w-18 h-18 rounded-2xl object-cover shadow-2xl border-[3px] border-white/90 mb-3"
               style={{ width: 72, height: 72 }}
@@ -191,9 +196,11 @@ function LandingContent() {
 
         {/* Powered by */}
         <p className="text-center text-[11px] text-gray-300 mt-6">
-          Powered by <span className="font-medium">RistoMenu</span>
+          Powered by <span className="font-medium">MenuWela</span>
         </p>
       </div>
+
+      <StoreFooter />
     </div>
   );
 }

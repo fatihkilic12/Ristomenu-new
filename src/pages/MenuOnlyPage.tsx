@@ -6,7 +6,9 @@ import { getDeliveryMenu } from '@/actions/store';
 import { StoreConfigProvider, useStoreConfig } from '@/context/StoreConfigContext';
 import { EURO, IMAGE_ADDRESS, IMAGE_SERVER_ADDRESS, PICKUP } from '@/config/constants';
 import { collectMenuImageUrls, precacheImages } from '@/lib/imageCache';
+import { getBranding } from '@/lib/branding';
 import LanguageSelector from '@/components/shared/LanguageSelector';
+import StoreFooter from '@/components/shared/StoreFooter';
 import CategoryNav from '@/components/shared/CategoryNav';
 import ProductCard from '@/components/shared/ProductCard';
 
@@ -22,11 +24,9 @@ function MenuOnlyContent() {
   const { company, loading: configLoading } = useStoreConfig();
   const { i18n, t } = useTranslation();
 
-  const websiteUrl: string | undefined =
-    company?.storefront_settings?.website_url ||
-    company?.website_url ||
-    company?.url ||
-    undefined;
+  const branding = getBranding(company);
+  const logo = branding.logo;
+  const websiteUrl: string | undefined = branding.website_url || undefined;
   const websiteHostname = websiteUrl ? safeHostname(websiteUrl) : null;
   const goToWebsite = () => { if (websiteUrl) window.location.href = websiteUrl; };
 
@@ -135,10 +135,10 @@ function MenuOnlyContent() {
         </div>
         {/* Middle: logo only */}
         <div className="justify-self-center">
-          {company?.img ? (
+          {logo ? (
             <img
-              src={company.img}
-              alt={company.name}
+              src={logo}
+              alt={company?.name}
               className="w-12 h-12 rounded-xl object-cover ring-1 ring-white/15"
             />
           ) : (
@@ -189,13 +189,23 @@ function MenuOnlyContent() {
 
       {/* Read-only product modal */}
       {openProduct && (
-        <ProductInfoModal product={openProduct} onClose={() => setOpenProduct(null)} />
+        <ProductInfoModal
+          product={openProduct}
+          showAllergens={branding.show_allergens}
+          onClose={() => setOpenProduct(null)}
+        />
       )}
+
+      <StoreFooter />
     </div>
   );
 }
 
-function ProductInfoModal({ product, onClose }: { product: Record<string, any>; onClose: () => void }) {
+function ProductInfoModal({ product, showAllergens, onClose }: {
+  product: Record<string, any>;
+  showAllergens: boolean;
+  onClose: () => void;
+}) {
   const { t } = useTranslation();
   const rawUri = product.uri || (product.image ? IMAGE_ADDRESS(product.image) : null);
   const imgUrl = rawUri && rawUri.startsWith('/') ? `${IMAGE_SERVER_ADDRESS}${rawUri}` : rawUri;
@@ -250,7 +260,7 @@ function ProductInfoModal({ product, onClose }: { product: Record<string, any>; 
               <p className="text-base text-gray-500 leading-relaxed mt-3">{product.description}</p>
             )}
 
-            {product.allergens?.length > 0 && (
+            {showAllergens && product.allergens?.length > 0 && (
               <div className="mt-5">
                 <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
                   {t('menu_only.allergens', 'Allergens')}

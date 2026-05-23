@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useCart } from '@/context/CartContext';
+import { useStoreConfig } from '@/context/StoreConfigContext';
 import { useTranslation } from 'react-i18next';
 import { EURO } from '@/config/constants';
+import { getBranding } from '@/lib/branding';
 
 type Props = {
   menu: Record<string, any> | null;
@@ -11,6 +13,8 @@ type Props = {
 
 export default function CartSidebar({ menu, onEdit, onConfirm }: Props) {
   const { cart, note, setNote, deleteFromCart, itemCount } = useCart();
+  const { company } = useStoreConfig();
+  const { allow_notes } = getBranding(company);
   const { t } = useTranslation();
   const [confirming, setConfirming] = useState(false);
 
@@ -73,15 +77,17 @@ export default function CartSidebar({ menu, onEdit, onConfirm }: Props) {
       </div>
 
       {/* Note */}
-      <div className="px-3 py-2 border-t border-[var(--color-border)]">
-        <input
-          type="text"
-          value={note}
-          onChange={e => setNote(e.target.value)}
-          placeholder={t('restaurants.cart.note.add', 'Add a note...')}
-          className="w-full text-sm px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-[var(--color-primary)]"
-        />
-      </div>
+      {allow_notes && (
+        <div className="px-3 py-2 border-t border-[var(--color-border)]">
+          <input
+            type="text"
+            value={note}
+            onChange={e => setNote(e.target.value)}
+            placeholder={t('restaurants.cart.note.add', 'Add a note...')}
+            className="w-full text-sm px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-[var(--color-primary)]"
+          />
+        </div>
+      )}
 
       {/* Footer */}
       <div className="p-3 border-t border-[var(--color-border)]">

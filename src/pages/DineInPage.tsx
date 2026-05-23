@@ -69,7 +69,7 @@ function DineInContent() {
             <img
               src={company.img}
               alt={company.name}
-              className="w-12 h-12 rounded-xl object-cover ring-1 ring-white/15"
+              className="w-12 h-12 rounded-xl object-cover ring-white/15"
             />
           ) : (
             <span className="font-bold text-lg capitalize">{company?.name}</span>

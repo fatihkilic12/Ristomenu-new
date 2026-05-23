@@ -8,7 +8,9 @@ import { StoreConfigProvider, useStoreConfig } from '@/context/StoreConfigContex
 import { DELIVERY, PICKUP, EURO } from '@/config/constants';
 import { COMPANY_CHECKOUT } from '@/config/paths';
 import { collectMenuImageUrls, precacheImages } from '@/lib/imageCache';
+import { getBranding } from '@/lib/branding';
 import LanguageSelector from '@/components/shared/LanguageSelector';
+import StoreFooter from '@/components/shared/StoreFooter';
 import OrderMenuView, { triggerOrderEditItem } from '@/components/order/OrderMenuView';
 import OrderCartPanel from '@/components/order/OrderCartPanel';
 
@@ -31,10 +33,13 @@ function OrderContent() {
       : (supportsDelivery ? DELIVERY : PICKUP);
   const [orderType, setOrderType] = useState(initialType);
 
-  // Theme mode (dark/light) — persisted per browser
+  // Theme mode (dark/light) — opt-in dark mode via the toggle button.
+  // Default is light; we deliberately do NOT read prefers-color-scheme so
+  // the customer experience is predictable and the brand colours stay
+  // recognisable until someone actively switches.
   const [themeMode, setThemeMode] = useState<'dark' | 'light'>(() => {
     const stored = typeof window !== 'undefined' ? localStorage.getItem('order-theme') : null;
-    return stored === 'light' ? 'light' : 'dark';
+    return stored === 'dark' ? 'dark' : 'light';
   });
   useEffect(() => {
     const html = document.documentElement;
@@ -87,16 +92,13 @@ function OrderContent() {
     navigate(COMPANY_CHECKOUT(storeId!) + `?type=${effectiveType}`);
   };
 
-  const hasBanner = !!company?.header_img;
+  const branding = getBranding(company);
+  const bannerImage = branding.banner_image;
+  const hasBanner = !!bannerImage;
 
-  // Restaurant's main website URL — configurable per store. Falls back through
-  // storefront_settings → top-level field. When unset, the back-to-website button
-  // is hidden and the simple "←" history-back is shown instead.
-  const websiteUrl: string | undefined =
-    company?.storefront_settings?.website_url ||
-    company?.website_url ||
-    company?.url ||
-    undefined;
+  // Restaurant's main website URL — provided by branding.website_url with
+  // legacy fallbacks. When unset, the back-to-website button is hidden.
+  const websiteUrl: string | undefined = branding.website_url || undefined;
   const websiteHostname = websiteUrl ? safeHostname(websiteUrl) : null;
   const goToWebsite = () => { if (websiteUrl) window.location.href = websiteUrl; };
 
@@ -172,7 +174,7 @@ function OrderContent() {
               in the header already, so no overlap, no fallback decoration. */}
           {hasBanner && (
             <div className="relative aspect-[16/9] sm:aspect-[5/2] max-h-[360px] overflow-hidden">
-              <img src={company.header_img} alt="" className="absolute inset-0 w-full h-full object-cover" />
+              <img src={bannerImage!} alt="" className="absolute inset-0 w-full h-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-bg)]/30 via-transparent to-transparent" />
             </div>
           )}
@@ -260,6 +262,8 @@ function OrderContent() {
         storeConfig={company}
         menu={menu}
       />
+
+      <StoreFooter />
     </div>
   );
 }

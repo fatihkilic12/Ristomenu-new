@@ -8,6 +8,7 @@ import { StoreConfigProvider, useStoreConfig } from '@/context/StoreConfigContex
 import { KIOSK, ADD, EDIT, EURO } from '@/config/constants';
 import { useIdleTimer } from '@/hooks/useIdleTimer';
 import { collectMenuImageUrls, precacheImages } from '@/lib/imageCache';
+import { getBranding } from '@/lib/branding';
 import LanguageSelector from '@/components/shared/LanguageSelector';
 import KioskCategoryNav from '@/components/kiosk/KioskCategoryNav';
 import KioskProductCard from '@/components/kiosk/KioskProductCard';
@@ -107,9 +108,9 @@ function KioskIdle({ company, onStart }: { company: any; onStart: () => void }) 
           <h1 className="text-white text-5xl font-extrabold tracking-tight leading-none capitalize">
             {company?.name || t('common.welcome', 'Welcome')}
           </h1>
-          {company?.storefront_settings?.welcome_message && (
+          {getBranding(company).welcome_message && (
             <p className="text-white/70 text-xl mt-5 max-w-2xl mx-auto leading-relaxed">
-              {company.storefront_settings.welcome_message}
+              {getBranding(company).welcome_message}
             </p>
           )}
         </div>
@@ -235,10 +236,10 @@ function KioskMenu({ customerName, onReset }: { customerName: string; onReset: (
   const products = menu?.menu?.products || [];
   const options = menu?.menu?.options || [];
 
-  const settings = company?.storefront_settings || company?.menu_settings || {};
-  const showImages = settings.show_product_images !== false;
-  const showAllergens = settings.show_allergens !== false;
-  const allowNotes = settings.allow_notes !== false && !settings.disable_note;
+  const branding = getBranding(company);
+  const showImages = branding.show_product_images;
+  const showAllergens = branding.show_allergens;
+  const allowNotes = branding.allow_notes;
 
   const subtotal = useMemo(() => {
     return cart.reduce((sum, item) => {

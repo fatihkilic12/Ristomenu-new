@@ -2,25 +2,6 @@ import { memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EURO, IMAGE_ADDRESS, IMAGE_SERVER_ADDRESS } from '@/config/constants';
 
-const FALLBACK_GRADIENTS = [
-  'from-amber-100 via-orange-50 to-rose-100',
-  'from-emerald-100 via-teal-50 to-cyan-100',
-  'from-violet-100 via-fuchsia-50 to-pink-100',
-  'from-sky-100 via-blue-50 to-indigo-100',
-  'from-yellow-100 via-amber-50 to-orange-100',
-  'from-lime-100 via-green-50 to-emerald-100',
-];
-
-function gradientForId(id: number) {
-  return FALLBACK_GRADIENTS[Math.abs(id) % FALLBACK_GRADIENTS.length];
-}
-
-function firstLetter(name?: string) {
-  if (!name) return '?';
-  const trimmed = name.trim();
-  return trimmed.charAt(0).toUpperCase() || '?';
-}
-
 type Props = {
   product: Record<string, any>;
   onClick: () => void;
@@ -62,7 +43,7 @@ export default memo(function KioskProductCard({ product, onClick, cartCount = 0,
         </div>
       )}
 
-      {/* Image / Icon fallback */}
+      {/* Image / Neutral fallback */}
       {hasImage ? (
         <div className="relative w-full aspect-square bg-gray-50 shrink-0 overflow-hidden">
           <img
@@ -74,12 +55,7 @@ export default memo(function KioskProductCard({ product, onClick, cartCount = 0,
           />
         </div>
       ) : (
-        <div className={`relative w-full aspect-square bg-gradient-to-br ${gradientForId(product.id)} flex items-center justify-center shrink-0`}>
-          <span className="text-[12rem] leading-none font-black text-white select-none drop-shadow-md mix-blend-overlay">
-            {firstLetter(product.name)}
-          </span>
-          <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/10 to-transparent" />
-        </div>
+        <NoImageFallback />
       )}
 
       {/* Content */}
@@ -100,3 +76,15 @@ export default memo(function KioskProductCard({ product, onClick, cartCount = 0,
     </button>
   );
 });
+
+function NoImageFallback() {
+  return (
+    <div className="relative w-full aspect-square bg-gray-50 flex items-center justify-center shrink-0 ring-1 ring-inset ring-gray-100">
+      <svg className="w-20 h-20 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 2v7a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V2" />
+        <path d="M6 11v11" />
+        <path d="M19 15V2a4 4 0 0 0-4 4v6a2 2 0 0 0 2 2h2v8" />
+      </svg>
+    </div>
+  );
+}

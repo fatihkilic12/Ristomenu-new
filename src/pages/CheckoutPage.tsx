@@ -44,10 +44,11 @@ function CheckoutContent({ orderType }: { orderType: string }) {
   // to stand down once an order has been placed.
   const submittedRef = useRef(false);
 
-  // Theme mode (dark/light) — shares the order-page preference
+  // Theme mode (dark/light) — shares the order-page preference. Default light;
+  // opt-in dark via the toggle (we don't read prefers-color-scheme).
   const [themeMode, setThemeMode] = useState<'dark' | 'light'>(() => {
     const stored = typeof window !== 'undefined' ? localStorage.getItem('order-theme') : null;
-    return stored === 'light' ? 'light' : 'dark';
+    return stored === 'dark' ? 'dark' : 'light';
   });
   useEffect(() => {
     const html = document.documentElement;

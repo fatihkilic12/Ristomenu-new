@@ -6,7 +6,9 @@ import { fetchGuestOrder } from '@/actions/order';
 import { StoreConfigProvider, useStoreConfig } from '@/context/StoreConfigContext';
 import { EURO } from '@/config/constants';
 import { COMPANY_ORDER } from '@/config/paths';
+import { getBranding } from '@/lib/branding';
 import LanguageSelector from '@/components/shared/LanguageSelector';
+import StoreFooter from '@/components/shared/StoreFooter';
 
 function safeHostname(url: string): string | null {
   try {
@@ -62,20 +64,18 @@ function TrackingContent() {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  // Restaurant's main website URL — same fallback chain as the order page.
-  const websiteUrl: string | undefined =
-    company?.storefront_settings?.website_url ||
-    company?.website_url ||
-    company?.url ||
-    undefined;
+  const branding = getBranding(company);
+  const logo = branding.logo;
+  const websiteUrl: string | undefined = branding.website_url || undefined;
   const websiteHostname = websiteUrl ? safeHostname(websiteUrl) : null;
   const goToWebsite = () => { if (websiteUrl) window.location.href = websiteUrl; };
   const goToMenu = () => navigate(COMPANY_ORDER(storeId!));
 
-  // Theme — shares the order-page preference so the brand stays consistent
+  // Theme — shares the order-page preference. Default light; opt-in dark
+  // via the toggle (we don't read prefers-color-scheme).
   const [themeMode, setThemeMode] = useState<'dark' | 'light'>(() => {
     const stored = typeof window !== 'undefined' ? localStorage.getItem('order-theme') : null;
-    return stored === 'light' ? 'light' : 'dark';
+    return stored === 'dark' ? 'dark' : 'light';
   });
   useEffect(() => {
     const html = document.documentElement;
@@ -164,8 +164,8 @@ function TrackingContent() {
             }`}
             aria-label={websiteUrl ? t('common.back_to_website', 'Back to website') : t('tracking.back_to_menu', 'Back to menu')}
           >
-            {company?.img && (
-              <img src={company.img} alt="" className="w-9 h-9 rounded-lg object-cover ring-1 ring-black/10" />
+            {logo && (
+              <img src={logo} alt="" className="w-9 h-9 rounded-lg object-cover ring-1 ring-black/10" />
             )}
             <span className="font-extrabold text-base truncate capitalize">{company?.name || ''}</span>
           </button>
@@ -498,6 +498,8 @@ function TrackingContent() {
           )}
         </section>
       </main>
+
+      <StoreFooter />
     </div>
   );
 }

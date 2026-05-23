@@ -1,16 +1,8 @@
 import { memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EURO, IMAGE_ADDRESS, IMAGE_SERVER_ADDRESS } from '@/config/constants';
-
-const FALLBACK_GRADIENTS = [
-  'from-amber-500/30 to-orange-600/40',
-  'from-emerald-500/30 to-teal-600/40',
-  'from-violet-500/30 to-fuchsia-600/40',
-  'from-sky-500/30 to-blue-600/40',
-  'from-yellow-500/30 to-amber-600/40',
-  'from-rose-500/30 to-pink-600/40',
-];
-const gradientFor = (id: number) => FALLBACK_GRADIENTS[Math.abs(id) % FALLBACK_GRADIENTS.length];
+import { useStoreConfig } from '@/context/StoreConfigContext';
+import { getBranding } from '@/lib/branding';
 
 type Props = {
   product: Record<string, any>;
@@ -20,12 +12,14 @@ type Props = {
 
 export default memo(function OrderProductCard({ product, onClick, cartCount = 0 }: Props) {
   const { t } = useTranslation();
+  const { company } = useStoreConfig();
+  const { show_product_images } = getBranding(company);
   const price = product.price != null ? (product.price / 100).toFixed(2) : null;
   const isSoldOut = product.is_sold_out;
   const rawUri = product.uri || (product.image ? IMAGE_ADDRESS(product.image) : null);
   const imgUrl = rawUri && rawUri.startsWith('/') ? `${IMAGE_SERVER_ADDRESS}${rawUri}` : rawUri;
   const [imgError, setImgError] = useState(false);
-  const showImage = imgUrl && !imgError;
+  const showImage = show_product_images && imgUrl && !imgError;
 
   return (
     <button
@@ -57,24 +51,23 @@ export default memo(function OrderProductCard({ product, onClick, cartCount = 0 
         </div>
       </div>
 
-      {/* Right: image */}
-      <div className="shrink-0 w-24 h-24 rounded-xl overflow-hidden">
-        {showImage ? (
-          <img
-            src={imgUrl}
-            alt=""
-            loading="lazy"
-            className="w-full h-full object-cover"
-            onError={() => setImgError(true)}
-          />
-        ) : (
-          <div className={`w-full h-full bg-gradient-to-br ${gradientFor(product.id)} flex items-center justify-center`}>
-            <span className="text-4xl font-black text-white/70 select-none">
-              {(product.name?.trim().charAt(0) || '?').toUpperCase()}
-            </span>
-          </div>
-        )}
-      </div>
+      {/* Right: image — hidden entirely when the store turned product images
+          off, so the text gets full width instead of a coloured placeholder. */}
+      {show_product_images && (
+        <div className="shrink-0 w-24 h-24 rounded-xl overflow-hidden">
+          {showImage ? (
+            <img
+              src={imgUrl}
+              alt=""
+              loading="lazy"
+              className="w-full h-full object-cover"
+              onError={() => setImgError(true)}
+            />
+          ) : (
+            <NoImageFallback />
+          )}
+        </div>
+      )}
 
       {/* Plus button */}
       {!isSoldOut && (
@@ -100,3 +93,18 @@ export default memo(function OrderProductCard({ product, onClick, cartCount = 0 
     </button>
   );
 });
+
+// Neutral, unobtrusive placeholder when a product has no image. A subtle
+// utensils icon on the same surface colour as the card sits beside actual
+// photos without competing with them visually.
+function NoImageFallback() {
+  return (
+    <div className="w-full h-full bg-[var(--color-surface-2)] flex items-center justify-center text-[var(--color-muted)]/45 ring-1 ring-inset ring-[var(--color-border)]">
+      <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 2v7a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V2" />
+        <path d="M6 11v11" />
+        <path d="M19 15V2a4 4 0 0 0-4 4v6a2 2 0 0 0 2 2h2v8" />
+      </svg>
+    </div>
+  );
+}
