@@ -19,29 +19,38 @@ function safeHostname(url: string): string | null {
 }
 
 type OrderStatus =
-  | 'PENDING' | 'PREPARING' | 'OUT_FOR_DELIVERY' | 'READY_FOR_PICKUP'
+  | 'PENDING' | 'AWAITING_CONFIRMATION' | 'PREPARING' | 'OUT_FOR_DELIVERY' | 'READY_FOR_PICKUP'
   | 'DELIVERED' | 'PICKED_UP' | 'CANCELLED' | 'FAILED'
   | 'AWAITING_PAYMENT' | 'SCHEDULED' | 'HANDLED' | 'SEND';
 
 const TERMINAL = new Set<OrderStatus>(['DELIVERED', 'PICKED_UP', 'CANCELLED', 'FAILED']);
 
+// AWAITING_CONFIRMATION shares the "received" timeline step — visually they
+// both mean "with us, kitchen hasn't started yet". The hero copy + ETA block
+// surface the distinction explicitly.
+function normalizeStatusForTimeline(s: OrderStatus): OrderStatus {
+  return s === 'AWAITING_CONFIRMATION' ? 'PENDING' : s;
+}
+
 function pickupSteps(status: OrderStatus, t: TFunction): { key: OrderStatus; label: string; passed: boolean; current: boolean }[] {
   const order: OrderStatus[] = ['PENDING', 'PREPARING', 'READY_FOR_PICKUP', 'PICKED_UP'];
-  const idx = order.indexOf(status);
+  const effective = normalizeStatusForTimeline(status);
+  const idx = order.indexOf(effective);
   return [
-    { key: 'PENDING',          label: t('tracking.steps.received', 'Order received'),      passed: idx >= 0, current: status === 'PENDING' },
-    { key: 'PREPARING',        label: t('tracking.steps.preparing', 'Being prepared'),     passed: idx >= 1, current: status === 'PREPARING' },
-    { key: 'READY_FOR_PICKUP', label: t('tracking.steps.ready_pickup', 'Ready for pickup'), passed: idx >= 2, current: status === 'READY_FOR_PICKUP' },
-    { key: 'PICKED_UP',        label: t('tracking.steps.picked_up', 'Picked up'),          passed: idx >= 3, current: status === 'PICKED_UP' },
+    { key: 'PENDING',          label: t('tracking.steps.received', 'Order received'),      passed: idx >= 0, current: effective === 'PENDING' },
+    { key: 'PREPARING',        label: t('tracking.steps.preparing', 'Being prepared'),     passed: idx >= 1, current: effective === 'PREPARING' },
+    { key: 'READY_FOR_PICKUP', label: t('tracking.steps.ready_pickup', 'Ready for pickup'), passed: idx >= 2, current: effective === 'READY_FOR_PICKUP' },
+    { key: 'PICKED_UP',        label: t('tracking.steps.picked_up', 'Picked up'),          passed: idx >= 3, current: effective === 'PICKED_UP' },
   ];
 }
 
 function deliverySteps(status: OrderStatus, t: TFunction): { key: OrderStatus; label: string; passed: boolean; current: boolean }[] {
   const order: OrderStatus[] = ['PENDING', 'PREPARING', 'OUT_FOR_DELIVERY', 'DELIVERED'];
-  const idx = order.indexOf(status);
+  const effective = normalizeStatusForTimeline(status);
+  const idx = order.indexOf(effective);
   return [
-    { key: 'PENDING',          label: t('tracking.steps.received', 'Order received'),   passed: idx >= 0, current: status === 'PENDING' },
-    { key: 'PREPARING',        label: t('tracking.steps.preparing', 'Being prepared'),  passed: idx >= 1, current: status === 'PREPARING' },
+    { key: 'PENDING',          label: t('tracking.steps.received', 'Order received'),   passed: idx >= 0, current: effective === 'PENDING' },
+    { key: 'PREPARING',        label: t('tracking.steps.preparing', 'Being prepared'),  passed: idx >= 1, current: effective === 'PREPARING' },
     { key: 'OUT_FOR_DELIVERY', label: t('tracking.steps.on_its_way', 'On its way'),     passed: idx >= 2, current: status === 'OUT_FOR_DELIVERY' },
     { key: 'DELIVERED',        label: t('tracking.steps.delivered', 'Delivered'),       passed: idx >= 3, current: status === 'DELIVERED' },
   ];
@@ -129,12 +138,28 @@ function TrackingContent() {
   const isDelivery = order.order_type === 'delivery';
   const isCancelled = order.status === 'CANCELLED' || order.status === 'FAILED';
   const isAwaitingPayment = order.status === 'AWAITING_PAYMENT';
+  const isAwaitingConfirmation = order.status === 'AWAITING_CONFIRMATION';
   const isComplete = TERMINAL.has(order.status);
+  const declineReason: string | undefined = (order as any).decline_reason || undefined;
+  const confirmedTime: string | undefined = (order as any).confirmed_time || undefined;
 
   const steps = isDelivery ? deliverySteps(order.status, t) : pickupSteps(order.status, t);
-  const eta = isPickup
-    ? `±${company?.pickup_settings?.duration || 20} min`
-    : `${company?.delivery_settings?.duration_min || 20}–${company?.delivery_settings?.duration_max || 45} min`;
+
+  // Once the operator has accepted, prefer the concrete confirmed_time over the
+  // generic range. Falls back to settings-based estimate while still in the
+  // received state.
+  const confirmedTimeLabel = (() => {
+    if (!confirmedTime) return null;
+    try {
+      const d = new Date(confirmedTime);
+      return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    } catch { return null; }
+  })();
+  const eta = confirmedTimeLabel
+    ? confirmedTimeLabel
+    : isPickup
+      ? `±${company?.pickup_settings?.duration || 20} min`
+      : `${company?.delivery_settings?.duration_min || 20}–${company?.delivery_settings?.duration_max || 45} min`;
 
   const placedAt = timeAgo(order.created_on, t);
 
@@ -143,10 +168,12 @@ function TrackingContent() {
     ? t('tracking.cancelled_title', 'Order cancelled')
     : isAwaitingPayment
       ? t('tracking.awaiting_payment_title', 'Waiting for payment')
-      : order.status === 'DELIVERED' || order.status === 'PICKED_UP'
-        ? t('tracking.complete_title', 'Enjoy your meal!')
-        : t('tracking.received_title', 'Order received');
-  const heroEmoji = isCancelled ? '⚠️' : isAwaitingPayment ? '⏳' : isComplete ? '🎉' : '🍽️';
+      : isAwaitingConfirmation
+        ? t('tracking.awaiting_confirmation_title', 'Waiting for the restaurant to accept')
+        : order.status === 'DELIVERED' || order.status === 'PICKED_UP'
+          ? t('tracking.complete_title', 'Enjoy your meal!')
+          : t('tracking.received_title', 'Order received');
+  const heroEmoji = isCancelled ? '⚠️' : isAwaitingPayment ? '⏳' : isAwaitingConfirmation ? '👀' : isComplete ? '🎉' : '🍽️';
 
   return (
     <div className="min-h-dvh">
@@ -218,14 +245,18 @@ function TrackingContent() {
           </h1>
           <p className="text-[var(--color-muted)] mt-2">
             {isCancelled
-              ? t('tracking.cancelled_sub', 'Please contact the restaurant for details.')
+              ? (declineReason
+                  ? t('tracking.cancelled_with_reason', 'The restaurant declined: {{reason}}', { reason: declineReason })
+                  : t('tracking.cancelled_sub', 'Please contact the restaurant for details.'))
               : isAwaitingPayment
                 ? t('tracking.awaiting_payment_sub', 'Complete your payment to confirm the order.')
-                : isComplete
-                  ? t('tracking.complete_sub', 'Thanks for ordering — see you next time!')
-                  : isDelivery
-                    ? t('tracking.delivery_sub', 'We\'ll keep you posted as we prepare and dispatch your order.')
-                    : t('tracking.pickup_sub', 'We\'ll let you know when your order is ready to pick up.')}
+                : isAwaitingConfirmation
+                  ? t('tracking.awaiting_confirmation_sub', 'We\'ve sent your order to the restaurant. You\'ll see a confirmation as soon as they accept it.')
+                  : isComplete
+                    ? t('tracking.complete_sub', 'Thanks for ordering — see you next time!')
+                    : isDelivery
+                      ? t('tracking.delivery_sub', 'We\'ll keep you posted as we prepare and dispatch your order.')
+                      : t('tracking.pickup_sub', 'We\'ll let you know when your order is ready to pick up.')}
           </p>
 
           {/* Order number + meta */}
@@ -240,21 +271,28 @@ function TrackingContent() {
             )}
           </div>
 
-          {/* ETA — only when not yet finished/cancelled */}
-          {!isComplete && !isCancelled && !isAwaitingPayment && (
+          {/* ETA — only when not yet finished/cancelled/awaiting. While waiting
+              for operator confirmation we deliberately hide it (we don't know
+              the timing until they accept). Once confirmed, show concrete time. */}
+          {!isComplete && !isCancelled && !isAwaitingPayment && !isAwaitingConfirmation && (
             <div className="mt-5 flex items-center justify-center gap-2 text-sm">
               <span className="w-2 h-2 rounded-full bg-[var(--color-accent)] animate-pulse" aria-hidden />
               <span className="text-[var(--color-muted)]">
-                {isDelivery
-                  ? t('tracking.eta_delivery', 'Estimated delivery in {{eta}}', { eta })
-                  : t('tracking.eta_pickup', 'Ready in {{eta}}', { eta })}
+                {confirmedTimeLabel
+                  ? (isDelivery
+                      ? t('tracking.eta_delivery_confirmed', 'Delivery around {{time}}', { time: confirmedTimeLabel })
+                      : t('tracking.eta_pickup_confirmed', 'Ready around {{time}}', { time: confirmedTimeLabel }))
+                  : (isDelivery
+                      ? t('tracking.eta_delivery', 'Estimated delivery in {{eta}}', { eta })
+                      : t('tracking.eta_pickup', 'Ready in {{eta}}', { eta }))}
               </span>
             </div>
           )}
         </section>
 
-        {/* Status timeline */}
-        {!isCancelled && !isAwaitingPayment && (
+        {/* Status timeline — hidden while we're still waiting for the restaurant
+            to accept; the hero copy carries the message until then. */}
+        {!isCancelled && !isAwaitingPayment && !isAwaitingConfirmation && (
           <section className="bg-[var(--color-surface)] rounded-3xl border border-[var(--color-border)] p-6 sm:p-7">
             <h2 className="font-bold text-base text-[var(--color-text)] mb-5">
               {t('tracking.progress', 'Progress')}
