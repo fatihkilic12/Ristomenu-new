@@ -15,6 +15,7 @@ import KioskProductCard from '@/components/kiosk/KioskProductCard';
 import KioskProductDetail, { type ProductDetailParams } from '@/components/kiosk/KioskProductDetail';
 import KioskCartPage from '@/components/kiosk/KioskCartPage';
 import KioskOrderConfirmation from '@/components/kiosk/KioskOrderConfirmation';
+import KioskUpsellModal from '@/components/kiosk/KioskUpsellModal';
 
 type KioskState = 'idle' | 'name_entry' | 'ordering';
 type View = 'menu' | 'product' | 'cart';
@@ -220,6 +221,11 @@ function KioskMenu({ customerName, onReset }: { customerName: string; onReset: (
   const [orderResult, setOrderResult] = useState<'success' | 'error' | 'closed' | null>(null);
   const [view, setView] = useState<View>('menu');
   const [productParams, setProductParams] = useState<ProductDetailParams | null>(null);
+  // McDonald's-style upsell: when KioskProductDetail closes after an add it
+  // hands back the just-added product. We pop a full-screen modal with its
+  // linked upsells (and global pool) so the customer can stack a drink or
+  // dessert in one tap before continuing to browse.
+  const [upsellTrigger, setUpsellTrigger] = useState<Record<string, any> | null>(null);
   const categoryRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -427,7 +433,23 @@ function KioskMenu({ customerName, onReset }: { customerName: string; onReset: (
           params={productParams}
           showAllergens={showAllergens}
           allowNotes={allowNotes}
-          onClose={() => { setView('menu'); setProductParams(null); }}
+          onClose={(added) => {
+            setView('menu');
+            setProductParams(null);
+            // Only fire the upsell flow on real adds (added is the product
+            // object), not on cancel / edit-mode close.
+            if (added) setUpsellTrigger(added);
+          }}
+        />
+      )}
+
+      {/* McDonald's-style "wil je er ... bij?" — fires once per add, self-
+          closes if there are no suggestions for this product. */}
+      {upsellTrigger && (
+        <KioskUpsellModal
+          menu={menu}
+          triggerProduct={upsellTrigger}
+          onClose={() => setUpsellTrigger(null)}
         />
       )}
 

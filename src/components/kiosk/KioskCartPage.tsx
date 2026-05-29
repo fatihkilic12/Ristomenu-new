@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useCart } from '@/context/CartContext';
 import { EURO, IMAGE_ADDRESS, IMAGE_SERVER_ADDRESS } from '@/config/constants';
@@ -34,11 +34,43 @@ function itemImage(item: any): string | null {
 }
 
 export default function KioskCartPage({ menu, onEdit, onConfirm, onClose, allowNotes = true, customerName }: Props) {
-  const { cart, note, setNote, deleteFromCart, updateCart, itemCount } = useCart();
+  const { cart, note, setNote, deleteFromCart, updateCart, addToCart, itemCount } = useCart();
   const { t } = useTranslation();
   const [confirming, setConfirming] = useState(false);
 
   const subtotal = cart.reduce((sum, item) => sum + getItemPrice(item, menu), 0);
+
+  // Cart-level upsells — last touchpoint before checkout, McDonald's style.
+  // Per-product links from every item in the cart take priority; the
+  // global is_upsell pool fills the rest. Skips anything already in the
+  // cart, sold out, or with required options (would need a configurator).
+  const upsellProducts: any[] = menu?.menu?.products ?? [];
+  const upsellSuggestions = useMemo(() => {
+    if (!upsellProducts.length) return [];
+    const inCartIds = new Set(cart.map((c) => c.product));
+    const seen = new Set<number>();
+    const linked: any[] = [];
+    for (const item of cart) {
+      const p = upsellProducts.find((x) => x.id === item.product);
+      const ids: number[] = Array.isArray(p?.upsell_product_ids) ? p.upsell_product_ids : [];
+      for (const id of ids) {
+        if (inCartIds.has(id) || seen.has(id)) continue;
+        const candidate = upsellProducts.find((x) => x.id === id);
+        if (!candidate || candidate.is_sold_out) continue;
+        if (Array.isArray(candidate.options) && candidate.options.length > 0) continue;
+        linked.push(candidate);
+        seen.add(id);
+      }
+    }
+    const global: any[] = [];
+    for (const p of upsellProducts) {
+      if (!p?.is_upsell || p.is_sold_out) continue;
+      if (inCartIds.has(p.id) || seen.has(p.id)) continue;
+      if (Array.isArray(p.options) && p.options.length > 0) continue;
+      global.push(p);
+    }
+    return [...linked, ...global].slice(0, 6);
+  }, [cart, upsellProducts]);
 
   const changeQuantity = (item: any, delta: number) => {
     const newQty = item.quantity + delta;
@@ -146,6 +178,65 @@ export default function KioskCartPage({ menu, onEdit, onConfirm, onClose, allowN
             );
           })}
         </div>
+
+        {/* Upsell rail — McDonald's-style "vergeet niet" before checkout.
+            Hidden once everything has been suggested + accepted or skipped. */}
+        {cart.length > 0 && upsellSuggestions.length > 0 && (
+          <div className="mt-6 rounded-3xl bg-white p-6">
+            <p className="text-base font-semibold uppercase tracking-wider text-[var(--color-primary)] mb-1">
+              {t('kiosk.upsell.cart.eyebrow', { defaultValue: 'Vergeet niet' })}
+            </p>
+            <h3 className="text-2xl font-extrabold mb-4 leading-tight">
+              {t('kiosk.upsell.cart.title', { defaultValue: 'Maak het compleet' })}
+            </h3>
+            <div className="flex gap-4 overflow-x-auto -mx-6 px-6 pb-2 snap-x snap-mandatory">
+              {upsellSuggestions.map((p: any) => {
+                const raw = p?.uri || (p?.image ? IMAGE_ADDRESS(p.image) : null);
+                const img = raw ? (raw.startsWith('/') ? `${IMAGE_SERVER_ADDRESS}${raw}` : raw) : null;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() =>
+                      addToCart({
+                        product: p.id,
+                        product_data: { name: p.name, price: p.price },
+                        quantity: 1,
+                        options: {},
+                      })
+                    }
+                    className="snap-start shrink-0 w-44 rounded-3xl bg-gray-50 border-2 border-transparent active:scale-[0.97] active:border-[var(--color-primary)] overflow-hidden"
+                  >
+                    <div className="aspect-square bg-white">
+                      {img ? (
+                        <img src={img} alt="" loading="lazy" className="w-full h-full object-cover"/>
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-5xl font-black text-gray-300 capitalize">
+                          {(p.name?.charAt(0) || '?').toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-3 text-left">
+                      <p className="font-bold text-base leading-tight line-clamp-2 capitalize min-h-[40px]">
+                        {p.name || `#${p.id}`}
+                      </p>
+                      <div className="flex items-center justify-between mt-2">
+                        {typeof p.price === 'number' && (
+                          <span className="font-extrabold text-lg">
+                            {EURO}{(p.price / 100).toFixed(2)}
+                          </span>
+                        )}
+                        <span className="w-11 h-11 rounded-2xl bg-[var(--color-primary)] text-white flex items-center justify-center text-2xl font-bold shadow">
+                          +
+                        </span>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Note */}
         {allowNotes && cart.length > 0 && (

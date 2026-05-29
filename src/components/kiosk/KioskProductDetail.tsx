@@ -25,7 +25,9 @@ type Props = {
   params: ProductDetailParams;
   showAllergens?: boolean;
   allowNotes?: boolean;
-  onClose: () => void;
+  // Called with the product that was just added so the parent can fire the
+  // upsell modal. Undefined on cancel / edit-mode close (no upsell needed).
+  onClose: (addedProduct?: Record<string, any>) => void;
 };
 
 export default function KioskProductDetail({ params, showAllergens = true, allowNotes = true, onClose }: Props) {
@@ -121,10 +123,14 @@ export default function KioskProductDetail({ params, showAllergens = true, allow
     };
     if (mode === EDIT && item) {
       updateCart(item.id, { ...item, ...cartItem, id: item.id });
+      onClose();
     } else {
       addToCart(cartItem);
+      // Hand the product object to the parent so it can show the upsell
+      // modal — only on real adds, not on edit (already in cart) or
+      // cancel (header back button passes nothing).
+      onClose(product);
     }
-    onClose();
   };
 
   const rawUri = product.uri || (product.image ? IMAGE_ADDRESS(product.image) : null);
