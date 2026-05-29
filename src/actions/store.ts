@@ -72,3 +72,27 @@ export const getKioskMenu = (id: string) =>
 
 export const getStoreConfig = (id: string) =>
   cachedGet<any>(`/api/v2/store/${id}/config/`);
+
+// Pre-order slots — fetched fresh every time the picker mounts. We deliberately
+// skip the cachedGet helper here because slot availability changes minute-by-minute
+// (lead time, opening-hour rollover, operator pausing pre-orders) and a stale
+// cached value would surface times the customer can't actually book.
+export type PreOrderSlot = { start: string; label: string };
+export type PreOrderSlotsResponse = {
+  order_type: 'delivery' | 'pickup';
+  currently_open: boolean;
+  next_open_at: string | null;
+  min_lead_minutes: number;
+  slot_minutes: number;
+  slots: PreOrderSlot[];
+  detail?: string;
+};
+
+export const getPreOrderSlots = (
+  id: string,
+  orderType: 'delivery' | 'pickup',
+  days = 7,
+): Promise<PreOrderSlotsResponse> =>
+  api
+    .get(`/api/v2/store/${id}/preorder-slots/?order_type=${orderType}&days=${days}`)
+    .then(r => r.data as PreOrderSlotsResponse);

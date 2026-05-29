@@ -1,6 +1,22 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { getCompanyInfo, getStoreConfig } from '@/actions/store';
-import { getBranding } from '@/lib/branding';
+import { getBranding, type Branding } from '@/lib/branding';
+
+// Channel settings include pause fields populated by the server. `is_paused`
+// is server-computed (paused_until > now) — trust it as the source of truth
+// rather than recomputing on the client.
+export type ChannelSettings = {
+  open_for_order?: boolean;
+  paused_until?: string | null;
+  pause_reason?: string | null;
+  is_paused?: boolean;
+  [key: string]: unknown;
+};
+
+// Shape of the raw `branding` block as it arrives from /config/. All fields
+// optional because the backend returns `{}` for stores without a configured
+// StorefrontSettings row.
+export type BrandingPayload = Partial<Branding>;
 
 type StoreConfig = {
   company: Record<string, any> | null;
@@ -30,8 +46,11 @@ export function StoreConfigProvider({ storeId, children }: { storeId: string; ch
     let cancelled = false;
 
     // Fetch both endpoints in parallel:
-    //   /store/{slug}/         — languages, menu_settings, hours, location, supports_*, delivery_settings, pickup_settings
-    //   /store/{slug}/config/  — full branding (StorefrontSettings), banner_image, social links, payment_methods, regions
+    //   /store/{slug}/         — languages, hours, location, supports_*, delivery_settings, pickup_settings
+    //                            (plus `menu_settings.disable_note` — the only non-branding menu toggle that lives here)
+    //   /store/{slug}/config/  — full `branding` block (StorefrontSettings), payment_methods, regions, opening_hours
+    // Branding (logo, colors, welcome message, social links) is read only from
+    // the /config/ response's `branding` field — see `src/lib/branding.ts`.
     // cachedGet swallows errors → null on failure, so the page still renders
     // from whichever response succeeded.
     Promise.all([getCompanyInfo(storeId), getStoreConfig(storeId)])

@@ -115,6 +115,10 @@
       "cash": "Cash",
       "cash_on_delivery": "You'll pay cash on delivery.",
       "cash_on_pickup": "You'll pay cash when you pick up your order."
+    },
+    "min_order": {
+      "short": "Minimum order value is {{min}} — add {{missing}} more.",
+      "cta": "Min. {{min}} — add {{missing}}"
     }
   },
   "tracking": {
@@ -129,6 +133,13 @@
     "pickup_at": "Pickup at",
     "eta_delivery": "Estimated delivery in {{eta}}",
     "eta_pickup": "Ready in {{eta}}",
+    "eta": {
+      "ready_in": "Ready in ~{{n}} min",
+      "between": "Ready in {{min}}-{{max}} min",
+      "delivery_between": "Delivery between {{min}}-{{max}} min",
+      "estimated_prefix": "Estimated: {{value}}"
+    },
+    "cancelled_note": "Cancelled: {{reason}}",
     "received_title": "Order received",
     "delivery_sub": "We'll keep you posted as we prepare and dispatch your order.",
     "pickup_sub": "We'll let you know when your order is ready to pick up.",
@@ -266,5 +277,57 @@
   "countries": {
     "BE": "Belgium",
     "NL": "Netherlands"
+  },
+  "pause": {
+    "unavailable_short": "Temporarily unavailable",
+    "banner": {
+      "delivery_unavailable": "Delivery is currently unavailable",
+      "pickup_unavailable": "Pickup is currently unavailable",
+      "try_pickup": "Try pickup or come back later.",
+      "try_delivery": "Try delivery or come back later.",
+      "try_again_after": "Try again after {{time}}."
+    }
+  },
+  "preorder": {
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "loading": "Loading available times…",
+    "load_error": "Could not load available times.",
+    "retry": "Try again",
+    "title": "When would you like your order?",
+    "closed_subtitle": "We're currently closed. Pick a time below to schedule your order.",
+    "asap": "As soon as possible",
+    "asap_inline": "As soon as possible",
+    "asap_disabled": "Restaurant is currently closed — pick a time below.",
+    "asap_disabled_tooltip": "Restaurant is currently closed — pick a time",
+    "schedule": "Order for later",
+    "schedule_sub": "Pick a date and time below.",
+    "stale_hint": "Your previous time is no longer available, pick a new one.",
+    "date": "Date",
+    "pick_day": "Choose a day…",
+    "pick_day_first": "Pick a day first",
+    "time": "Time",
+    "pick_time": "Choose a time…",
+    "order_for_later": "Order for later?",
+    "cancel_later": "Cancel — order ASAP instead",
+    "scheduled_delivery": "For delivery at {{label}}",
+    "scheduled_pickup": "For pickup at {{label}}",
+    "change": "Change time",
+    "cta_pick_time": "Pick a time to continue",
+    "required_title": "Schedule your order",
+    "required_subtitle": "The restaurant is currently closed. Pick a time within opening hours.",
+    "optional_title": "Order time",
+    "optional_subtitle": "We will start your order right away unless you schedule it for later.",
+    "optional_scheduled_sub": "Your order is scheduled.",
+    "delivery_at_label": "Delivery at",
+    "pickup_at_label": "Pickup at",
+    "confirm": "Confirm",
+    "modal": {
+      "close": "Close"
+    },
+    "tracking": {
+      "delivery_scheduled": "Scheduled for delivery at {{time}}",
+      "pickup_scheduled": "Scheduled for pickup at {{time}}"
+    }
   }
 }

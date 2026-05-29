@@ -1,12 +1,15 @@
-// Branding fields come from a few different places depending on how old the
-// store record is:
-//   1. `branding`            — what the new PartnerPortal writes
-//   2. `storefront_settings` — older name for the same data
-//   3. `menu_settings`       — even older, only carried button_color / header_color
-//   4. top-level fields      — legacy logo (`img`), banner (`header_img`), etc.
+// Branding for the storefront comes from a single source: the `branding`
+// block on `GET /api/v2/store/<slug>/config/`. That endpoint is fetched
+// alongside the StoreDetail call inside `StoreConfigContext` and merged onto
+// the `company` object under the `branding` key.
 //
-// `getBranding(company)` normalises all of that into one flat object so
-// consumers can read a single source of truth.
+// `getBranding(company)` reads only from `company.branding` and fills in
+// safe defaults for stores that haven't set up StorefrontSettings yet — the
+// caller gets a fully populated object and never has to null-check fields.
+//
+// Legacy locations (`menu_settings.logo` / `menu_settings.button_color` /
+// `menu_settings.header_color` / `settings.header_color` / top-level `img`)
+// are no longer consulted — the backend dropped them from the response.
 
 export type Branding = {
   primary_color:    string | null;
@@ -47,27 +50,27 @@ const DEFAULT_BRANDING: Branding = {
 export function getBranding(company: any): Branding {
   if (!company) return DEFAULT_BRANDING;
 
+  // `branding` is `{}` on the server for stores without StorefrontSettings.
+  // That's fine — every field below resolves to its DEFAULT_BRANDING value
+  // and the UI renders with the storefront's built-in theme tokens.
   const b = company.branding || {};
-  const s = company.storefront_settings || {};
-  const m = company.menu_settings || {};
 
   return {
-    primary_color:    pick(b.primary_color,    m.button_color),
+    primary_color:    pick(b.primary_color),
     secondary_color:  pick(b.secondary_color),
     background_color: pick(b.background_color),
     text_color:       pick(b.text_color),
-    header_color:     pick(b.header_color,     m.header_color),
-    logo:             pick(b.logo,             m.logo, company.img),
-    banner_image:     pick(b.banner_image,     company.header_img),
-    welcome_message:  pick(b.welcome_message,  s.welcome_message),
-    footer_text:      pick(b.footer_text,      s.footer_text),
-    show_allergens:        flag(true, b.show_allergens, s.show_allergens),
-    show_product_images:   flag(true, b.show_product_images, s.show_product_images),
-    // `disable_note` is the older, inverted flag — honour both.
-    allow_notes:           flag(true, b.allow_notes, s.allow_notes) && !s.disable_note,
-    website_url:      pick(b.website_url,    s.website_url,   company.website_url, company.url),
-    instagram_url:    pick(b.instagram_url,  s.instagram_url),
-    facebook_url:     pick(b.facebook_url,   s.facebook_url),
+    header_color:     pick(b.header_color),
+    logo:             pick(b.logo),
+    banner_image:     pick(b.banner_image),
+    welcome_message:  pick(b.welcome_message),
+    footer_text:      pick(b.footer_text),
+    show_allergens:        flag(DEFAULT_BRANDING.show_allergens,      b.show_allergens),
+    show_product_images:   flag(DEFAULT_BRANDING.show_product_images, b.show_product_images),
+    allow_notes:           flag(DEFAULT_BRANDING.allow_notes,         b.allow_notes),
+    website_url:      pick(b.website_url),
+    instagram_url:    pick(b.instagram_url),
+    facebook_url:     pick(b.facebook_url),
   };
 }
 

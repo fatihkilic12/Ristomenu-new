@@ -4,11 +4,17 @@ import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { CartProvider, useCart } from '@/context/CartContext';
 import { StoreConfigProvider, useStoreConfig } from '@/context/StoreConfigContext';
-import { getDeliveryMenu } from '@/actions/store';
+import { getDeliveryMenu, getPreOrderSlots } from '@/actions/store';
 import { DELIVERY, PICKUP, EURO } from '@/config/constants';
 import { COMPANY_ORDER, COMPANY_ORDER_TRACK } from '@/config/paths';
 import { useCustomerDetails } from '@/hooks/useCustomerDetails';
+import { extractPauseFromError, formatPauseUntil, isChannelPaused } from '@/lib/pause';
+import { formatApiError } from '@/lib/apiError';
+import { getEffectiveMinOrder } from '@/lib/minOrder';
+import { getBranding } from '@/lib/branding';
 import LanguageSelector from '@/components/shared/LanguageSelector';
+import PauseBanner from '@/components/shared/PauseBanner';
+import PreOrderSlotModal from '@/components/order/PreOrderSlotModal';
 
 function getItemPrice(item: any, menu: any): number {
   const product = menu?.menu?.products?.find((p: any) => p.id === item.product);
@@ -29,7 +35,12 @@ function CheckoutContent({ orderType }: { orderType: string }) {
   const navigate = useNavigate();
   const { i18n, t } = useTranslation();
   const { company } = useStoreConfig();
-  const { cart, note, submitOrder, resetCart, itemCount } = useCart();
+  const { cart, note, submitOrder, resetCart, itemCount, desiredTime, setDesiredTime } = useCart();
+  // Modal-open flag. The checkout page only opens this modal explicitly —
+  // there's no inline picker any more. Closed-store + no-slot renders a CTA
+  // that auto-opens with `required={true}`; open-store renders a small
+  // "Order for later?" link with `required={false}`.
+  const [pickerOpen, setPickerOpen] = useState(false);
   const { details, update, persist, setDetails } = useCustomerDetails(storeId);
 
   const isDelivery = orderType === DELIVERY;
@@ -43,6 +54,12 @@ function CheckoutContent({ orderType }: { orderType: string }) {
   // guard below and bounce the user back to the menu. This ref tells the guard
   // to stand down once an order has been placed.
   const submittedRef = useRef(false);
+
+  // Ref for the inline error Alert at the top of the form. When the server
+  // rejects with 400, we both render the message here AND smooth-scroll to it
+  // so the customer physically sees what went wrong — the submit button
+  // appearing to do nothing was a real complaint.
+  const errorRef = useRef<HTMLDivElement>(null);
 
   // Theme mode (dark/light) — shares the order-page preference. Default light;
   // opt-in dark via the toggle (we don't read prefers-color-scheme).
@@ -69,6 +86,27 @@ function CheckoutContent({ orderType }: { orderType: string }) {
     enabled: !!storeId,
   });
 
+  // Fetch slot info so we know whether the channel is currently open. The
+  // PreOrderSlotPicker below uses the same query key (TanStack will dedupe).
+  // We deliberately don't preload menus to discover this — `currently_open`
+  // is computed cheaply server-side and lives behind a dedicated endpoint.
+  const { data: slotsData } = useQuery({
+    queryKey: ['preorder-slots', storeId, orderType],
+    queryFn: () => getPreOrderSlots(storeId!, orderType as 'delivery' | 'pickup', 7),
+    enabled: !!storeId,
+    refetchInterval: 120_000,
+    staleTime: 60_000,
+  });
+  // First-render: while slotsData is loading we treat the store as "open" so
+  // we don't flash the mandatory picker. The real value lands within ~100ms
+  // and the picker then auto-shows when needed.
+  const currentlyOpenForChannel = slotsData?.currently_open ?? true;
+  const channelClosed = !currentlyOpenForChannel;
+  // The mandatory picker is shown until the customer either picks a slot OR
+  // the store comes back online. The opt-in picker is shown when the customer
+  // toggles "Order for later" while the store is open.
+  const mustPickSlot = channelClosed && !desiredTime;
+
   const subtotal = useMemo(
     () => cart.reduce((sum, item) => sum + getItemPrice(item, menu), 0),
     [cart, menu]
@@ -77,9 +115,16 @@ function CheckoutContent({ orderType }: { orderType: string }) {
   const ds = company?.delivery_settings;
   const ps = company?.pickup_settings;
   const deliveryFee = isDelivery ? (ds?.default_delivery_fee || 0) : 0;
-  const minOrder = isDelivery ? (ds?.min_order_value || 0) : 0;
+  // Region-aware: if the customer has typed a postal code that matches a
+  // region with an `override_min_order_value`, that wins over the channel
+  // default. Empty postal_code → channel default. See lib/minOrder.ts.
+  const minOrder = getEffectiveMinOrder(orderType, ds, company?.regions, details.postalCode);
   const total = subtotal + deliveryFee;
   const belowMin = isDelivery && minOrder > 0 && subtotal < minOrder;
+  // If the channel got paused between landing here and now, block submit
+  // outright. The server would 400 anyway, but stopping locally avoids the
+  // round-trip and keeps the error UI tied to the visible banner.
+  const channelPaused = isDelivery ? isChannelPaused(ds) : isChannelPaused(ps);
 
   // Empty cart guard — bounce back to menu (but not right after we just placed
   // an order, when the cart is intentionally empty and we're navigating to the
@@ -121,6 +166,10 @@ function CheckoutContent({ orderType }: { orderType: string }) {
     e.preventDefault();
     setError('');
     if (!requiredFilled || belowMin) return;
+    // When the store is closed for this channel, force a slot pick — submitting
+    // would otherwise hit the backend "currently_closed" reject. The button is
+    // also disabled, this is the belt-and-braces guard.
+    if (mustPickSlot) return;
 
     persist(details);
     setLoading(true);
@@ -156,16 +205,42 @@ function CheckoutContent({ orderType }: { orderType: string }) {
         resetCart();
       }
     } catch (err: any) {
-      const detail = err?.response?.data?.detail;
-      const msg = Array.isArray(detail) ? detail.join(' ') : (detail || err?.message || t('common.common_error', 'Something went wrong'));
-      setError(msg);
+      // The backend returns 400 + `{ detail, paused_until }` when the order
+      // is rejected for a paused channel. Surface `detail` directly (already
+      // translated by the server) and append a "try again after {time}" hint
+      // when `paused_until` is present.
+      const paused = extractPauseFromError(err);
+      if (paused) {
+        const until = formatPauseUntil(paused.pausedUntil, i18n.language);
+        setError(
+          until
+            ? `${paused.detail} — ${t('pause.banner.try_again_after', 'Try again after {{time}}.', { time: until })}`
+            : paused.detail,
+        );
+      } else {
+        // formatApiError handles all DRF error shapes: { detail: "str" },
+        // { detail: ["a", "b"] }, and field-keyed { location: ..., payment_method: ... }.
+        // We prefer the concrete server message over a generic toast — the
+        // customer needs to know exactly what to fix.
+        setError(formatApiError(err, t('common.common_error', 'Something went wrong')));
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  // Scroll the inline error Alert into view whenever a new error message
+  // appears. Without this, the customer just sees the submit button "do
+  // nothing" — the message is rendered above the form but out of viewport.
+  useEffect(() => {
+    if (error && errorRef.current) {
+      errorRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [error]);
+
   const hasSavedDetails = !!(details.name || details.phone || details.email);
   const onlyCash = enabledMethods.length === 1;
+  const logo = getBranding(company).logo;
 
   return (
     <div className="min-h-dvh">
@@ -186,9 +261,9 @@ function CheckoutContent({ orderType }: { orderType: string }) {
             aria-label={t('checkout.back_to_menu', 'Back to menu')}
           >
             <span className="text-lg" aria-hidden>←</span>
-            {company?.img && (
+            {logo && (
               <img
-                src={company.img}
+                src={logo}
                 alt=""
                 className="w-9 h-9 rounded-lg object-cover ring-1 ring-black/10"
               />
@@ -248,18 +323,140 @@ function CheckoutContent({ orderType }: { orderType: string }) {
             </p>
           </div>
 
+          {/* Pause banner — appears only when the selected channel is paused.
+              Sits above the form so it's the first thing customers see. */}
+          <PauseBanner
+            orderType={orderType}
+            deliverySettings={ds}
+            pickupSettings={ps}
+          />
+
+          {/* Pre-order time slot. No inline picker — the modal owns the UX.
+              - Channel closed + no slot → empty "Schedule your order" state
+                with a single "Pick a time" CTA that opens the modal in
+                required mode. Submit stays disabled until a slot is picked.
+              - Channel closed + slot picked → show the chosen slot + a
+                "Change time" link that reopens the modal.
+              - Channel open  → small "Order for later?" link that opens the
+                modal in optional mode. */}
+          {channelClosed ? (
+            <Section
+              title={t('preorder.required_title', 'Schedule your order')}
+              subtitle={t(
+                'preorder.required_subtitle',
+                'The restaurant is currently closed. Pick a time within opening hours.',
+              )}
+            >
+              {desiredTime ? (
+                <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-[var(--color-accent)]/10 border border-[var(--color-accent)]/30">
+                  <div className="min-w-0">
+                    <p className="text-xs uppercase font-semibold tracking-wider text-[var(--color-muted)]">
+                      {isDelivery
+                        ? t('preorder.delivery_at_label', 'Delivery at')
+                        : t('preorder.pickup_at_label', 'Pickup at')}
+                    </p>
+                    <p className="font-bold text-[var(--color-text)] mt-0.5">
+                      {formatSlotInline(desiredTime, i18n.language, t)}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setPickerOpen(true)}
+                    className="shrink-0 text-sm font-semibold text-[var(--color-accent)] hover:underline"
+                  >
+                    {t('preorder.change', 'Change time')}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setPickerOpen(true)}
+                  className="w-full h-12 rounded-xl font-bold text-sm bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] transition-colors"
+                >
+                  {t('preorder.cta_pick_time', 'Pick a time to continue')}
+                </button>
+              )}
+            </Section>
+          ) : (
+            <Section
+              title={t('preorder.optional_title', 'Order time')}
+              subtitle={
+                desiredTime
+                  ? t('preorder.optional_scheduled_sub', 'Your order is scheduled.')
+                  : t('preorder.optional_subtitle', 'We will start your order right away unless you schedule it for later.')
+              }
+            >
+              {desiredTime ? (
+                <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-[var(--color-accent)]/10 border border-[var(--color-accent)]/30">
+                  <div className="min-w-0">
+                    <p className="text-xs uppercase font-semibold tracking-wider text-[var(--color-muted)]">
+                      {isDelivery
+                        ? t('preorder.delivery_at_label', 'Delivery at')
+                        : t('preorder.pickup_at_label', 'Pickup at')}
+                    </p>
+                    <p className="font-bold text-[var(--color-text)] mt-0.5">
+                      {formatSlotInline(desiredTime, i18n.language, t)}
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setPickerOpen(true)}
+                      className="text-sm font-semibold text-[var(--color-accent)] hover:underline"
+                    >
+                      {t('preorder.change', 'Change time')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDesiredTime(null)}
+                      className="text-xs text-[var(--color-muted)] hover:text-[var(--color-text)] underline"
+                    >
+                      {t('preorder.cancel_later', 'Cancel — order ASAP instead')}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm text-[var(--color-text)]">
+                    {t('preorder.asap_inline', 'As soon as possible')}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setPickerOpen(true)}
+                    className="text-sm font-semibold text-[var(--color-accent)] hover:underline"
+                  >
+                    {t('preorder.order_for_later', 'Order for later?')}
+                  </button>
+                </div>
+              )}
+            </Section>
+          )}
+
+          {/* Persistent inline error Alert. Source of truth for any 400 the
+              server returns (or any client-side rejection). Stays visible
+              until either the customer fixes the issue and re-submits or
+              navigates away — we deliberately don't auto-dismiss. */}
           {error && (
-            <div className="p-4 rounded-xl bg-red-500/10 text-red-500 text-sm border border-red-500/30">
-              {error}
+            <div
+              ref={errorRef}
+              role="alert"
+              aria-live="assertive"
+              className="p-4 rounded-xl bg-red-500/10 text-red-600 dark:text-red-300 text-sm border border-red-500/30 flex items-start gap-3 scroll-mt-24"
+            >
+              <svg className="w-5 h-5 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <div className="flex-1 whitespace-pre-line font-medium">{error}</div>
             </div>
           )}
           {belowMin && (
             <div className="p-4 rounded-xl bg-orange-500/10 text-orange-600 dark:text-orange-300 text-sm border border-orange-500/30">
-              {t('restaurants.cart.minimum_alert.text', {
-                company: company?.name,
-                price: `${EURO}${(minOrder / 100).toFixed(2)}`,
-                rest: `${EURO}${((minOrder - subtotal) / 100).toFixed(2)}`,
-                defaultValue: `Minimum order is ${EURO}${(minOrder / 100).toFixed(2)}.`,
+              {t('checkout.min_order.short', {
+                min: `${EURO}${(minOrder / 100).toFixed(2)}`,
+                missing: `${EURO}${((minOrder - subtotal) / 100).toFixed(2)}`,
+                defaultValue: `Minimum order value is ${EURO}${(minOrder / 100).toFixed(2)} — add ${EURO}${((minOrder - subtotal) / 100).toFixed(2)} more.`,
               })}
             </div>
           )}
@@ -431,6 +628,21 @@ function CheckoutContent({ orderType }: { orderType: string }) {
                 <span>{t('restaurants.cart.total', 'Total')}</span>
                 <span>{EURO}{(total / 100).toFixed(2)}</span>
               </div>
+              {/* Scheduled-slot chip — shown in the summary so the customer
+                  sees their chosen time alongside the totals before they
+                  commit. */}
+              {desiredTime && (
+                <div className="pt-2 border-t border-[var(--color-border)] text-sm">
+                  <p className="text-[var(--color-muted)] text-xs uppercase font-semibold tracking-wider mb-1">
+                    {isDelivery
+                      ? t('preorder.delivery_at_label', 'Delivery at')
+                      : t('preorder.pickup_at_label', 'Pickup at')}
+                  </p>
+                  <p className="font-bold text-[var(--color-text)]">
+                    {formatSlotInline(desiredTime, i18n.language, t)}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -467,7 +679,7 @@ function CheckoutContent({ orderType }: { orderType: string }) {
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={loading || !requiredFilled || belowMin || cart.length === 0}
+            disabled={loading || !requiredFilled || belowMin || cart.length === 0 || channelPaused || mustPickSlot}
             className="flex-1 max-w-md h-14 rounded-xl font-extrabold text-white bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading ? (
@@ -475,6 +687,10 @@ function CheckoutContent({ orderType }: { orderType: string }) {
                 <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                 {t('checkout.placing', 'Placing order…')}
               </span>
+            ) : channelPaused ? (
+              t('pause.unavailable_short', 'Tijdelijk niet beschikbaar')
+            ) : mustPickSlot ? (
+              t('preorder.cta_pick_time', 'Pick a time to continue')
             ) : paymentMethod === 'cash' ? (
               t('checkout.place_order', 'Place order')
             ) : (
@@ -483,6 +699,19 @@ function CheckoutContent({ orderType }: { orderType: string }) {
           </button>
         </div>
       </div>
+
+      {/* Slot picker modal — single point of truth for slot selection on the
+          checkout page. `required` is bound to channelClosed so the closed
+          flow blocks both the close X and backdrop-dismiss. */}
+      <PreOrderSlotModal
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        orderType={orderType as 'delivery' | 'pickup'}
+        storeSlug={storeId!}
+        required={channelClosed && !desiredTime}
+        value={desiredTime}
+        onChange={iso => setDesiredTime(iso)}
+      />
     </div>
   );
 }
@@ -518,6 +747,27 @@ function Row({ label, value }: { label: string; value: string }) {
       <span className="font-semibold text-[var(--color-text)]">{value}</span>
     </div>
   );
+}
+
+// Human-friendly representation of a scheduled-slot ISO. Mirrors the helper
+// used by OrderCartPanel so both pages display the same "Today HH:MM" or
+// "DD Mon HH:MM" string.
+function formatSlotInline(iso: string, locale: string, t: (k: string, def: string) => string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  const today = new Date();
+  const sameDay =
+    d.getFullYear() === today.getFullYear() &&
+    d.getMonth() === today.getMonth() &&
+    d.getDate() === today.getDate();
+  try {
+    const time = d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+    if (sameDay) return `${t('preorder.today', 'Today')} ${time}`;
+    const day = d.toLocaleDateString(locale, { day: '2-digit', month: 'short' });
+    return `${day} ${time}`;
+  } catch {
+    return iso;
+  }
 }
 
 export default function CheckoutPage() {

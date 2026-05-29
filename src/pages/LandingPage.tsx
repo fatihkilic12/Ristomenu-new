@@ -1,8 +1,10 @@
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { StoreConfigProvider, useStoreConfig } from '@/context/StoreConfigContext';
 import { COMPANY_ORDER, COMPANY_KIOSK, COMPANY_TABLE, COMPANY_MENU_ONLY } from '@/config/paths';
 import { EURO } from '@/config/constants';
 import { getBranding } from '@/lib/branding';
+import { isChannelPaused } from '@/lib/pause';
 import StoreFooter from '@/components/shared/StoreFooter';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -17,6 +19,7 @@ function LandingContent() {
   const { storeId } = useParams<{ storeId: string }>();
   const { company, loading } = useStoreConfig();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   if (loading) {
     return (
@@ -107,6 +110,12 @@ function LandingContent() {
                   icon="🚴‍♂️"
                   title="Delivery"
                   subtitle={`${ds?.duration_min || 20}–${ds?.duration_max || 45} min${ds?.default_delivery_fee > 0 ? ` · ${EURO}${(ds.default_delivery_fee / 100).toFixed(2)}` : ''}`}
+                  disabled={isChannelPaused(ds)}
+                  disabledReason={
+                    isChannelPaused(ds)
+                      ? formatDisabledReason(t, ds?.pause_reason)
+                      : undefined
+                  }
                 />
               )}
               {supportsPickup && (
@@ -115,6 +124,12 @@ function LandingContent() {
                   icon="🛍️"
                   title="Takeaway"
                   subtitle={`±${ps?.duration || 20} min · Free`}
+                  disabled={isChannelPaused(ps)}
+                  disabledReason={
+                    isChannelPaused(ps)
+                      ? formatDisabledReason(t, ps?.pause_reason)
+                      : undefined
+                  }
                 />
               )}
               {supportsKiosk && (
@@ -205,24 +220,55 @@ function LandingContent() {
   );
 }
 
-function OrderOption({ onClick, icon, title, subtitle }: {
-  onClick: () => void; icon: string; title: string; subtitle: string;
+function OrderOption({ onClick, icon, title, subtitle, disabled, disabledReason }: {
+  onClick: () => void;
+  icon: string;
+  title: string;
+  subtitle: string;
+  disabled?: boolean;
+  disabledReason?: string;
 }) {
   return (
     <button
-      onClick={onClick}
-      className="w-full flex items-center gap-3.5 p-3.5 rounded-xl border border-gray-100 hover:border-[var(--color-primary)]/30 hover:bg-[var(--color-primary)]/[0.02] active:scale-[0.98] transition-all text-left group"
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
+      aria-disabled={disabled || undefined}
+      className={`w-full flex items-center gap-3.5 p-3.5 rounded-xl border text-left group transition-all ${
+        disabled
+          ? 'border-gray-100 bg-gray-50/60 cursor-not-allowed opacity-60'
+          : 'border-gray-100 hover:border-[var(--color-primary)]/30 hover:bg-[var(--color-primary)]/[0.02] active:scale-[0.98]'
+      }`}
     >
-      <span className="text-xl w-9 h-9 flex items-center justify-center bg-gray-50 rounded-lg group-hover:bg-[var(--color-primary)]/5 transition-colors">{icon}</span>
+      <span className={`text-xl w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${
+        disabled ? 'bg-gray-100 grayscale' : 'bg-gray-50 group-hover:bg-[var(--color-primary)]/5'
+      }`}>{icon}</span>
       <div className="flex-1 min-w-0">
         <span className="font-semibold text-[15px] text-gray-800 block">{title}</span>
-        <span className="text-[13px] text-gray-400">{subtitle}</span>
+        {disabled && disabledReason ? (
+          <span className="text-[12px] text-orange-600 block leading-tight mt-0.5">{disabledReason}</span>
+        ) : (
+          <span className="text-[13px] text-gray-400">{subtitle}</span>
+        )}
       </div>
-      <svg className="w-4 h-4 text-gray-300 group-hover:text-[var(--color-primary)] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-      </svg>
+      {!disabled && (
+        <svg className="w-4 h-4 text-gray-300 group-hover:text-[var(--color-primary)] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+      )}
     </button>
   );
+}
+
+// "Tijdelijk niet beschikbaar — {reason}" with graceful fallback when the
+// operator didn't enter a reason. Kept inline to LandingPage since this is
+// the only place that needs the exact compact phrasing.
+function formatDisabledReason(
+  t: (key: string, defaultValue: string) => string,
+  reason?: string | null,
+): string {
+  const base = t('pause.unavailable_short', 'Tijdelijk niet beschikbaar');
+  const trimmed = (reason || '').trim();
+  return trimmed ? `${base} — ${trimmed}` : base;
 }
 
 export default function LandingPage() {

@@ -134,32 +134,34 @@ function TrackingContent() {
     );
   }
 
-  const isPickup = order.order_type === 'pickup';
   const isDelivery = order.order_type === 'delivery';
   const isCancelled = order.status === 'CANCELLED' || order.status === 'FAILED';
   const isAwaitingPayment = order.status === 'AWAITING_PAYMENT';
   const isAwaitingConfirmation = order.status === 'AWAITING_CONFIRMATION';
   const isComplete = TERMINAL.has(order.status);
   const declineReason: string | undefined = (order as any).decline_reason || undefined;
-  const confirmedTime: string | undefined = (order as any).confirmed_time || undefined;
+  const etaMin: number | null = (order as any).eta_min_minutes ?? null;
+  const etaMax: number | null = (order as any).eta_max_minutes ?? null;
 
   const steps = isDelivery ? deliverySteps(order.status, t) : pickupSteps(order.status, t);
 
-  // Once the operator has accepted, prefer the concrete confirmed_time over the
-  // generic range. Falls back to settings-based estimate while still in the
-  // received state.
-  const confirmedTimeLabel = (() => {
-    if (!confirmedTime) return null;
-    try {
-      const d = new Date(confirmedTime);
-      return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-    } catch { return null; }
+  // ETA copy is driven entirely by the backend's eta_min_minutes / eta_max_minutes
+  // pair. The customer storefront never touches confirmed_time directly — once the
+  // operator accepts, the numbers below already reflect "minutes from now".
+  // Returns null when there's nothing to render (dine-in/kiosk, cancelled, etc.).
+  const etaLabel: string | null = (() => {
+    if (isCancelled) return null;
+    if (etaMin == null || etaMax == null) return null;
+    const base = etaMin === etaMax
+      ? t('tracking.eta.ready_in', 'Ready in ~{{n}} min', { n: etaMin })
+      : isDelivery
+        ? t('tracking.eta.delivery_between', 'Delivery between {{min}}-{{max}} min', { min: etaMin, max: etaMax })
+        : t('tracking.eta.between', 'Ready in {{min}}-{{max}} min', { min: etaMin, max: etaMax });
+    if (isAwaitingConfirmation) {
+      return t('tracking.eta.estimated_prefix', 'Estimated: {{value}}', { value: base });
+    }
+    return base;
   })();
-  const eta = confirmedTimeLabel
-    ? confirmedTimeLabel
-    : isPickup
-      ? `±${company?.pickup_settings?.duration || 20} min`
-      : `${company?.delivery_settings?.duration_min || 20}–${company?.delivery_settings?.duration_max || 45} min`;
 
   const placedAt = timeAgo(order.created_on, t);
 
@@ -271,21 +273,50 @@ function TrackingContent() {
             )}
           </div>
 
-          {/* ETA — only when not yet finished/cancelled/awaiting. While waiting
-              for operator confirmation we deliberately hide it (we don't know
-              the timing until they accept). Once confirmed, show concrete time. */}
-          {!isComplete && !isCancelled && !isAwaitingPayment && !isAwaitingConfirmation && (
+          {/* Scheduled-for chip — surfaces the committed time when this is a
+              pre-order. We show it most prominently while AWAITING_CONFIRMATION
+              (customer is anxiously checking) but keep it visible through
+              PREPARING too as a reminder. Once the order is OUT_FOR_DELIVERY
+              / READY_FOR_PICKUP the ETA pill takes over. Prefer
+              `confirmed_time` so that operator counter-offers (e.g. customer
+              asked 23:45, operator pushed it +15 min) are reflected here. */}
+          {(() => {
+            const scheduledTime = (order as any).confirmed_time ?? (order as any).desired_time;
+            if (isComplete || isCancelled || isAwaitingPayment || !scheduledTime) return null;
+            return (
+              <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--color-accent)]/10 border border-[var(--color-accent)]/30 text-sm">
+                <span aria-hidden>📅</span>
+                <span className="font-semibold text-[var(--color-text)]">
+                  {isDelivery
+                    ? t('preorder.tracking.delivery_scheduled', 'Scheduled for delivery at {{time}}', {
+                        time: formatScheduledTime(scheduledTime, t),
+                      })
+                    : t('preorder.tracking.pickup_scheduled', 'Scheduled for pickup at {{time}}', {
+                        time: formatScheduledTime(scheduledTime, t),
+                      })}
+                </span>
+              </div>
+            );
+          })()}
+
+          {/* ETA — driven by backend eta_min_minutes / eta_max_minutes. Hidden
+              for dine-in/kiosk (nulls), cancelled, or payment-pending orders.
+              Also hidden when the customer scheduled a specific desired_time
+              (the "Scheduled for HH:MM" chip above is more useful than a
+              rough "Estimated: 10-45 min" window).
+              While AWAITING_CONFIRMATION without a schedule, copy gets the
+              "Estimated:" prefix to make clear it's not a commitment yet. */}
+          {!isComplete && !isCancelled && !isAwaitingPayment && etaLabel && !(order as any).desired_time && (
             <div className="mt-5 flex items-center justify-center gap-2 text-sm">
               <span className="w-2 h-2 rounded-full bg-[var(--color-accent)] animate-pulse" aria-hidden />
-              <span className="text-[var(--color-muted)]">
-                {confirmedTimeLabel
-                  ? (isDelivery
-                      ? t('tracking.eta_delivery_confirmed', 'Delivery around {{time}}', { time: confirmedTimeLabel })
-                      : t('tracking.eta_pickup_confirmed', 'Ready around {{time}}', { time: confirmedTimeLabel }))
-                  : (isDelivery
-                      ? t('tracking.eta_delivery', 'Estimated delivery in {{eta}}', { eta })
-                      : t('tracking.eta_pickup', 'Ready in {{eta}}', { eta }))}
-              </span>
+              <span className="text-[var(--color-muted)]">{etaLabel}</span>
+            </div>
+          )}
+
+          {/* Cancellation reason — small red note when the restaurant declined */}
+          {isCancelled && declineReason && (
+            <div className="mt-5 inline-block px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/30 text-xs font-semibold text-red-600 dark:text-red-400">
+              {t('tracking.cancelled_note', 'Cancelled: {{reason}}', { reason: declineReason })}
             </div>
           )}
         </section>
@@ -541,6 +572,33 @@ function TrackingContent() {
       <StoreFooter />
     </div>
   );
+}
+
+// "Today HH:MM" or "DD Mon HH:MM" representation of desired_time. The Django
+// REST framework serialises DateTime as a unix-seconds string (DATETIME_FORMAT
+// = '%s'), so a numeric value needs unix→Date conversion; ISO strings still
+// go through new Date() directly for forward compat if the server config flips.
+function formatScheduledTime(value: string | number, t: (k: string, def: string) => string): string {
+  let d: Date;
+  if (typeof value === 'number' || /^\d+$/.test(String(value))) {
+    d = new Date(Number(value) * 1000);
+  } else {
+    d = new Date(value);
+  }
+  if (Number.isNaN(d.getTime())) return String(value);
+  const today = new Date();
+  const sameDay =
+    d.getFullYear() === today.getFullYear() &&
+    d.getMonth() === today.getMonth() &&
+    d.getDate() === today.getDate();
+  try {
+    const time = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    if (sameDay) return `${t('preorder.today', 'Today')} ${time}`;
+    const day = d.toLocaleDateString(undefined, { day: '2-digit', month: 'short' });
+    return `${day} ${time}`;
+  } catch {
+    return String(value);
+  }
 }
 
 function Row({ k, v, capitalize }: { k: string; v: React.ReactNode; capitalize?: boolean }) {

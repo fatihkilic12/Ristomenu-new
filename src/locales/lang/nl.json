@@ -115,6 +115,10 @@
       "cash": "Contant",
       "cash_on_delivery": "Je betaalt contant bij levering.",
       "cash_on_pickup": "Je betaalt contant bij afhalen."
+    },
+    "min_order": {
+      "short": "Minimum bestelbedrag is {{min}} — voeg nog {{missing}} toe.",
+      "cta": "Min. {{min}} — voeg {{missing}} toe"
     }
   },
   "tracking": {
@@ -129,6 +133,13 @@
     "pickup_at": "Afhalen bij",
     "eta_delivery": "Verwachte levering over {{eta}}",
     "eta_pickup": "Klaar over {{eta}}",
+    "eta": {
+      "ready_in": "Klaar binnen ~{{n}} min",
+      "between": "Klaar binnen {{min}}-{{max}} min",
+      "delivery_between": "Levering tussen {{min}}-{{max}} min",
+      "estimated_prefix": "Verwachte: {{value}}"
+    },
+    "cancelled_note": "Geannuleerd: {{reason}}",
     "received_title": "Bestelling ontvangen",
     "delivery_sub": "We houden je op de hoogte terwijl we je bestelling voorbereiden en verzenden.",
     "pickup_sub": "We laten je weten wanneer je bestelling klaar is om af te halen.",
@@ -240,5 +251,57 @@
   "countries": {
     "BE": "België",
     "NL": "Nederland"
+  },
+  "pause": {
+    "unavailable_short": "Tijdelijk niet beschikbaar",
+    "banner": {
+      "delivery_unavailable": "Levering is momenteel niet beschikbaar",
+      "pickup_unavailable": "Afhalen is momenteel niet beschikbaar",
+      "try_pickup": "Probeer afhalen of kom later terug.",
+      "try_delivery": "Probeer levering of kom later terug.",
+      "try_again_after": "Probeer opnieuw na {{time}}."
+    }
+  },
+  "preorder": {
+    "today": "Vandaag",
+    "tomorrow": "Morgen",
+    "loading": "Beschikbare tijden laden…",
+    "load_error": "Kon beschikbare tijden niet laden.",
+    "retry": "Opnieuw proberen",
+    "title": "Wanneer wil je je bestelling?",
+    "closed_subtitle": "We zijn momenteel gesloten. Kies hieronder een tijd om je bestelling in te plannen.",
+    "asap": "Zo snel mogelijk",
+    "asap_inline": "Zo snel mogelijk",
+    "asap_disabled": "Restaurant is momenteel gesloten — kies hieronder een tijd.",
+    "asap_disabled_tooltip": "Restaurant is momenteel gesloten — kies een tijd",
+    "schedule": "Voor later bestellen",
+    "schedule_sub": "Kies hieronder een datum en tijd.",
+    "stale_hint": "Je vorige tijd is niet meer beschikbaar, kies een nieuwe.",
+    "date": "Datum",
+    "pick_day": "Kies een dag…",
+    "pick_day_first": "Kies eerst een dag",
+    "time": "Tijd",
+    "pick_time": "Kies een tijd…",
+    "order_for_later": "Bestel voor later?",
+    "cancel_later": "Annuleer — bestel nu",
+    "scheduled_delivery": "Voor levering om {{label}}",
+    "scheduled_pickup": "Voor afhalen om {{label}}",
+    "change": "Tijd wijzigen",
+    "cta_pick_time": "Kies een tijd om verder te gaan",
+    "required_title": "Plan je bestelling",
+    "required_subtitle": "Het restaurant is gesloten. Kies een moment binnen openingstijden.",
+    "optional_title": "Besteltijd",
+    "optional_subtitle": "We starten je bestelling meteen tenzij je 'm inplant.",
+    "optional_scheduled_sub": "Je bestelling is gepland.",
+    "delivery_at_label": "Levering om",
+    "pickup_at_label": "Afhalen om",
+    "confirm": "Bevestigen",
+    "modal": {
+      "close": "Sluiten"
+    },
+    "tracking": {
+      "delivery_scheduled": "Gepland voor levering om {{time}}",
+      "pickup_scheduled": "Gepland voor afhalen om {{time}}"
+    }
   }
 }

@@ -22,6 +22,7 @@ type View = 'menu' | 'product' | 'cart';
 /* ─── Idle / Welcome Screen ───────────────────── */
 function KioskIdle({ company, onStart }: { company: any; onStart: () => void }) {
   const { t, i18n } = useTranslation();
+  const logo = getBranding(company).logo;
 
   // Cycle the welcome word through the available languages — start with current UI lang
   const phrases = useMemo(() => {
@@ -78,9 +79,9 @@ function KioskIdle({ company, onStart }: { company: any; onStart: () => void }) 
         <div className="relative">
           <span className="absolute inset-0 rounded-[2.5rem] kiosk-anim-pulse-ring" style={{ background: 'rgba(255,255,255,0.12)' }} />
           <span className="absolute inset-0 rounded-[2.5rem] kiosk-anim-pulse-ring" style={{ background: 'rgba(255,255,255,0.08)', animationDelay: '-1.2s' }} />
-          {company?.img ? (
+          {logo ? (
             <img
-              src={company.img}
+              src={logo}
               alt=""
               className="relative w-72 h-72 object-cover rounded-[2.5rem] shadow-2xl kiosk-anim-float ring-4 ring-white/10"
             />
@@ -140,6 +141,7 @@ function KioskIdle({ company, onStart }: { company: any; onStart: () => void }) 
 function KioskNameEntry({ company, onSubmit, onBack }: { company: any; onSubmit: (name: string) => void; onBack: () => void }) {
   const { t } = useTranslation();
   const [name, setName] = useState('');
+  const logo = getBranding(company).logo;
 
   return (
     <div
@@ -172,8 +174,8 @@ function KioskNameEntry({ company, onSubmit, onBack }: { company: any; onSubmit:
 
       {/* Centered content */}
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center kiosk-anim-fade-in-up">
-        {company?.img && (
-          <img src={company.img} alt="" className="h-40 w-40 object-cover rounded-3xl mb-10 shadow-2xl ring-4 ring-white/10" />
+        {logo && (
+          <img src={logo} alt="" className="h-40 w-40 object-cover rounded-3xl mb-10 shadow-2xl ring-4 ring-white/10" />
         )}
         <h1 className="text-white text-6xl font-extrabold text-center leading-tight">
           👋 {t('common.welcome_personal', 'Hey there!')}
@@ -349,8 +351,8 @@ function KioskMenu({ customerName, onReset }: { customerName: string; onReset: (
       {/* Header */}
       <header className="shrink-0 bg-[var(--color-header)] text-[var(--color-header-text)] px-7 h-28 flex items-center justify-between shadow-md z-10">
         <div className="flex items-center gap-4 min-w-0">
-          {company?.img && (
-            <img src={company.img} alt={company.name} className="w-16 h-16 rounded-2xl object-cover ring-2 ring-white/10" />
+          {branding.logo && (
+            <img src={branding.logo} alt={company?.name} className="w-16 h-16 rounded-2xl object-cover ring-2 ring-white/10" />
           )}
           <div className="min-w-0">
             <p className="text-base opacity-70 leading-none">👋 {t('common.hey', 'Hi')}</p>

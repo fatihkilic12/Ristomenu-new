@@ -129,6 +129,13 @@
     "pickup_at": "Buradan al",
     "eta_delivery": "Tahmini teslimat {{eta}} içinde",
     "eta_pickup": "{{eta}} içinde hazır",
+    "eta": {
+      "ready_in": "~{{n}} dk içinde hazır",
+      "between": "{{min}}-{{max}} dk içinde hazır",
+      "delivery_between": "Teslimat {{min}}-{{max}} dk içinde",
+      "estimated_prefix": "Tahmini: {{value}}"
+    },
+    "cancelled_note": "İptal edildi: {{reason}}",
     "received_title": "Sipariş alındı",
     "delivery_sub": "Siparişinizi hazırlarken ve gönderirken sizi bilgilendireceğiz.",
     "pickup_sub": "Siparişiniz alıma hazır olduğunda sizi bilgilendireceğiz.",
@@ -260,5 +267,47 @@
   "countries": {
     "BE": "Belçika",
     "NL": "Hollanda"
+  },
+  "preorder": {
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "loading": "Loading available times…",
+    "load_error": "Could not load available times.",
+    "retry": "Try again",
+    "title": "When would you like your order?",
+    "closed_subtitle": "We're currently closed. Pick a time below to schedule your order.",
+    "asap": "As soon as possible",
+    "asap_inline": "As soon as possible",
+    "asap_disabled": "Restaurant is currently closed — pick a time below.",
+    "asap_disabled_tooltip": "Restaurant is currently closed — pick a time",
+    "schedule": "Order for later",
+    "schedule_sub": "Pick a date and time below.",
+    "stale_hint": "Your previous time is no longer available, pick a new one.",
+    "date": "Date",
+    "pick_day": "Choose a day…",
+    "pick_day_first": "Pick a day first",
+    "time": "Time",
+    "pick_time": "Choose a time…",
+    "order_for_later": "Order for later?",
+    "cancel_later": "Cancel — order ASAP instead",
+    "scheduled_delivery": "For delivery at {{label}}",
+    "scheduled_pickup": "For pickup at {{label}}",
+    "change": "Change time",
+    "cta_pick_time": "Pick a time to continue",
+    "required_title": "Schedule your order",
+    "required_subtitle": "The restaurant is currently closed. Pick a time within opening hours.",
+    "optional_title": "Order time",
+    "optional_subtitle": "We will start your order right away unless you schedule it for later.",
+    "optional_scheduled_sub": "Your order is scheduled.",
+    "delivery_at_label": "Delivery at",
+    "pickup_at_label": "Pickup at",
+    "confirm": "Confirm",
+    "modal": {
+      "close": "Close"
+    },
+    "tracking": {
+      "delivery_scheduled": "Scheduled for delivery at {{time}}",
+      "pickup_scheduled": "Scheduled for pickup at {{time}}"
+    }
   }
 }

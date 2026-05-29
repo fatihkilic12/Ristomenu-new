@@ -7,6 +7,7 @@ import { CartProvider, useCart } from '@/context/CartContext';
 import { StoreConfigProvider, useStoreConfig } from '@/context/StoreConfigContext';
 import { DINE_IN } from '@/config/constants';
 import { collectMenuImageUrls, precacheImages } from '@/lib/imageCache';
+import { getBranding } from '@/lib/branding';
 import MenuView from '@/components/menu/MenuView';
 import LanguageSelector from '@/components/shared/LanguageSelector';
 import OrderResultModal from '@/components/shared/OrderResultModal';
@@ -54,6 +55,8 @@ function DineInContent() {
     </div>;
   }
 
+  const logo = getBranding(company).logo;
+
   return (
     <div className="min-h-dvh bg-[#fafafa]">
       <header className="sticky top-0 z-50 bg-[var(--color-header)] text-[var(--color-header-text)] px-3 sm:px-4 h-20 grid grid-cols-3 items-center shadow-sm">
@@ -65,10 +68,10 @@ function DineInContent() {
         </div>
         {/* Middle: logo only — branding speaks for itself */}
         <div className="justify-self-center">
-          {company?.img ? (
+          {logo ? (
             <img
-              src={company.img}
-              alt={company.name}
+              src={logo}
+              alt={company?.name}
               className="w-12 h-12 rounded-xl object-cover ring-white/15"
             />
           ) : (

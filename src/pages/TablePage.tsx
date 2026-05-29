@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { COMPANY_MENU } from '@/config/paths';
 import { StoreConfigProvider, useStoreConfig } from '@/context/StoreConfigContext';
+import { getBranding } from '@/lib/branding';
 
 const keys = ['1','2','3','4','5','6','7','8','9','','0','⌫'];
 
@@ -23,6 +24,8 @@ function TableContent() {
     if (value && storeId) navigate(COMPANY_MENU(storeId, value));
   };
 
+  const logo = getBranding(company).logo;
+
   return (
     <div className="min-h-dvh bg-[#0a0a0a] flex flex-col items-center justify-center px-6 relative overflow-hidden">
       {/* Ambient glow */}
@@ -30,8 +33,8 @@ function TableContent() {
 
       {/* Store name */}
       <div className="mb-10 text-center">
-        {company?.img && (
-          <img src={company.img} alt="" className="w-12 h-12 rounded-xl object-cover mx-auto mb-3 opacity-80" />
+        {logo && (
+          <img src={logo} alt="" className="w-12 h-12 rounded-xl object-cover mx-auto mb-3 opacity-80" />
         )}
         <p className="text-white/30 text-xs font-medium uppercase tracking-[0.2em]">{t('common.table_number', 'Table number')}</p>
       </div>

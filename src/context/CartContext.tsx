@@ -12,11 +12,14 @@ export type CartItem = {
   options?: Record<string, any>;
 };
 
-type CartState = { items: CartItem[]; note: string };
+type CartState = { items: CartItem[]; note: string; desiredTime?: string | null };
 
 type CartContextType = {
   cart: CartItem[];
   note: string;
+  /** ISO datetime selected from the pre-order picker, or null/undefined for "ASAP". */
+  desiredTime: string | null;
+  setDesiredTime: (iso: string | null) => void;
   addToCart: (item: Omit<CartItem, 'id'>) => void;
   updateCart: (id: string, item: CartItem) => void;
   deleteFromCart: (id: string) => void;
@@ -32,9 +35,19 @@ const CartContext = createContext<CartContextType | null>(null);
 function loadCart(key: string): CartState {
   try {
     const raw = localStorage.getItem(key);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      // Defensive: older versions of the cart didn't persist `desiredTime`.
+      // Make sure the shape is consistent so downstream code never sees an
+      // accidental `undefined` vs `null` mismatch.
+      return {
+        items: parsed.items || [],
+        note: parsed.note || '',
+        desiredTime: parsed.desiredTime ?? null,
+      };
+    }
   } catch { /* ignore */ }
-  return { items: [], note: '' };
+  return { items: [], note: '', desiredTime: null };
 }
 
 function saveCart(key: string, cart: CartState) {
@@ -83,10 +96,14 @@ export function CartProvider({ storeId, table, orderType, customerName, children
     setCartState(prev => ({ ...prev, items: prev.items.filter(i => i.id !== id) }));
   }, []);
 
-  const resetCart = useCallback(() => setCartState({ items: [], note: '' }), []);
+  const resetCart = useCallback(() => setCartState({ items: [], note: '', desiredTime: null }), []);
 
   const setNote = useCallback((note: string) => {
     setCartState(prev => ({ ...prev, note }));
+  }, []);
+
+  const setDesiredTime = useCallback((iso: string | null) => {
+    setCartState(prev => ({ ...prev, desiredTime: iso }));
   }, []);
 
   const submitOrder = useCallback(async (extra?: Record<string, any>) => {
@@ -103,6 +120,11 @@ export function CartProvider({ storeId, table, orderType, customerName, children
     if (table) payload.table = table;
     if (orderType) payload.order_type = orderType;
     if (customerName) payload.customer_name = customerName;
+    // Pre-order: only attach `desired_time` when the customer explicitly picked
+    // one. Null/undefined means "ASAP" — the backend treats omitted as ASAP and
+    // we deliberately don't send the key in that case so we don't accidentally
+    // ship the empty string.
+    if (cart.desiredTime) payload.desired_time = cart.desiredTime;
     if (extra) Object.assign(payload, extra);
     return placeOrder(storeId, payload);
   }, [cart, storeId, table, orderType, customerName]);
@@ -112,10 +134,12 @@ export function CartProvider({ storeId, table, orderType, customerName, children
   const value = useMemo<CartContextType>(() => ({
     cart: cart.items,
     note: cart.note,
+    desiredTime: cart.desiredTime ?? null,
+    setDesiredTime,
     addToCart, updateCart, deleteFromCart, resetCart, setNote, submitOrder,
     total: 0, // Calculated from prices in menu context
     itemCount: total,
-  }), [cart, addToCart, updateCart, deleteFromCart, resetCart, setNote, submitOrder, total]);
+  }), [cart, addToCart, updateCart, deleteFromCart, resetCart, setNote, setDesiredTime, submitOrder, total]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

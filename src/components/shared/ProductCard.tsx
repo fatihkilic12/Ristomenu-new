@@ -107,8 +107,8 @@ export default memo(function ProductCard({ product, onClick, cartCount = 0 }: Pr
         </div>
       ) : (
         <div className="w-full aspect-[4/3] bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center shrink-0 relative">
-          {company?.img ? (
-            <img src={company.img} alt="" className="w-12 h-12 rounded-xl object-cover opacity-20" />
+          {branding.logo ? (
+            <img src={branding.logo} alt="" className="w-12 h-12 rounded-xl object-cover opacity-20" />
           ) : (
             <span className="text-3xl opacity-10">🍽</span>
           )}

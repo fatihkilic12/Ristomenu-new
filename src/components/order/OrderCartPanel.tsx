@@ -1,6 +1,13 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
 import { useCart } from '@/context/CartContext';
 import { DELIVERY, PICKUP, EURO } from '@/config/constants';
+import { isChannelPaused } from '@/lib/pause';
+import { getEffectiveMinOrder } from '@/lib/minOrder';
+import { getPreOrderSlots } from '@/actions/store';
+import PauseBanner from '@/components/shared/PauseBanner';
+import PreOrderSlotModal from '@/components/order/PreOrderSlotModal';
 
 type Props = {
   menu: Record<string, any> | null;
@@ -10,6 +17,8 @@ type Props = {
   onChangeType: (t: string) => void;
   onEdit: (item: any) => void;
   onConfirm: () => void;
+  /** When provided, the cart panel uses this slug to fetch pre-order slots. */
+  storeSlug?: string;
 };
 
 function getItemPrice(item: any, menu: any): number {
@@ -27,19 +36,52 @@ function getItemPrice(item: any, menu: any): number {
 }
 
 export default function OrderCartPanel({
-  menu, storeConfig, effectiveType, bothActive, onChangeType, onEdit, onConfirm,
+  menu, storeConfig, effectiveType, bothActive, onChangeType, onEdit, onConfirm, storeSlug,
 }: Props) {
-  const { cart, deleteFromCart, updateCart, itemCount } = useCart();
-  const { t } = useTranslation();
+  const { cart, deleteFromCart, updateCart, itemCount, desiredTime, setDesiredTime } = useCart();
+  const { t, i18n } = useTranslation();
+  // Modal-open flag. Both the "Order for later?" link and the closed-store
+  // CTA route through this. We never auto-open: the customer always taps to
+  // schedule (matches the Deliveroo/UberEats pattern).
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  // Fetch slots here too, scoped to the same query key the picker uses, so the
+  // CTA can react to `currently_open` without waiting for the picker to mount.
+  // (When `storeSlug` is missing — e.g. dine-in cart panel — we skip.)
+  const isPreorderChannel = effectiveType === DELIVERY || effectiveType === PICKUP;
+  const { data: slotsData } = useQuery({
+    queryKey: ['preorder-slots', storeSlug, effectiveType],
+    queryFn: () => getPreOrderSlots(storeSlug!, effectiveType as 'delivery' | 'pickup', 7),
+    enabled: !!storeSlug && isPreorderChannel,
+    refetchInterval: 120_000,
+    staleTime: 60_000,
+  });
+  const currentlyOpenForChannel = slotsData?.currently_open;
+  // "Channel currently closed" → store the customer must pick a future time.
+  // Note: we treat `undefined` (still loading) as "open" to avoid flashing the
+  // closed UI on first paint.
+  const channelClosed = isPreorderChannel && currentlyOpenForChannel === false;
 
   const subtotal = cart.reduce((sum, item) => sum + getItemPrice(item, menu), 0);
   const isDelivery = effectiveType === DELIVERY;
   const ds = storeConfig?.delivery_settings;
   const ps = storeConfig?.pickup_settings;
   const deliveryFee = isDelivery ? (ds?.default_delivery_fee || 0) : 0;
-  const minOrder = isDelivery ? (ds?.min_order_value || 0) : 0;
+  // Cart panel doesn't yet know the customer's postal code — that's collected
+  // on the CheckoutPage — so we fall back to the channel default here. The
+  // CheckoutPage re-runs this with the typed postal_code and a region match
+  // can lower (or raise) the threshold there.
+  // TODO(regions): once postal_code is collected earlier (e.g. on landing),
+  // pass it as the 4th arg so the cart panel reflects the per-region minimum.
+  const minOrder = getEffectiveMinOrder(effectiveType, ds, storeConfig?.regions);
   const total = subtotal + deliveryFee;
   const belowMin = isDelivery && minOrder > 0 && subtotal < minOrder;
+  const deliveryPaused = isChannelPaused(ds);
+  const pickupPaused = isChannelPaused(ps);
+  // Block the "Checkout" CTA if the currently selected channel is paused.
+  // The actual order-create POST also rejects this server-side, but cutting
+  // it off here avoids the round-trip and a confusing 400.
+  const currentChannelPaused = isDelivery ? deliveryPaused : pickupPaused;
 
   const change = (item: any, delta: number) => {
     const q = item.quantity + delta;
@@ -66,6 +108,8 @@ export default function OrderCartPanel({
               icon="🚴"
               label={t('common.delivery', 'Delivery')}
               eta={ds ? `${ds.duration_min || 20}-${ds.duration_max || 45} min` : ''}
+              disabled={deliveryPaused}
+              disabledLabel={t('pause.unavailable_short', 'Tijdelijk niet beschikbaar')}
             />
             <ToggleButton
               active={effectiveType === PICKUP}
@@ -73,6 +117,8 @@ export default function OrderCartPanel({
               icon="🛍️"
               label={t('common.pickup', 'Pickup')}
               eta={ps ? `±${ps.duration || 20} min` : ''}
+              disabled={pickupPaused}
+              disabledLabel={t('pause.unavailable_short', 'Tijdelijk niet beschikbaar')}
             />
           </div>
         </div>
@@ -96,6 +142,18 @@ export default function OrderCartPanel({
                   : ''}
             </p>
           </div>
+        </div>
+      )}
+
+      {/* Pause notice — compact variant inside the panel */}
+      {currentChannelPaused && (
+        <div className="px-5 pb-3">
+          <PauseBanner
+            orderType={effectiveType}
+            deliverySettings={ds}
+            pickupSettings={ps}
+            variant="compact"
+          />
         </div>
       )}
 
@@ -192,59 +250,199 @@ export default function OrderCartPanel({
             <span>{EURO}{(total / 100).toFixed(2)}</span>
           </div>
           {belowMin && (
-            <p className="text-xs text-orange-300 mt-2">
-              {t('restaurants.cart.minimum_alert.text', {
-                company: storeConfig?.name,
-                price: `${EURO}${(minOrder / 100).toFixed(2)}`,
-                rest: `${EURO}${((minOrder - subtotal) / 100).toFixed(2)}`,
-                defaultValue: `Minimum order ${EURO}${(minOrder / 100).toFixed(2)}, you need ${EURO}${((minOrder - subtotal) / 100).toFixed(2)} more.`,
+            <p
+              role="alert"
+              className="text-xs font-medium text-red-600 dark:text-red-300 mt-2"
+            >
+              {t('checkout.min_order.short', {
+                min: `${EURO}${(minOrder / 100).toFixed(2)}`,
+                missing: `${EURO}${((minOrder - subtotal) / 100).toFixed(2)}`,
+                defaultValue: `Minimum order value is ${EURO}${(minOrder / 100).toFixed(2)} — add ${EURO}${((minOrder - subtotal) / 100).toFixed(2)} more.`,
               })}
             </p>
           )}
         </div>
       )}
 
-      {/* Submit */}
+      {/* Scheduled-slot confirmation badge — shows when a future time has
+          been committed. The customer can tap "Change time" to re-open the
+          modal, or tap "ASAP" (when the store is open) to revert. */}
+      {desiredTime && cart.length > 0 && (
+        <div className="px-5 pb-2">
+          <div className="p-3 rounded-xl bg-[var(--color-accent)]/10 border border-[var(--color-accent)]/30 text-sm">
+            <p className="font-semibold text-[var(--color-text)]">
+              {isDelivery
+                ? t('preorder.scheduled_delivery', 'For delivery at {{label}}', {
+                    label: formatSlotInline(desiredTime, i18n.language, t),
+                  })
+                : t('preorder.scheduled_pickup', 'For pickup at {{label}}', {
+                    label: formatSlotInline(desiredTime, i18n.language, t),
+                  })}
+            </p>
+            <div className="flex items-center gap-3 mt-1">
+              <button
+                type="button"
+                onClick={() => setPickerOpen(true)}
+                className="text-xs text-[var(--color-muted)] hover:text-[var(--color-text)] underline"
+              >
+                {t('preorder.change', 'Change time')}
+              </button>
+              {/* Only allow reverting to ASAP when the store is open — when
+                  closed, "ASAP" isn't a valid choice. */}
+              {!channelClosed && (
+                <button
+                  type="button"
+                  onClick={() => setDesiredTime(null)}
+                  className="text-xs text-[var(--color-muted)] hover:text-[var(--color-text)] underline"
+                >
+                  {t('preorder.cancel_later', 'Cancel — order ASAP instead')}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* "Order for later?" link — visible only when the store is open and no
+          slot is already committed. Closed-store flow goes through the CTA
+          itself (see disabled "Pick a time to continue" below). */}
+      {storeSlug && isPreorderChannel && !channelClosed && !desiredTime && cart.length > 0 && (
+        <div className="px-5 pb-1">
+          <button
+            type="button"
+            onClick={() => setPickerOpen(true)}
+            className="w-full text-sm font-semibold text-[var(--color-accent)] hover:underline py-2"
+          >
+            {t('preorder.order_for_later', 'Order for later?')}
+          </button>
+        </div>
+      )}
+
+      {/* Submit. When below-min, the button is disabled AND aria-disabled so
+          screen readers + the inline warning above tell the same story. The
+          short label "Min. €X — add €Y" replaces the normal "Checkout · N
+          items" CTA so the reason is visible on the button itself.
+          When the store is closed for this channel the CTA flips to "Order
+          for later" until a slot is picked. */}
       <div className="px-5 pb-5 pt-4">
         <button
           type="button"
-          onClick={onConfirm}
-          disabled={cart.length === 0 || belowMin}
-          className="w-full h-12 rounded-xl font-bold text-base bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          onClick={() => {
+            // Closed-store flow: the CTA doubles as "open the slot modal" until
+            // the customer has picked a future time. Once a slot is in
+            // desiredTime we resume normal checkout.
+            if (channelClosed && !desiredTime && isPreorderChannel && storeSlug) {
+              setPickerOpen(true);
+              return;
+            }
+            onConfirm();
+          }}
+          disabled={
+            cart.length === 0 ||
+            belowMin ||
+            currentChannelPaused
+          }
+          aria-disabled={
+            cart.length === 0 ||
+            belowMin ||
+            currentChannelPaused ||
+            undefined
+          }
+          className="w-full h-12 rounded-xl font-bold text-base bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:grayscale flex items-center justify-center gap-2"
         >
-          {cart.length === 0
-            ? t('checkout.empty', 'Add items to start')
-            : <>
-                <span>{t('checkout.go_to_checkout', 'Checkout')}</span>
-                <span className="opacity-70">·</span>
-                <span>{itemCount} {itemCount === 1 ? t('common.item', 'item') : t('common.items', 'items')}</span>
-              </>
+          {currentChannelPaused
+            ? t('pause.unavailable_short', 'Tijdelijk niet beschikbaar')
+            : cart.length === 0
+              ? t('checkout.empty', 'Add items to start')
+              : belowMin
+                ? t('checkout.min_order.cta', {
+                    min: `${EURO}${(minOrder / 100).toFixed(2)}`,
+                    missing: `${EURO}${((minOrder - subtotal) / 100).toFixed(2)}`,
+                    defaultValue: `Min. ${EURO}${(minOrder / 100).toFixed(2)} — add ${EURO}${((minOrder - subtotal) / 100).toFixed(2)}`,
+                  })
+                : channelClosed && !desiredTime
+                  ? t('preorder.cta_pick_time', 'Pick a time to continue')
+                  : <>
+                      <span>{t('checkout.go_to_checkout', 'Checkout')}</span>
+                      <span className="opacity-70">·</span>
+                      <span>{itemCount} {itemCount === 1 ? t('common.item', 'item') : t('common.items', 'items')}</span>
+                    </>
           }
         </button>
       </div>
+
+      {/* Slot picker modal. Mounted once, controlled by `pickerOpen`. We force
+          `required` whenever the channel is closed — that hides the close X
+          and the backdrop-dismiss so the user has to commit to a slot or
+          change channel/cart. */}
+      {storeSlug && isPreorderChannel && (
+        <PreOrderSlotModal
+          open={pickerOpen}
+          onClose={() => setPickerOpen(false)}
+          orderType={effectiveType as 'delivery' | 'pickup'}
+          storeSlug={storeSlug}
+          required={channelClosed}
+          value={desiredTime}
+          onChange={iso => setDesiredTime(iso)}
+        />
+      )}
     </aside>
   );
 }
 
-function ToggleButton({ active, onClick, icon, label, eta }: {
-  active: boolean; onClick: () => void; icon: string; label: string; eta: string;
+// Short representation of the desired-time ISO for in-line copy. Reuses the
+// device locale so the formatting matches the customer's typical clock. We
+// keep this dumb on purpose — anything richer (e.g. "Tomorrow at 13:00")
+// would re-implement the day-grouping logic that already lives in the picker.
+function formatSlotInline(iso: string, locale: string, t: (k: string, def: string) => string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  const today = new Date();
+  const sameDay =
+    d.getFullYear() === today.getFullYear() &&
+    d.getMonth() === today.getMonth() &&
+    d.getDate() === today.getDate();
+  try {
+    const time = d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+    if (sameDay) return `${t('preorder.today', 'Today')} ${time}`;
+    const day = d.toLocaleDateString(locale, { day: '2-digit', month: 'short' });
+    return `${day} ${time}`;
+  } catch {
+    return iso;
+  }
+}
+
+function ToggleButton({ active, onClick, icon, label, eta, disabled, disabledLabel }: {
+  active: boolean;
+  onClick: () => void;
+  icon: string;
+  label: string;
+  eta: string;
+  disabled?: boolean;
+  disabledLabel?: string;
 }) {
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
+      aria-disabled={disabled || undefined}
       className={`relative flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-all ${
-        active
-          ? 'bg-[var(--color-bg)] ring-1 ring-[var(--color-accent)]'
-          : 'bg-transparent hover:bg-white/5'
+        disabled
+          ? 'bg-transparent opacity-50 cursor-not-allowed'
+          : active
+            ? 'bg-[var(--color-bg)] ring-1 ring-[var(--color-accent)]'
+            : 'bg-transparent hover:bg-white/5'
       }`}
     >
       <span className="text-lg" aria-hidden>{icon}</span>
-      <span className="text-left">
-        <span className={`block text-sm font-bold leading-tight ${active ? 'text-[var(--color-accent)]' : 'text-[var(--color-text)]'}`}>
+      <span className="text-left min-w-0">
+        <span className={`block text-sm font-bold leading-tight ${active && !disabled ? 'text-[var(--color-accent)]' : 'text-[var(--color-text)]'}`}>
           {label}
         </span>
-        {eta && (
+        {disabled ? (
+          <span className="block text-[11px] leading-tight text-orange-500 mt-0.5 truncate">{disabledLabel}</span>
+        ) : eta && (
           <span className="block text-[11px] leading-tight text-[var(--color-muted)] mt-0.5">{eta}</span>
         )}
       </span>

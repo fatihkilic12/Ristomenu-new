@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { getDeliveryMenu } from '@/actions/store';
 import { CartProvider, useCart } from '@/context/CartContext';
+// (we use useCart below to clear desired_time when the channel toggles)
 import { StoreConfigProvider, useStoreConfig } from '@/context/StoreConfigContext';
 import { DELIVERY, PICKUP, EURO } from '@/config/constants';
 import { COMPANY_CHECKOUT } from '@/config/paths';
@@ -11,6 +12,7 @@ import { collectMenuImageUrls, precacheImages } from '@/lib/imageCache';
 import { getBranding } from '@/lib/branding';
 import LanguageSelector from '@/components/shared/LanguageSelector';
 import StoreFooter from '@/components/shared/StoreFooter';
+import PauseBanner from '@/components/shared/PauseBanner';
 import OrderMenuView, { triggerOrderEditItem } from '@/components/order/OrderMenuView';
 import OrderCartPanel from '@/components/order/OrderCartPanel';
 
@@ -32,6 +34,16 @@ function OrderContent() {
       ? DELIVERY
       : (supportsDelivery ? DELIVERY : PICKUP);
   const [orderType, setOrderType] = useState(initialType);
+
+  // When the customer switches channel, any previously-picked desired_time
+  // becomes invalid (slot windows differ per channel) — clear it so they
+  // re-pick. We pull setDesiredTime via useCart so we don't have to thread
+  // a prop through OrderCartPanel.
+  const { setDesiredTime } = useCart();
+  const handleChangeType = (next: string) => {
+    if (next !== orderType) setDesiredTime(null);
+    setOrderType(next);
+  };
 
   // Theme mode (dark/light) — opt-in dark mode via the toggle button.
   // Default is light; we deliberately do NOT read prefers-color-scheme so
@@ -179,6 +191,17 @@ function OrderContent() {
             </div>
           )}
 
+          {/* Pause banner — only renders when the currently selected channel
+              is paused server-side. Trust `is_paused` from the API; don't
+              re-run the clock-compare on the client. */}
+          <div className="px-4 sm:px-6 pt-4">
+            <PauseBanner
+              orderType={effectiveType}
+              deliverySettings={ds}
+              pickupSettings={ps}
+            />
+          </div>
+
           {/* Restaurant info */}
           <div className={`px-4 sm:px-6 pb-2 ${hasBanner ? 'pt-6' : 'pt-6'}`}>
             {/* Prominent order-mode label — always visible so users know if they're
@@ -244,9 +267,10 @@ function OrderContent() {
             storeConfig={company}
             effectiveType={effectiveType}
             bothActive={bothActive}
-            onChangeType={setOrderType}
+            onChangeType={handleChangeType}
             onEdit={triggerOrderEditItem}
             onConfirm={handleConfirm}
+            storeSlug={storeId}
           />
         </div>
       </div>
@@ -255,12 +279,13 @@ function OrderContent() {
       <MobileCartBar
         effectiveType={effectiveType}
         bothActive={bothActive}
-        onChangeType={setOrderType}
+        onChangeType={handleChangeType}
         onConfirm={handleConfirm}
         ds={ds}
         ps={ps}
         storeConfig={company}
         menu={menu}
+        storeSlug={storeId}
       />
 
       <StoreFooter />
@@ -269,11 +294,12 @@ function OrderContent() {
 }
 
 function BrandContent({ company }: { company: any }) {
+  const logo = getBranding(company).logo;
   return (
     <>
-      {company?.img ? (
+      {logo ? (
         <img
-          src={company.img}
+          src={logo}
           alt=""
           className="w-9 h-9 rounded-lg object-cover ring-1 ring-black/10"
         />
@@ -313,9 +339,9 @@ function Badge({ children, color, icon }: { children: React.ReactNode; color?: '
 }
 
 /* ─── Mobile cart bar ─────────────────────────────────────── */
-function MobileCartBar({ effectiveType, bothActive, onChangeType, onConfirm, ds, ps, storeConfig, menu }: {
+function MobileCartBar({ effectiveType, bothActive, onChangeType, onConfirm, ds, ps, storeConfig, menu, storeSlug }: {
   effectiveType: string; bothActive: boolean; onChangeType: (t: string) => void; onConfirm: () => void;
-  ds: any; ps: any; storeConfig: any; menu: any;
+  ds: any; ps: any; storeConfig: any; menu: any; storeSlug?: string;
 }) {
   const { cart, itemCount } = useCart();
   const { t } = useTranslation();
@@ -352,6 +378,7 @@ function MobileCartBar({ effectiveType, bothActive, onChangeType, onConfirm, ds,
               onChangeType={onChangeType}
               onEdit={triggerOrderEditItem}
               onConfirm={() => { setOpen(false); onConfirm(); }}
+              storeSlug={storeSlug}
             />
           </div>
         </div>

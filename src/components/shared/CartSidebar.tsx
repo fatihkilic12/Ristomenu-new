@@ -4,6 +4,7 @@ import { useStoreConfig } from '@/context/StoreConfigContext';
 import { useTranslation } from 'react-i18next';
 import { EURO } from '@/config/constants';
 import { getBranding } from '@/lib/branding';
+import CartUpsellRail from '@/components/order/CartUpsellRail';
 
 type Props = {
   menu: Record<string, any> | null;
@@ -75,6 +76,11 @@ export default function CartSidebar({ menu, onEdit, onConfirm }: Props) {
           </div>
         ))}
       </div>
+
+      {/* Upsell suggestions — hidden when the cart is empty (handled inside
+          the component since suggestions also disappear once everything is
+          already in the cart). */}
+      {cart.length > 0 && <CartUpsellRail menu={menu}/>}
 
       {/* Note */}
       {allow_notes && (
