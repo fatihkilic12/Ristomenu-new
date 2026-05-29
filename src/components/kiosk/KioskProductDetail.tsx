@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EURO, ADD, EDIT, IMAGE_ADDRESS, IMAGE_SERVER_ADDRESS } from '@/config/constants';
 import { useCart } from '@/context/CartContext';
+import KioskMealBuilder from '@/components/kiosk/KioskMealBuilder';
 
 const FALLBACK_GRADIENTS = [
   'from-amber-100 via-orange-50 to-rose-100',
@@ -32,6 +33,16 @@ type Props = {
 
 export default function KioskProductDetail({ params, showAllergens = true, allowNotes = true, onClose }: Props) {
   const { product, options, mode, item } = params;
+
+  // McDonald's-style meal-builder: when the operator has flagged the
+  // product as a combo AND there's at least one option group to walk
+  // through, hand off to the dedicated wizard. The shared params type
+  // and onClose signature mean KioskPage doesn't need to know which
+  // surface is rendering — the post-add upsell flow still fires.
+  if (product?.is_combo && Array.isArray(options) && options.length > 0) {
+    return <KioskMealBuilder params={params} onClose={onClose}/>;
+  }
+
   const { addToCart, updateCart } = useCart();
   const { t } = useTranslation();
   const [showError, setShowError] = useState(false);
