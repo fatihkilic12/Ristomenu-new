@@ -11,6 +11,12 @@
 // `menu_settings.header_color` / `settings.header_color` / top-level `img`)
 // are no longer consulted — the backend dropped them from the response.
 
+// Server-side enum mirror — keep in sync with
+// StorefrontSettings.MenuLayout. Unknown values fall back to 'classic'
+// at read time so a future server release with a new variant doesn't
+// crash older storefront builds.
+export type MenuLayout = 'classic' | 'compact' | 'luxe';
+
 export type Branding = {
   primary_color:    string | null;
   secondary_color:  string | null;
@@ -21,6 +27,7 @@ export type Branding = {
   banner_image:     string | null;
   welcome_message:  string | null;
   footer_text:      string | null;
+  menu_layout:      MenuLayout;
   show_allergens:        boolean;
   show_product_images:   boolean;
   allow_notes:           boolean;
@@ -39,6 +46,7 @@ const DEFAULT_BRANDING: Branding = {
   banner_image: null,
   welcome_message: null,
   footer_text: null,
+  menu_layout: 'classic',
   show_allergens: true,
   show_product_images: true,
   allow_notes: true,
@@ -46,6 +54,11 @@ const DEFAULT_BRANDING: Branding = {
   instagram_url: null,
   facebook_url: null,
 };
+
+const VALID_LAYOUTS: ReadonlySet<MenuLayout> = new Set(['classic', 'compact', 'luxe']);
+function normalizeLayout(v: any): MenuLayout {
+  return typeof v === 'string' && VALID_LAYOUTS.has(v as MenuLayout) ? (v as MenuLayout) : 'classic';
+}
 
 export function getBranding(company: any): Branding {
   if (!company) return DEFAULT_BRANDING;
@@ -65,6 +78,7 @@ export function getBranding(company: any): Branding {
     banner_image:     pick(b.banner_image),
     welcome_message:  pick(b.welcome_message),
     footer_text:      pick(b.footer_text),
+    menu_layout:      normalizeLayout(b.menu_layout),
     show_allergens:        flag(DEFAULT_BRANDING.show_allergens,      b.show_allergens),
     show_product_images:   flag(DEFAULT_BRANDING.show_product_images, b.show_product_images),
     allow_notes:           flag(DEFAULT_BRANDING.allow_notes,         b.allow_notes),

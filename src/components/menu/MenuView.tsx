@@ -2,9 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useStoreConfig } from '@/context/StoreConfigContext';
 import { getDineInPause } from '@/lib/dineIn';
+import { getBranding } from '@/lib/branding';
 import { ADD, EDIT } from '@/config/constants';
 import CategoryNav from '@/components/shared/CategoryNav';
 import ProductCard from '@/components/shared/ProductCard';
+import CompactProductCard from '@/components/shared/CompactProductCard';
 import CartSidebar from '@/components/shared/CartSidebar';
 import CartMobileBar from '@/components/shared/CartMobileBar';
 import DineInPausedBanner from '@/components/shared/DineInPausedBanner';
@@ -24,6 +26,11 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
   // itself stays fully browsable so customers at the table can still read
   // descriptions and allergens while they wait.
   const { paused: dineInPaused } = getDineInPause(company);
+  // Per-store layout variant — operator picks in Portal → Storefront →
+  // Menu-layout. 'classic' is the existing grid; 'compact' is the
+  // dense list for high-item-count menus; 'luxe' adds paper texture +
+  // serif typography for fine-dining.
+  const layout = getBranding(company).menu_layout;
   const modalRef = useRef<OptionModalRef>(null);
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
   const categoryRefs = useRef<Record<number, HTMLDivElement | null>>({});
@@ -119,10 +126,37 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
     );
   }
 
+  // 'luxe' wraps the whole menu area in a paper-textured background
+  // and switches the body font to a serif. The SVG noise is inline so
+  // we don't ship an asset; the operator's primary brand colour still
+  // drives accents (buttons, active states) — luxe only changes the
+  // ambient typography + paper feel, not the brand identity.
+  const isLuxe = layout === 'luxe';
+  const isCompact = layout === 'compact';
+
   return (
     <>
       <DineInPausedBanner/>
-      <div className="flex overflow-x-clip">
+      {isLuxe && (
+        <style>{`
+          .luxe-menu {
+            font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
+            background-color: #f7f1e6;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.42 0 0 0 0 0.32 0 0 0 0 0.18 0 0 0 0.07 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+            background-repeat: repeat;
+          }
+          .luxe-menu h2 {
+            font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            color: #2c1810;
+            font-size: 1.75rem;
+            border-bottom: 1px solid rgba(60, 38, 22, 0.18);
+            padding-bottom: 6px;
+          }
+        `}</style>
+      )}
+      <div className={`flex overflow-x-clip ${isLuxe ? 'luxe-menu' : ''}`}>
         {/* Main content */}
         <div className="flex-1 min-w-0">
           <CategoryNav categories={categories} activeId={activeCategory} onSelect={scrollToCategory} />
@@ -136,19 +170,41 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
                   key={cat.id}
                   ref={el => { categoryRefs.current[cat.id] = el; }}
                   data-category={cat.id}
-                  className="mb-6 scroll-mt-36"
+                  className={isCompact ? 'mb-4 scroll-mt-36' : 'mb-6 scroll-mt-36'}
                 >
-                  <h2 className="text-lg font-bold mb-3 px-1">{cat.name}</h2>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {catProducts.map((product: Record<string, any>) => (
-                      <ProductCard
-                        key={product.id}
-                        product={product}
-                        onClick={() => onProductClick(product)}
-                        cartCount={getCartCount(product.id)}
-                      />
-                    ))}
-                  </div>
+                  <h2 className={isCompact ? 'text-base font-bold mb-2 px-1' : 'text-lg font-bold mb-3 px-1'}>
+                    {cat.name}
+                  </h2>
+                  {isCompact ? (
+                    // List-style: products stack vertically; image
+                    // becomes a small thumbnail. Each row is its own
+                    // tap-target with a divider line — denser scan than
+                    // the classic 2/3-col grid.
+                    <div className="rounded-lg overflow-hidden border border-[var(--color-border)] bg-white">
+                      {catProducts.map((product: Record<string, any>) => (
+                        <CompactProductCard
+                          key={product.id}
+                          product={product}
+                          onClick={() => onProductClick(product)}
+                          cartCount={getCartCount(product.id)}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    // Classic + Luxe both use the same grid + ProductCard.
+                    // Luxe gets its serif/paper feel from the wrapper +
+                    // styles above; the cards themselves stay clean.
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {catProducts.map((product: Record<string, any>) => (
+                        <ProductCard
+                          key={product.id}
+                          product={product}
+                          onClick={() => onProductClick(product)}
+                          cartCount={getCartCount(product.id)}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
               );
             })}

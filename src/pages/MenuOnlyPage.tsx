@@ -11,6 +11,7 @@ import LanguageSelector from '@/components/shared/LanguageSelector';
 import StoreFooter from '@/components/shared/StoreFooter';
 import CategoryNav from '@/components/shared/CategoryNav';
 import ProductCard from '@/components/shared/ProductCard';
+import CompactProductCard from '@/components/shared/CompactProductCard';
 
 function safeHostname(url: string): string | null {
   try {
@@ -156,35 +157,82 @@ function MenuOnlyContent() {
           <div className="w-8 h-8 border-2 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
         </div>
       ) : (
-        <>
-          <CategoryNav categories={categories} activeId={activeCategory} onSelect={scrollToCategory} />
+        // Variants are decided per-store in Portal → Storefront → Menu-layout.
+        // Same three options as the orderable dine-in view:
+        //   classic — photo-first grid (default)
+        //   compact — list rows for menus with many items
+        //   luxe    — paper-textured wrapper + serif type for fine-dining
+        (() => {
+          const layout = branding.menu_layout;
+          const isLuxe = layout === 'luxe';
+          const isCompact = layout === 'compact';
+          return (
+            <>
+              {isLuxe && (
+                <style>{`
+                  .luxe-menu {
+                    font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
+                    background-color: #f7f1e6;
+                    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.42 0 0 0 0 0.32 0 0 0 0 0.18 0 0 0 0.07 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+                    background-repeat: repeat;
+                  }
+                  .luxe-menu h2 {
+                    font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
+                    font-weight: 600;
+                    letter-spacing: 0.02em;
+                    color: #2c1810;
+                    font-size: 1.75rem;
+                    border-bottom: 1px solid rgba(60, 38, 22, 0.18);
+                    padding-bottom: 6px;
+                  }
+                `}</style>
+              )}
+              <div className={isLuxe ? 'luxe-menu' : ''}>
+                <CategoryNav categories={categories} activeId={activeCategory} onSelect={scrollToCategory} />
 
-          <div className="px-3 py-4">
-            {categories.map((cat: Record<string, any>) => {
-              const catProducts = products.filter((p: any) => p.category === cat.id);
-              if (catProducts.length === 0) return null;
-              return (
-                <div
-                  key={cat.id}
-                  ref={el => { categoryRefs.current[cat.id] = el; }}
-                  data-category={cat.id}
-                  className="mb-6 scroll-mt-36"
-                >
-                  <h2 className="text-lg font-bold mb-3 px-1 capitalize">{cat.name}</h2>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {catProducts.map((product: Record<string, any>) => (
-                      <ProductCard
-                        key={product.id}
-                        product={product}
-                        onClick={() => setOpenProduct(product)}
-                      />
-                    ))}
-                  </div>
+                <div className="px-3 py-4">
+                  {categories.map((cat: Record<string, any>) => {
+                    const catProducts = products.filter((p: any) => p.category === cat.id);
+                    if (catProducts.length === 0) return null;
+                    return (
+                      <div
+                        key={cat.id}
+                        ref={el => { categoryRefs.current[cat.id] = el; }}
+                        data-category={cat.id}
+                        className={isCompact ? 'mb-4 scroll-mt-36' : 'mb-6 scroll-mt-36'}
+                      >
+                        <h2 className={isCompact ? 'text-base font-bold mb-2 px-1 capitalize' : 'text-lg font-bold mb-3 px-1 capitalize'}>
+                          {cat.name}
+                        </h2>
+                        {isCompact ? (
+                          <div className="rounded-lg overflow-hidden border border-[var(--color-border)] bg-white">
+                            {catProducts.map((product: Record<string, any>) => (
+                              <CompactProductCard
+                                key={product.id}
+                                product={product}
+                                onClick={() => setOpenProduct(product)}
+                              />
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            {catProducts.map((product: Record<string, any>) => (
+                              <ProductCard
+                                key={product.id}
+                                product={product}
+                                onClick={() => setOpenProduct(product)}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
-          </div>
-        </>
+              </div>
+            </>
+          );
+        })()
       )}
 
       {/* Read-only product modal */}
