@@ -39,6 +39,11 @@ export default function App() {
           <Route path="/company/:storeId/order/track/:secretKey" element={<OrderTrackingPage />} />
           {/* Static `menu` route must come before the dynamic `:table` catch-all */}
           <Route path="/company/:storeId/menu" element={<MenuOnlyPage />} />
+          {/* TabletMenuApp's "Disable Order" switch points at this path —
+              treat it as the same browse-only surface as /menu so wall-
+              mounted tablets and permanent-display devices both work
+              without a separate page. */}
+          <Route path="/company/:storeId/tablet" element={<MenuOnlyPage />} />
           <Route path="/company/:storeId/:table" element={<DineInPage />} />
           <Route path="*" element={<div className="flex items-center justify-center h-screen text-xl text-gray-400">Not Found</div>} />
         </Routes>
