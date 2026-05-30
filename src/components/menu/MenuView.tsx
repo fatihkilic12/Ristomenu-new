@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useCart } from '@/context/CartContext';
+import { useStoreConfig } from '@/context/StoreConfigContext';
+import { getDineInPause } from '@/lib/dineIn';
 import { ADD, EDIT } from '@/config/constants';
 import CategoryNav from '@/components/shared/CategoryNav';
 import ProductCard from '@/components/shared/ProductCard';
 import CartSidebar from '@/components/shared/CartSidebar';
 import CartMobileBar from '@/components/shared/CartMobileBar';
+import DineInPausedBanner from '@/components/shared/DineInPausedBanner';
 import OptionModal, { type OptionModalRef } from '@/components/shared/OptionModal';
 
 type Props = {
@@ -15,6 +18,12 @@ type Props = {
 
 export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
   const { cart } = useCart();
+  const { company } = useStoreConfig();
+  // When the operator hits "Pauzeer dine-in" on the Portal home, the cart
+  // surfaces hide and product tiles drop into read-only mode. The menu
+  // itself stays fully browsable so customers at the table can still read
+  // descriptions and allergens while they wait.
+  const { paused: dineInPaused } = getDineInPause(company);
   const modalRef = useRef<OptionModalRef>(null);
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
   const categoryRefs = useRef<Record<number, HTMLDivElement | null>>({});
@@ -89,6 +98,10 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
   };
 
   const onProductClick = (product: Record<string, any>) => {
+    // While paused, tapping a tile is a no-op — the product modal would
+    // surface an "Add to cart" CTA that can't actually do anything.
+    // Banner is already visible up top so the customer knows why.
+    if (dineInPaused) return;
     const productOptions = getProductOptions(product);
     modalRef.current?.openModal({ product, options: productOptions, mode: ADD, item: null });
   };
@@ -108,6 +121,7 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
 
   return (
     <>
+      <DineInPausedBanner/>
       <div className="flex overflow-x-clip">
         {/* Main content */}
         <div className="flex-1 min-w-0">
@@ -141,14 +155,19 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
           </div>
         </div>
 
-        {/* Desktop cart sidebar */}
-        <div className="hidden lg:block w-72 shrink-0 sticky top-14 h-[calc(100dvh-3.5rem)] border-l border-[var(--color-border)]">
-          <CartSidebar menu={menu} onEdit={onProductEditClick} onConfirm={onOrderConfirm} />
-        </div>
+        {/* Desktop cart sidebar — hidden while dine-in is paused so customers
+            can't even start a doomed order. */}
+        {!dineInPaused && (
+          <div className="hidden lg:block w-72 shrink-0 sticky top-14 h-[calc(100dvh-3.5rem)] border-l border-[var(--color-border)]">
+            <CartSidebar menu={menu} onEdit={onProductEditClick} onConfirm={onOrderConfirm} />
+          </div>
+        )}
       </div>
 
-      {/* Mobile cart bar */}
-      <CartMobileBar menu={menu} onEdit={onProductEditClick} onConfirm={onOrderConfirm} />
+      {/* Mobile cart bar — same guard as the sidebar above. */}
+      {!dineInPaused && (
+        <CartMobileBar menu={menu} onEdit={onProductEditClick} onConfirm={onOrderConfirm} />
+      )}
 
       {/* Option modal */}
       <OptionModal ref={modalRef} />
