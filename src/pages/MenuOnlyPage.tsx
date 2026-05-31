@@ -169,10 +169,24 @@ function MenuOnlyContent() {
         //   classic — photo-first grid (default)
         //   compact — list rows for menus with many items
         //   luxe    — paper-textured wrapper + serif type for fine-dining
+        // Plus two cross-layout knobs (mirrored from MenuView):
+        //   title_size — small/medium/large heading scale
+        //   show_category_photos — horizontal-scroll category-photo strip
         (() => {
           const layout = branding.menu_layout;
           const isLuxe = layout === 'luxe';
           const isCompact = layout === 'compact';
+          const titleSize = branding.title_size;
+          const titleSizeClass: Record<typeof titleSize, string> =
+            isCompact
+              ? {small: 'text-sm', medium: 'text-base', large: 'text-lg'}
+              : {small: 'text-base', medium: 'text-lg', large: 'text-2xl'};
+          // Static-string concat so Tailwind JIT statically picks up both classes.
+          const headingClass = `${titleSizeClass[titleSize]} font-bold ${isCompact ? 'mb-2' : 'mb-3'} px-1 capitalize`;
+          const photoCategories = categories.filter(
+            (c: Record<string, any>) => typeof c.image === 'string' && c.image,
+          );
+          const renderCategoryStrip = branding.show_category_photos && photoCategories.length > 0;
           return (
             <>
               {isLuxe && (
@@ -192,9 +206,43 @@ function MenuOnlyContent() {
                     border-bottom: 1px solid rgba(60, 38, 22, 0.18);
                     padding-bottom: 6px;
                   }
+                  /* Title-size scales the Luxe heading proportionally
+                     so the border + spacing still feel balanced. */
+                  .luxe-menu[data-title-size='small'] h2 { font-size: 1.4rem; }
+                  .luxe-menu[data-title-size='large'] h2 { font-size: 2.2rem; }
                 `}</style>
               )}
-              <div className={isLuxe ? 'luxe-menu' : ''}>
+              <div className={isLuxe ? 'luxe-menu' : ''} data-title-size={titleSize}>
+                {renderCategoryStrip && (
+                  // Horizontal, swipe-scrollable rail of category-photo
+                  // tiles. Tap a tile → scrollToCategory jumps to the
+                  // matching section. Same component shape as the dine-in
+                  // build in MenuView.
+                  <div className="px-3 pt-3 pb-1">
+                    <div className="flex gap-3 overflow-x-auto scrollbar-none -mx-3 px-3 pb-1">
+                      {photoCategories.map((cat: Record<string, any>) => (
+                        <button
+                          key={cat.id}
+                          onClick={() => scrollToCategory(cat.id)}
+                          className="flex-shrink-0 w-24 group"
+                          aria-label={cat.name}
+                        >
+                          <div className="w-24 h-24 rounded-xl overflow-hidden bg-gray-100 border border-[var(--color-border)]">
+                            <img
+                              src={cat.image}
+                              alt=""
+                              className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                              loading="lazy"
+                            />
+                          </div>
+                          <div className="mt-1.5 text-xs font-medium text-center text-[var(--color-text)] line-clamp-2 leading-tight">
+                            {cat.name}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <CategoryNav categories={categories} activeId={activeCategory} onSelect={scrollToCategory} />
 
                 <div className="px-3 py-4">
@@ -208,7 +256,7 @@ function MenuOnlyContent() {
                         data-category={cat.id}
                         className={isCompact ? 'mb-4 scroll-mt-36' : 'mb-6 scroll-mt-36'}
                       >
-                        <h2 className={isCompact ? 'text-base font-bold mb-2 px-1 capitalize' : 'text-lg font-bold mb-3 px-1 capitalize'}>
+                        <h2 className={isLuxe ? 'capitalize' : headingClass}>
                           {cat.name}
                         </h2>
                         {isCompact ? (

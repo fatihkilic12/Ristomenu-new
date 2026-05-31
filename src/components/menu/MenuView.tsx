@@ -146,17 +146,19 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
     isCompact
       ? {small: 'text-sm', medium: 'text-base', large: 'text-lg'}
       : {small: 'text-base', medium: 'text-lg', large: 'text-2xl'};
-  const headingClass = `${titleSizeClass[titleSize]} font-bold mb-${isCompact ? 2 : 3} px-1`;
+  // Static-string concat (not `mb-${n}`) so Tailwind's JIT scanner
+  // can statically extract both `mb-2` and `mb-3` from the source.
+  const headingClass = `${titleSizeClass[titleSize]} font-bold ${isCompact ? 'mb-2' : 'mb-3'} px-1`;
 
-  // Categories with a real image are the only ones that get a tile in the
-  // photo strip — half-empty rows look worse than no strip at all, so we
-  // hide the whole rail unless at least 3 categories have something to
-  // show. The operator can fill in the missing ones from the Category
-  // form (image FK).
+  // Honor the operator's explicit toggle — if they turned the strip on,
+  // show whatever photos they've uploaded so far. A previous build hid
+  // the rail until 3+ categories had photos, but that confused operators
+  // who toggled it on with 1-2 photos and saw "nothing happen". Now any
+  // category without a photo simply doesn't get a tile.
   const photoCategories = categories.filter(
     (c: Record<string, any>) => typeof c.image === 'string' && c.image,
   );
-  const renderCategoryStrip = showCategoryPhotos && photoCategories.length >= 3;
+  const renderCategoryStrip = showCategoryPhotos && photoCategories.length > 0;
 
   return (
     <>
