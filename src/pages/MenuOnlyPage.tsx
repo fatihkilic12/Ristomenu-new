@@ -7,10 +7,11 @@ import { useMenuRefresh } from '@/hooks/useMenuRefresh';
 import { StoreConfigProvider, useStoreConfig } from '@/context/StoreConfigContext';
 import { EURO, IMAGE_ADDRESS, IMAGE_SERVER_ADDRESS, PICKUP } from '@/config/constants';
 import { collectMenuImageUrls, precacheImages } from '@/lib/imageCache';
-import { getBranding, absoluteMediaUrl } from '@/lib/branding';
+import { getBranding } from '@/lib/branding';
 import LanguageSelector from '@/components/shared/LanguageSelector';
 import StoreFooter from '@/components/shared/StoreFooter';
 import CategoryNav from '@/components/shared/CategoryNav';
+import CategoryPhotoStrip from '@/components/shared/CategoryPhotoStrip';
 import ProductCard from '@/components/shared/ProductCard';
 import CompactProductCard from '@/components/shared/CompactProductCard';
 
@@ -48,11 +49,6 @@ function MenuOnlyContent() {
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
   const [openProduct, setOpenProduct] = useState<Record<string, any> | null>(null);
   const categoryRefs = useRef<Record<number, HTMLDivElement | null>>({});
-  // Photo-strip refs — mirror CategoryNav: navRef on the scrolling
-  // container, activeRef on the active tile, used by the useEffect below
-  // to keep the active tile horizontally centred.
-  const stripNavRef = useRef<HTMLDivElement | null>(null);
-  const stripActiveRef = useRef<HTMLButtonElement | null>(null);
   const programmaticScrollRef = useRef(false);
   const programmaticScrollTimer = useRef<number | null>(null);
 
@@ -86,18 +82,6 @@ function MenuOnlyContent() {
     Object.values(categoryRefs.current).forEach(el => { if (el) observer.observe(el); });
     return () => observer.disconnect();
   }, [products]);
-
-  // Centre the active category tile inside the photo strip whenever the
-  // active category changes (observer or tile-click), mirroring CategoryNav.
-  useEffect(() => {
-    const btn = stripActiveRef.current;
-    const nav = stripNavRef.current;
-    if (!btn || !nav) return;
-    const navRect = nav.getBoundingClientRect();
-    const btnRect = btn.getBoundingClientRect();
-    const scrollLeft = nav.scrollLeft + btnRect.left - navRect.left - navRect.width / 2 + btnRect.width / 2;
-    nav.scrollTo({ left: scrollLeft, behavior: 'smooth' });
-  }, [activeCategory]);
 
   const scrollToCategory = useCallback((catId: number) => {
     const el = categoryRefs.current[catId];
@@ -242,63 +226,23 @@ function MenuOnlyContent() {
                   name, description AND price. Targets data-attrs the
                   three ProductCard variants stamp on text elements. */}
               <style>{`
-                [data-menu-scale='small']  [data-product-name] { font-size: 12px; }
-                [data-menu-scale='small']  [data-product-desc] { font-size: 10px; }
-                [data-menu-scale='small']  [data-price]        { font-size: 13px; }
+                [data-menu-scale='small']  [data-product-name]   { font-size: 12px; }
+                [data-menu-scale='small']  [data-product-desc]   { font-size: 10px; }
+                [data-menu-scale='small']  [data-price]          { font-size: 13px; }
+                [data-menu-scale='small']  [data-category-label] { font-size: 11px; }
 
-                [data-menu-scale='large']  [data-product-name] { font-size: 20px; }
-                [data-menu-scale='large']  [data-product-desc] { font-size: 16px; }
-                [data-menu-scale='large']  [data-price]        { font-size: 22px; }
+                [data-menu-scale='large']  [data-product-name]   { font-size: 20px; }
+                [data-menu-scale='large']  [data-product-desc]   { font-size: 16px; }
+                [data-menu-scale='large']  [data-price]          { font-size: 22px; }
+                [data-menu-scale='large']  [data-category-label] { font-size: 15px; }
               `}</style>
               <div className={isLuxe ? 'luxe-menu' : ''} data-title-size={titleSize} data-menu-scale={titleSize}>
                 {renderCategoryStrip && (
-                  // Horizontal, swipe-scrollable rail of category-photo
-                  // tiles. Sticky like the pill nav so it stays in view
-                  // while scrolling. Tap → scrollToCategory; active tile
-                  // gets a primary ring + bolder label.
-                  <div
-                    ref={stripNavRef}
-                    className="sticky top-20 z-30 bg-white/85 backdrop-blur-xl border-b border-gray-100 overflow-x-auto scrollbar-hide"
-                  >
-                    <div className="flex gap-3 px-3 py-2.5">
-                      {photoCategories.map((cat: Record<string, any>) => {
-                        const isActive = cat.id === activeCategory;
-                        return (
-                          <button
-                            key={cat.id}
-                            ref={isActive ? stripActiveRef : null}
-                            onClick={() => scrollToCategory(cat.id)}
-                            className="flex-shrink-0 w-24 group"
-                            aria-label={cat.name}
-                          >
-                            <div
-                              className={`w-24 h-24 rounded-xl overflow-hidden bg-gray-100 transition-shadow ${
-                                isActive
-                                  ? 'ring-4 ring-[var(--color-primary)] ring-offset-2 shadow'
-                                  : 'border border-[var(--color-border)]'
-                              }`}
-                            >
-                              <img
-                                src={absoluteMediaUrl(cat.image) ?? ''}
-                                alt=""
-                                className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                                loading="lazy"
-                              />
-                            </div>
-                            <div
-                              className={`mt-1.5 text-xs text-center line-clamp-2 leading-tight ${
-                                isActive
-                                  ? 'font-bold text-[var(--color-primary)]'
-                                  : 'font-medium text-[var(--color-text)]'
-                              }`}
-                            >
-                              {cat.name}
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
+                  <CategoryPhotoStrip
+                    categories={photoCategories}
+                    activeId={activeCategory}
+                    onSelect={scrollToCategory}
+                  />
                 )}
                 {/* Pill nav is redundant when the photo strip is on —
                     both labels, same scroll-on-tap. Show pills only when

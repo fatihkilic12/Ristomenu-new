@@ -28,6 +28,7 @@ export default memo(function CategoryNav({ categories, activeId, onSelect }: Pro
             key={cat.id}
             ref={cat.id === activeId ? activeRef : null}
             onClick={() => onSelect(cat.id)}
+            data-category-label
             className={`whitespace-nowrap px-4 py-1.5 rounded-full text-[13px] font-medium transition-all ${
               cat.id === activeId
                 ? 'bg-[var(--color-primary)] text-white shadow-sm'
