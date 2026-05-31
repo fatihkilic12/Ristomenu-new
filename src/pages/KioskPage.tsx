@@ -167,9 +167,12 @@ function KioskNameEntry({ company, onSubmit, onBack }: { company: any; onSubmit:
         <button
           type="button"
           onClick={onBack}
-          className="w-20 h-20 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 flex items-center justify-center text-3xl text-white active:bg-white/20"
+          className="w-20 h-20 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 flex items-center justify-center text-white active:bg-white/20"
         >
-          ←
+          <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <line x1="19" y1="12" x2="5" y2="12" />
+            <polyline points="12 19 5 12 12 5" />
+          </svg>
         </button>
         <LanguageSelector languages={company?.languages || []} defaultLang={company?.default_lang} variant="dark" />
       </div>

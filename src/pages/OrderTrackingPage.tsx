@@ -210,7 +210,10 @@ function TrackingContent() {
                 }`}
                 title={websiteUrl}
               >
-                <span aria-hidden>←</span>
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <line x1="19" y1="12" x2="5" y2="12" />
+                  <polyline points="12 19 5 12 12 5" />
+                </svg>
                 <span>{t('common.back_to_website', 'Back to website')}</span>
                 {websiteHostname && (
                   <span className="opacity-60 hidden md:inline">· {websiteHostname}</span>
@@ -548,7 +551,10 @@ function TrackingContent() {
                 onClick={goToMenu}
                 className="text-[var(--color-accent)] hover:underline font-semibold inline-flex items-center gap-1"
               >
-                <span aria-hidden>←</span>
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <line x1="19" y1="12" x2="5" y2="12" />
+                  <polyline points="12 19 5 12 12 5" />
+                </svg>
                 <span>{t('tracking.back_to_menu', 'Back to menu')}</span>
               </button>
               {websiteUrl && (

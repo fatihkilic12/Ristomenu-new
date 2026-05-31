@@ -26,11 +26,19 @@ export default memo(function CompactProductCard({ product, onClick, cartCount = 
   const imgUrl = rawUri && rawUri.startsWith('/') ? `${IMAGE_SERVER_ADDRESS}${rawUri}` : rawUri;
   const [imgError, setImgError] = useState(false);
   const hasImage = showImages && imgUrl && !imgError;
+  // Image preload on pointerdown — gives the modal image a ~100ms head start.
+  const preloadModalImage = () => {
+    if (imgUrl && !imgError) {
+      const img = new Image();
+      img.src = imgUrl;
+    }
+  };
 
   return (
     <button
       type="button"
       onClick={isSoldOut ? undefined : onClick}
+      onPointerDown={isSoldOut ? undefined : preloadModalImage}
       className={`relative w-full text-left bg-white border-b border-[var(--color-border)] transition-colors active:bg-gray-50 ${
         isSoldOut ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-gray-50'
       }`}

@@ -138,10 +138,13 @@ export default function KioskMealBuilder({ params, onClose }: Props) {
         <button
           type="button"
           onClick={step === HERO ? () => onClose() : goBack}
-          className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center text-3xl font-bold text-gray-700 active:bg-gray-200"
+          className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center text-gray-700 active:bg-gray-200"
           aria-label={step === HERO ? t('common.close', 'Close') : t('common.back', 'Back')}
         >
-          ←
+          <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <line x1="19" y1="12" x2="5" y2="12" />
+            <polyline points="12 19 5 12 12 5" />
+          </svg>
         </button>
         <div className="flex-1 min-w-0">
           <p className="text-base text-gray-500 truncate">{product.name}</p>

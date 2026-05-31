@@ -88,9 +88,12 @@ export default function KioskCartPage({ menu, onEdit, onConfirm, onClose, allowN
         <button
           type="button"
           onClick={onClose}
-          className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center text-3xl font-bold text-gray-700 active:bg-gray-200"
+          className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center text-gray-700 active:bg-gray-200"
         >
-          ←
+          <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <line x1="19" y1="12" x2="5" y2="12" />
+            <polyline points="12 19 5 12 12 5" />
+          </svg>
         </button>
         <div className="flex-1 min-w-0">
           <h1 className="text-3xl font-extrabold leading-tight">{t('restaurants.cart.title', 'Your order')}</h1>

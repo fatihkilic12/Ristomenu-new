@@ -20,7 +20,8 @@ export type OptionModalRef = {
 const OptionModal = forwardRef(function OptionModal(_props: {}, ref: Ref<OptionModalRef>) {
   const { addToCart, updateCart } = useCart();
   const { company } = useStoreConfig();
-  const branding = getBranding(company);
+  // Recompute only when company changes, not on every quantity / option tap.
+  const branding = useMemo(() => getBranding(company), [company]);
   const { t } = useTranslation();
   const [state, setState] = useState<ModalState>({ open: false, product: null, options: [], mode: ADD, item: null });
   const [quantity, setQuantity] = useState(1);
@@ -146,18 +147,30 @@ const OptionModal = forwardRef(function OptionModal(_props: {}, ref: Ref<OptionM
     close();
   };
 
-  if (!state.open || !state.product) return null;
+  // Keep the wrapper mounted after the first open so subsequent opens skip
+  // the full React mount cost (image decode, option-group reconciliation,
+  // useEffect setup). state.product stays set across closes — only state.open
+  // toggles, which lets the CSS transition handle the animation.
+  if (!state.product) return null;
 
-  const { product, options } = state;
+  const { product, options, open } = state;
   const rawUri = product.uri || (product.image ? IMAGE_ADDRESS(product.image) : null);
   const imgUrl = rawUri && rawUri.startsWith('/') ? `${IMAGE_SERVER_ADDRESS}${rawUri}` : rawUri;
   const basePrice = product.price != null ? (product.price / 100).toFixed(2) : null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" onClick={close}>
+    <div
+      className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center transition-opacity duration-150 ${
+        open ? 'opacity-100' : 'opacity-0 pointer-events-none'
+      }`}
+      onClick={close}
+      aria-hidden={!open}
+    >
       <div className="fixed inset-0 bg-black/60" />
       <div
-        className="relative z-10 w-full h-[100dvh] sm:h-auto sm:rounded-2xl sm:max-w-xl sm:max-h-[90dvh] flex flex-col bg-[var(--color-surface)] text-[var(--color-text)] shadow-2xl"
+        className={`relative z-10 w-full h-[100dvh] sm:h-auto sm:rounded-2xl sm:max-w-xl sm:max-h-[90dvh] flex flex-col bg-[var(--color-surface)] text-[var(--color-text)] shadow-2xl transition-transform duration-150 ease-out ${
+          open ? 'translate-y-0 sm:scale-100' : 'translate-y-4 sm:translate-y-0 sm:scale-95'
+        }`}
         onClick={e => e.stopPropagation()}
       >
         {/* Fixed back button - always visible. Inline SVG arrow rather
@@ -191,7 +204,7 @@ const OptionModal = forwardRef(function OptionModal(_props: {}, ref: Ref<OptionM
           {/* Product image */}
           {imgUrl ? (
             <div className="relative w-full aspect-[4/3] sm:aspect-[16/9] bg-[var(--color-surface-2)] overflow-hidden">
-              <img src={imgUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+              <img src={imgUrl} alt="" decoding="async" fetchPriority="high" className="absolute inset-0 w-full h-full object-cover" />
               {(product.vegan || product.vegetarian) && (
                 <div className="absolute bottom-3 left-3 flex gap-1.5">
                   {product.vegan && <span className="bg-green-600 text-white text-[11px] font-bold px-2.5 py-1 rounded-full">VEGAN</span>}

@@ -21,11 +21,19 @@ export default memo(function OrderProductCard({ product, onClick, cartCount = 0 
   const imgUrl = rawUri && rawUri.startsWith('/') ? `${IMAGE_SERVER_ADDRESS}${rawUri}` : rawUri;
   const [imgError, setImgError] = useState(false);
   const showImage = show_product_images && imgUrl && !imgError;
+  // Image preload on pointerdown — gives the modal image a ~100ms head start.
+  const preloadModalImage = () => {
+    if (imgUrl && !imgError) {
+      const img = new Image();
+      img.src = imgUrl;
+    }
+  };
 
   return (
     <button
       type="button"
       onClick={isSoldOut ? undefined : onClick}
+      onPointerDown={isSoldOut ? undefined : preloadModalImage}
       className={`group relative w-full text-left rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-accent)]/40 transition-all p-4 flex gap-4 min-h-[112px] ${
         isSoldOut ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer active:scale-[0.99]'
       }`}

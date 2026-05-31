@@ -27,12 +27,23 @@ export default memo(function ProductCard({ product, onClick, cartCount = 0 }: Pr
   const isVegan = product.vegan;
   const isVegetarian = product.vegetarian;
 
+  // Kick off the image fetch/decode on pointerdown so the modal image is
+  // ready by the time the click event fires (~80-150ms head start on mobile).
+  // The browser dedupes the request, so repeated pointerdowns are free.
+  const preloadModalImage = () => {
+    if (imgUrl && !imgError) {
+      const img = new Image();
+      img.src = imgUrl;
+    }
+  };
+
   // Text-only compact variant when product images are disabled store-wide.
   if (!renderImages) {
     return (
       <button
         type="button"
         onClick={isSoldOut ? undefined : onClick}
+        onPointerDown={isSoldOut ? undefined : preloadModalImage}
         className={`relative w-full h-full text-left rounded-2xl bg-white overflow-hidden transition-all shadow-[0_1px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)] active:scale-[0.97] flex flex-col min-h-[112px] ${
           isSoldOut ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
         }`}
@@ -73,6 +84,7 @@ export default memo(function ProductCard({ product, onClick, cartCount = 0 }: Pr
     <button
       type="button"
       onClick={isSoldOut ? undefined : onClick}
+      onPointerDown={isSoldOut ? undefined : preloadModalImage}
       className={`relative w-full h-full text-left rounded-2xl bg-white overflow-hidden transition-all shadow-[0_1px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)] active:scale-[0.97] flex flex-col ${
         isSoldOut ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
       }`}

@@ -260,7 +260,10 @@ function CheckoutContent({ orderType }: { orderType: string }) {
             }`}
             aria-label={t('checkout.back_to_menu', 'Back to menu')}
           >
-            <span className="text-lg" aria-hidden>←</span>
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <line x1="19" y1="12" x2="5" y2="12" />
+              <polyline points="12 19 5 12 12 5" />
+            </svg>
             {logo && (
               <img
                 src={logo}
