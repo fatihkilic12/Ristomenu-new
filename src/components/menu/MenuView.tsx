@@ -281,9 +281,24 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
           }
         `}</style>
       )}
+      {/* title_size globally scales every product-card text: name,
+          description AND price. Targets the data-attributes the three
+          ProductCard variants now stamp on their text elements, so the
+          operator's "Klein/Middel/Groot" choice ripples through the
+          whole menu, not just the section headings. */}
+      <style>{`
+        [data-menu-scale='small']  [data-product-name] { font-size: 12px; }
+        [data-menu-scale='small']  [data-product-desc] { font-size: 10px; }
+        [data-menu-scale='small']  [data-price]        { font-size: 13px; }
+
+        [data-menu-scale='large']  [data-product-name] { font-size: 20px; }
+        [data-menu-scale='large']  [data-product-desc] { font-size: 16px; }
+        [data-menu-scale='large']  [data-price]        { font-size: 22px; }
+      `}</style>
       <div
         className={`flex overflow-x-clip ${isLuxe ? 'luxe-menu' : ''}`}
         data-title-size={titleSize}
+        data-menu-scale={titleSize}
       >
         {/* Main content */}
         <div className="flex-1 min-w-0">

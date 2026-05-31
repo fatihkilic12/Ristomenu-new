@@ -238,7 +238,19 @@ function MenuOnlyContent() {
                   .luxe-menu[data-title-size='large'] h2 { font-size: 3.5rem; }
                 `}</style>
               )}
-              <div className={isLuxe ? 'luxe-menu' : ''} data-title-size={titleSize}>
+              {/* title_size globally scales every product-card text:
+                  name, description AND price. Targets data-attrs the
+                  three ProductCard variants stamp on text elements. */}
+              <style>{`
+                [data-menu-scale='small']  [data-product-name] { font-size: 12px; }
+                [data-menu-scale='small']  [data-product-desc] { font-size: 10px; }
+                [data-menu-scale='small']  [data-price]        { font-size: 13px; }
+
+                [data-menu-scale='large']  [data-product-name] { font-size: 20px; }
+                [data-menu-scale='large']  [data-product-desc] { font-size: 16px; }
+                [data-menu-scale='large']  [data-price]        { font-size: 22px; }
+              `}</style>
+              <div className={isLuxe ? 'luxe-menu' : ''} data-title-size={titleSize} data-menu-scale={titleSize}>
                 {renderCategoryStrip && (
                   // Horizontal, swipe-scrollable rail of category-photo
                   // tiles. Sticky like the pill nav so it stays in view

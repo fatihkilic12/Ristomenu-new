@@ -69,7 +69,7 @@ export default memo(function ProductCard({ product, onClick, cartCount = 0 }: Pr
         )}
         <div className="p-4 flex flex-col flex-1">
           <div className="flex items-start gap-2">
-            <h3 className="font-semibold text-[13px] text-gray-800 leading-snug line-clamp-2 flex-1 pr-4">{product.name}</h3>
+            <h3 data-product-name className="font-semibold text-[13px] text-gray-800 leading-snug line-clamp-2 flex-1 pr-4">{product.name}</h3>
             {(isVegan || isVegetarian) && (
               <span className={`shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded ${isVegan ? 'bg-green-600' : 'bg-green-500'} text-white`}>
                 {isVegan ? 'VEGAN' : 'VEGGIE'}
@@ -77,10 +77,10 @@ export default memo(function ProductCard({ product, onClick, cartCount = 0 }: Pr
             )}
           </div>
           {product.description && (
-            <p className="text-[11px] text-gray-400 mt-1 line-clamp-2">{product.description}</p>
+            <p data-product-desc className="text-[11px] text-gray-400 mt-1 line-clamp-2">{product.description}</p>
           )}
           {price && (
-            <span className="font-bold text-[14px] text-gray-900 mt-auto pt-2">{EURO}{price}</span>
+            <span data-price className="font-bold text-[14px] text-gray-900 mt-auto pt-2">{EURO}{price}</span>
           )}
         </div>
       </button>
@@ -144,14 +144,14 @@ export default memo(function ProductCard({ product, onClick, cartCount = 0 }: Pr
 
       {/* Content */}
       <div className="p-3 flex flex-col flex-1">
-        <h3 className="font-semibold text-[13px] text-gray-800 leading-snug line-clamp-2">{product.name}</h3>
+        <h3 data-product-name className="font-semibold text-[13px] text-gray-800 leading-snug line-clamp-2">{product.name}</h3>
         {product.description && (
-          <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-2">{product.description}</p>
+          <p data-product-desc className="text-[11px] text-gray-400 mt-0.5 line-clamp-2">{product.description}</p>
         )}
 
         <div className="flex items-center justify-between mt-auto pt-2">
           {price && (
-            <span className="font-bold text-[14px] text-gray-900">{EURO}{price}</span>
+            <span data-price className="font-bold text-[14px] text-gray-900">{EURO}{price}</span>
           )}
         </div>
       </div>

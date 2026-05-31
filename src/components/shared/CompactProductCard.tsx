@@ -88,17 +88,17 @@ export default memo(function CompactProductCard({ product, onClick, cartCount = 
 
         {/* Title + description */}
         <div className="flex-1 min-w-0 pr-12">
-          <p className="text-[15px] font-semibold text-gray-900 leading-tight line-clamp-1 capitalize">
+          <p data-product-name className="text-[15px] font-semibold text-gray-900 leading-tight line-clamp-1 capitalize">
             {product.name}
           </p>
           {product.description && (
-            <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{product.description}</p>
+            <p data-product-desc className="text-xs text-gray-500 mt-0.5 line-clamp-1">{product.description}</p>
           )}
         </div>
 
         {/* Price */}
         {price && (
-          <span className="shrink-0 text-[15px] font-bold text-gray-900 tabular-nums">
+          <span data-price className="shrink-0 text-[15px] font-bold text-gray-900 tabular-nums">
             {EURO}{price}
           </span>
         )}

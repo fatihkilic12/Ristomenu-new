@@ -121,11 +121,11 @@ export default memo(function ListProductCard({ product, onClick, cartCount = 0 }
         {/* Title + price on one line, full description below */}
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline justify-between gap-3 mb-1.5">
-            <h3 className="font-bold text-[16px] text-gray-900 leading-tight capitalize">
+            <h3 data-product-name className="font-bold text-[16px] text-gray-900 leading-tight capitalize">
               {product.name}
             </h3>
             {price && (
-              <span className="shrink-0 text-[16px] font-bold text-gray-900 tabular-nums">
+              <span data-price className="shrink-0 text-[16px] font-bold text-gray-900 tabular-nums">
                 {EURO}{price}
               </span>
             )}
@@ -154,7 +154,7 @@ export default memo(function ListProductCard({ product, onClick, cartCount = 0 }
               can use linebreaks in the description to structure
               the topping list. */}
           {product.description && (
-            <p className="text-[13px] text-gray-600 leading-relaxed whitespace-pre-line">
+            <p data-product-desc className="text-[13px] text-gray-600 leading-relaxed whitespace-pre-line">
               {product.description}
             </p>
           )}
