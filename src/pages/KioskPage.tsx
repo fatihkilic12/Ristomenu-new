@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { getKioskMenu } from '@/actions/store';
+import { useIsTabletMode } from '@/hooks/useIsTabletMode';
 import { CartProvider, useCart } from '@/context/CartContext';
 import { StoreConfigProvider, useStoreConfig } from '@/context/StoreConfigContext';
 import { KIOSK, ADD, EDIT, EURO } from '@/config/constants';
@@ -229,10 +230,13 @@ function KioskMenu({ customerName, onReset }: { customerName: string; onReset: (
   const categoryRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const isTablet = useIsTabletMode();
   const { data: menu, isLoading } = useQuery({
     queryKey: ['kiosk-menu', storeId, i18n.language],
     queryFn: () => getKioskMenu(storeId!),
     enabled: !!storeId,
+    refetchInterval: isTablet ? 5 * 60 * 1000 : false,
+    refetchIntervalInBackground: isTablet,
   });
 
   // Pre-cache product images so a brief Wi-Fi blip doesn't stall the kiosk.
