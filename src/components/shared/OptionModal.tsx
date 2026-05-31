@@ -160,13 +160,30 @@ const OptionModal = forwardRef(function OptionModal(_props: {}, ref: Ref<OptionM
         className="relative z-10 w-full h-[100dvh] sm:h-auto sm:rounded-2xl sm:max-w-xl sm:max-h-[90dvh] flex flex-col bg-[var(--color-surface)] text-[var(--color-text)] shadow-2xl"
         onClick={e => e.stopPropagation()}
       >
-        {/* Fixed back button - always visible */}
+        {/* Fixed back button - always visible. Inline SVG arrow rather
+            than the `←` Unicode character — the latter renders as a
+            tiny glyph in Android WebView's system font and the operator
+            reported it was barely visible on the tablet. SVG honours
+            the wrapping <button>'s sizing consistently across desktop
+            Chrome, iOS Safari, and Android WebView. */}
         <button
           onClick={close}
-          className="absolute top-4 left-4 z-20 w-12 h-12 rounded-full bg-black/50 text-white flex items-center justify-center text-xl backdrop-blur-sm hover:bg-black/70 shadow-lg"
+          className="absolute top-4 left-4 z-20 w-12 h-12 rounded-full bg-black/50 text-white flex items-center justify-center backdrop-blur-sm hover:bg-black/70 shadow-lg"
           aria-label="Close"
         >
-          ←
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M19 12H5"/>
+            <path d="M12 19l-7-7 7-7"/>
+          </svg>
         </button>
 
         {/* Scrollable content */}
