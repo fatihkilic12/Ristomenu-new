@@ -10,19 +10,50 @@ type Props = {
   cartCount?: number;
 };
 
+// Cutlery / utensils icon — used when the product has no photo.
+// Better than falling back to the restaurant logo (which gets visually
+// noisy when many rows share the same default image — every pizza
+// shows the same restaurant logo as a "thumb", confusing) and better
+// than the first-letter glyph used elsewhere (looks like a layout
+// bug, the operator wanted a clearer placeholder).
+const CutleryIcon = () => (
+  <svg
+    className="w-8 h-8 text-gray-400"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={1.5}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden
+  >
+    <path d="M3 2v7a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V2"/>
+    <path d="M6 11v11"/>
+    <path d="M19 15V2a4 4 0 0 0-4 4v6a2 2 0 0 0 2 2h2v8"/>
+  </svg>
+);
+
 // Per-category "list with full description" variant — opt-in via
 // Category.display_style = 'list' on the server. Designed for
-// categories like Pizzas / Pastas where each variant has a
-// meaningful description difference and truncating to 1 line (the
-// CompactProductCard default) hides the actual information the
-// customer needs to choose.
+// categories like Pizzas / Pastas where each variant has a meaningful
+// description difference and truncating to 1-2 lines (the default
+// ProductCard / CompactProductCard) hides the actual info the
+// customer needs to choose between similar-looking items.
 //
-// Layout: wide row, ~80px thumbnail left, name + FULL description
-// (no line-clamp) + price right. The product card the customer
-// reads top-to-bottom like a printed menu.
+// Layout choices:
+//   - 96px square thumb on the left. Big enough to convey what the
+//     dish looks like at a glance; small enough that long
+//     descriptions still get most of the row width.
+//   - Name + price share the top line, separated by a flex 1 span so
+//     the price hugs the right edge — classic printed-menu feel.
+//   - Description flows below the name in full (whitespace-pre-line,
+//     no line-clamp). This is the whole point of the variant.
+//   - Generous vertical padding so rows don't feel cramped.
+//   - Soft divider between rows instead of a hard border-bottom; the
+//     row hover/active state still provides the tap-feedback.
 //
-// Image preload on pointerdown gives the modal a ~100ms head start,
-// matching the optimization the other ProductCard variants got.
+// Pointer-down preload on the image gives the modal open a ~100ms
+// head start.
 export default memo(function ListProductCard({ product, onClick, cartCount = 0 }: Props) {
   const { company } = useStoreConfig();
   const { t } = useTranslation();
@@ -49,11 +80,15 @@ export default memo(function ListProductCard({ product, onClick, cartCount = 0 }
       type="button"
       onClick={isSoldOut ? undefined : onClick}
       onPointerDown={isSoldOut ? undefined : preloadModalImage}
-      className={`relative w-full text-left bg-white border-b border-[var(--color-border)] transition-colors active:bg-gray-50 ${
+      className={`group relative w-full text-left bg-white transition-colors active:bg-gray-50 ${
         isSoldOut ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-gray-50'
       }`}
     >
-      <div className="flex items-start gap-4 p-4">
+      {/* Soft divider above (skipped on the first row by the wrapping
+          container's `divide-y` would work too, but since we live
+          inside a manual map we draw it here at the bottom of each
+          row instead — see the wrapper in MenuView). */}
+      <div className="flex items-start gap-5 p-5">
         {/* Cart count chip */}
         {cartCount > 0 && (
           <span className="absolute top-3 right-3 z-10 bg-[var(--color-primary)] text-white text-[11px] font-bold rounded-full w-5 h-5 flex items-center justify-center shadow">
@@ -61,9 +96,12 @@ export default memo(function ListProductCard({ product, onClick, cartCount = 0 }
           </span>
         )}
 
-        {/* Thumbnail (left) */}
+        {/* Thumbnail (left) — 96px square. Falls back to a centered
+            cutlery icon when there's no photo, which reads as
+            "menu item" without polluting the row with the restaurant
+            logo repeated for every dish. */}
         {showImages && (
-          <div className="w-20 h-20 shrink-0 rounded-lg overflow-hidden bg-gray-100 relative">
+          <div className="w-24 h-24 shrink-0 rounded-xl overflow-hidden bg-gray-50 ring-1 ring-inset ring-gray-100 relative">
             {hasImage ? (
               <img
                 src={imgUrl}
@@ -72,68 +110,70 @@ export default memo(function ListProductCard({ product, onClick, cartCount = 0 }
                 className="w-full h-full object-cover"
                 onError={() => setImgError(true)}
               />
-            ) : branding.banner_image ? (
-              <>
-                <img
-                  src={branding.banner_image}
-                  alt=""
-                  loading="lazy"
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-white/55"/>
-                {branding.logo && (
-                  <img
-                    src={branding.logo}
-                    alt=""
-                    className="absolute inset-0 m-auto w-10 h-10 rounded-md object-cover opacity-90"
-                  />
-                )}
-              </>
-            ) : branding.logo ? (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <img src={branding.logo} alt="" className="w-12 h-12 rounded-md object-cover opacity-70"/>
-              </div>
             ) : (
-              <div className="absolute inset-0 flex items-center justify-center text-xl font-bold text-gray-400 capitalize">
-                {(product.name?.trim().charAt(0) || '?').toUpperCase()}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <CutleryIcon/>
               </div>
             )}
           </div>
         )}
 
-        {/* Title + full description (no line-clamp on purpose) */}
-        <div className="flex-1 min-w-0 pr-12">
-          <div className="flex items-start justify-between gap-2 mb-1">
-            <h3 className="font-bold text-[15px] text-gray-900 leading-tight capitalize pr-2">
+        {/* Title + price on one line, full description below */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-baseline justify-between gap-3 mb-1.5">
+            <h3 className="font-bold text-[16px] text-gray-900 leading-tight capitalize">
               {product.name}
             </h3>
-            {(isVegan || isVegetarian) && (
-              <span className={`shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded ${isVegan ? 'bg-green-600' : 'bg-green-500'} text-white mt-0.5`}>
-                {isVegan ? 'VEGAN' : 'VEGGIE'}
+            {price && (
+              <span className="shrink-0 text-[16px] font-bold text-gray-900 tabular-nums">
+                {EURO}{price}
               </span>
             )}
           </div>
+
+          {/* Dietary chip row — single-letter badges that feel like
+              part of the title block without competing with the
+              ingredient list below. */}
+          {(isVegan || isVegetarian) && (
+            <div className="flex gap-1.5 mb-1.5">
+              {isVegan && (
+                <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-green-600 text-white">
+                  Vegan
+                </span>
+              )}
+              {isVegetarian && !isVegan && (
+                <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-green-500 text-white">
+                  Veggie
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* The whole reason this card variant exists — full,
+              UNclamped description. whitespace-pre-line so operators
+              can use linebreaks in the description to structure
+              the topping list. */}
           {product.description && (
-            // No line-clamp — the whole point of this variant is to
-            // let the customer read the differences between
-            // similar-looking pizzas/pastas.
-            <p className="text-[13px] text-gray-600 leading-snug whitespace-pre-line">
+            <p className="text-[13px] text-gray-600 leading-relaxed whitespace-pre-line">
               {product.description}
             </p>
           )}
         </div>
-
-        {/* Price (right) */}
-        {price && (
-          <span className="shrink-0 text-[15px] font-bold text-gray-900 tabular-nums self-start pt-0.5">
-            {EURO}{price}
-          </span>
-        )}
       </div>
 
-      {/* Sold out overlay — corner badge to keep the row legible */}
+      {/* Bottom divider — sits inside the button so the last item in
+          the category gets a divider too (the wrapping container
+          masks it via overflow-hidden in MenuView). Subtle enough
+          that it reads as a separator, not a line drawing attention. */}
+      <span
+        aria-hidden
+        className="absolute bottom-0 left-5 right-5 h-px bg-gray-100"
+      />
+
+      {/* Sold out chip — discreet top-right corner so it doesn't
+          fight the price for attention. */}
       {isSoldOut && (
-        <span className="absolute top-3 right-12 bg-red-500 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full">
+        <span className="absolute top-3 right-12 bg-red-500 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full shadow-sm">
           {t('common.sold_out', 'Sold out')}
         </span>
       )}
