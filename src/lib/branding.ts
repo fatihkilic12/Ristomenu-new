@@ -22,6 +22,7 @@ import { IMAGE_SERVER_ADDRESS } from '@/config/constants';
 // at read time so a future server release with a new variant doesn't
 // crash older storefront builds.
 export type MenuLayout = 'classic' | 'compact' | 'luxe';
+export type TitleSize = 'small' | 'medium' | 'large';
 
 export type Branding = {
   primary_color:    string | null;
@@ -34,6 +35,8 @@ export type Branding = {
   welcome_message:  string | null;
   footer_text:      string | null;
   menu_layout:      MenuLayout;
+  title_size:       TitleSize;
+  show_category_photos:  boolean;
   show_allergens:        boolean;
   show_product_images:   boolean;
   allow_notes:           boolean;
@@ -53,6 +56,8 @@ const DEFAULT_BRANDING: Branding = {
   welcome_message: null,
   footer_text: null,
   menu_layout: 'classic',
+  title_size: 'medium',
+  show_category_photos: false,
   show_allergens: true,
   show_product_images: true,
   allow_notes: true,
@@ -64,6 +69,11 @@ const DEFAULT_BRANDING: Branding = {
 const VALID_LAYOUTS: ReadonlySet<MenuLayout> = new Set(['classic', 'compact', 'luxe']);
 function normalizeLayout(v: any): MenuLayout {
   return typeof v === 'string' && VALID_LAYOUTS.has(v as MenuLayout) ? (v as MenuLayout) : 'classic';
+}
+
+const VALID_TITLE_SIZES: ReadonlySet<TitleSize> = new Set(['small', 'medium', 'large']);
+function normalizeTitleSize(v: any): TitleSize {
+  return typeof v === 'string' && VALID_TITLE_SIZES.has(v as TitleSize) ? (v as TitleSize) : 'medium';
 }
 
 export function getBranding(company: any): Branding {
@@ -85,9 +95,11 @@ export function getBranding(company: any): Branding {
     welcome_message:  pick(b.welcome_message),
     footer_text:      pick(b.footer_text),
     menu_layout:      normalizeLayout(b.menu_layout),
-    show_allergens:        flag(DEFAULT_BRANDING.show_allergens,      b.show_allergens),
-    show_product_images:   flag(DEFAULT_BRANDING.show_product_images, b.show_product_images),
-    allow_notes:           flag(DEFAULT_BRANDING.allow_notes,         b.allow_notes),
+    title_size:       normalizeTitleSize(b.title_size),
+    show_category_photos:  flag(DEFAULT_BRANDING.show_category_photos, b.show_category_photos),
+    show_allergens:        flag(DEFAULT_BRANDING.show_allergens,       b.show_allergens),
+    show_product_images:   flag(DEFAULT_BRANDING.show_product_images,  b.show_product_images),
+    allow_notes:           flag(DEFAULT_BRANDING.allow_notes,          b.allow_notes),
     website_url:      pick(b.website_url),
     instagram_url:    pick(b.instagram_url),
     facebook_url:     pick(b.facebook_url),

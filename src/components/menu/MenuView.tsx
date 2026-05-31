@@ -31,7 +31,10 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
   // Menu-layout. 'classic' is the existing grid; 'compact' is the
   // dense list for high-item-count menus; 'luxe' adds paper texture +
   // serif typography for fine-dining.
-  const layout = getBranding(company).menu_layout;
+  const branding = getBranding(company);
+  const layout = branding.menu_layout;
+  const titleSize = branding.title_size;
+  const showCategoryPhotos = branding.show_category_photos;
   const modalRef = useRef<OptionModalRef>(null);
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
   const categoryRefs = useRef<Record<number, HTMLDivElement | null>>({});
@@ -135,6 +138,26 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
   const isLuxe = layout === 'luxe';
   const isCompact = layout === 'compact';
 
+  // Map title_size + layout to the h2 className for the category headings
+  // (PIZZAS, DESSERTS …). Luxe has its own .luxe-menu h2 base size in the
+  // injected <style> below (1.5rem), so we scale around that with a class
+  // on the body element below; classic/compact use Tailwind sizes.
+  const titleSizeClass: Record<typeof titleSize, string> =
+    isCompact
+      ? {small: 'text-sm', medium: 'text-base', large: 'text-lg'}
+      : {small: 'text-base', medium: 'text-lg', large: 'text-2xl'};
+  const headingClass = `${titleSizeClass[titleSize]} font-bold mb-${isCompact ? 2 : 3} px-1`;
+
+  // Categories with a real image are the only ones that get a tile in the
+  // photo strip — half-empty rows look worse than no strip at all, so we
+  // hide the whole rail unless at least 3 categories have something to
+  // show. The operator can fill in the missing ones from the Category
+  // form (image FK).
+  const photoCategories = categories.filter(
+    (c: Record<string, any>) => typeof c.image === 'string' && c.image,
+  );
+  const renderCategoryStrip = showCategoryPhotos && photoCategories.length >= 3;
+
   return (
     <>
       <DineInPausedBanner/>
@@ -171,6 +194,12 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
             border: none;
             position: relative;
           }
+          /* Title-size override (operator picks in Portal → Storefront).
+             Luxe defaults to "medium". Other sizes scale around the
+             1.5rem base proportionally so the gold hairline + spacing
+             still feel balanced. */
+          .luxe-menu[data-title-size='small'] h2  { font-size: 1.2rem; }
+          .luxe-menu[data-title-size='large'] h2  { font-size: 1.95rem; letter-spacing: 0.16em; }
           .luxe-menu h2::after {
             content: '';
             display: block;
@@ -220,9 +249,43 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
           }
         `}</style>
       )}
-      <div className={`flex overflow-x-clip ${isLuxe ? 'luxe-menu' : ''}`}>
+      <div
+        className={`flex overflow-x-clip ${isLuxe ? 'luxe-menu' : ''}`}
+        data-title-size={titleSize}
+      >
         {/* Main content */}
         <div className="flex-1 min-w-0">
+          {renderCategoryStrip && (
+            // Horizontal, swipe-scrollable rail of category-photo tiles.
+            // Tap a tile → scrollToCategory jumps to the section.
+            // Uses the same scrollToCategory the pill nav uses, so the
+            // sticky CategoryNav highlights the new section automatically
+            // via the IntersectionObserver already in place.
+            <div className="px-3 pt-3 pb-1">
+              <div className="flex gap-3 overflow-x-auto scrollbar-none -mx-3 px-3 pb-1">
+                {photoCategories.map((cat: Record<string, any>) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => scrollToCategory(cat.id)}
+                    className="flex-shrink-0 w-24 group"
+                    aria-label={cat.name}
+                  >
+                    <div className="w-24 h-24 rounded-xl overflow-hidden bg-gray-100 border border-[var(--color-border)]">
+                      <img
+                        src={cat.image}
+                        alt=""
+                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                        loading="lazy"
+                      />
+                    </div>
+                    <div className="mt-1.5 text-xs font-medium text-center text-[var(--color-text)] line-clamp-2 leading-tight">
+                      {cat.name}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <CategoryNav categories={categories} activeId={activeCategory} onSelect={scrollToCategory} />
 
           <div className="px-3 py-4">
@@ -243,7 +306,7 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
                   data-category={cat.id}
                   className={isCompact ? 'mb-4 scroll-mt-36' : 'mb-6 scroll-mt-36'}
                 >
-                  <h2 className={isCompact ? 'text-base font-bold mb-2 px-1' : 'text-lg font-bold mb-3 px-1'}>
+                  <h2 className={isLuxe ? undefined : headingClass}>
                     {cat.name}
                   </h2>
                   {isCategoryList ? (
