@@ -60,7 +60,7 @@ export default memo(function CategoryPhotoStrip({ categories, activeId, onSelect
                 data-strip-thumb
                 className={`w-24 h-24 rounded-xl overflow-hidden bg-gray-100 ${
                   isActive
-                    ? 'ring-[3px] ring-[var(--color-primary)] ring-offset-2 shadow'
+                    ? 'ring-2 ring-[var(--color-primary)] ring-offset-2 shadow'
                     : 'border border-[var(--color-border)]'
                 }`}
               >
