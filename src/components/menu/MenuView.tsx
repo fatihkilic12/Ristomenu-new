@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useStoreConfig } from '@/context/StoreConfigContext';
 import { getDineInPause } from '@/lib/dineIn';
@@ -56,23 +56,66 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
     }
   }, [categories, activeCategory]);
 
-  // Scroll observer for category highlighting
+  // Scroll observer for category highlighting.
+  //
+  // Two perf-correctness traps the original loop tripped over:
+  //
+  //   1. Picking the *last* intersecting entry in the array landed us on
+  //      the bottom-most visible category. After a click-to-scroll, when
+  //      the suppression flag cleared and the observer flushed, the
+  //      observer's entries-in-order delivery would briefly flag the
+  //      "deepest" intersecting category (e.g. 8) right before settling
+  //      on the actual landing target (5). The strip then visibly jumped
+  //      8 → 5 instead of going straight to 5.
+  //
+  //   2. setActiveCategory fired on every observer tick (potentially
+  //      multiple per scroll frame) — each call re-renders MenuView and
+  //      reconciles the entire product grid (hundreds of cards), making
+  //      the page feel jammed while scrolling. Bundling work into one
+  //      rAF + bailing when the chosen id didn't change cuts the
+  //      re-renders to one per visible-section change.
   useEffect(() => {
+    let rafId = 0;
+    let pending: IntersectionObserverEntry[] | null = null;
+
+    const flush = () => {
+      if (programmaticScrollRef.current || !pending) {
+        pending = null;
+        return;
+      }
+      let chosenId: number | null = null;
+      let bestTop = Infinity;
+      for (const entry of pending) {
+        if (!entry.isIntersecting) continue;
+        const id = Number(entry.target.getAttribute('data-category'));
+        if (!id) continue;
+        const top = entry.boundingClientRect.top;
+        if (top < bestTop) {
+          bestTop = top;
+          chosenId = id;
+        }
+      }
+      pending = null;
+      if (chosenId !== null) {
+        setActiveCategory(prev => (prev === chosenId ? prev : chosenId));
+      }
+    };
+
     const observer = new IntersectionObserver(
       entries => {
-        if (programmaticScrollRef.current) return; // Locked during click-to-scroll
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            const id = Number(entry.target.getAttribute('data-category'));
-            if (id) setActiveCategory(id);
-          }
-        }
+        if (programmaticScrollRef.current) return;
+        pending = entries;
+        cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(flush);
       },
       { rootMargin: '-20% 0px -60% 0px' }
     );
 
     Object.values(categoryRefs.current).forEach(el => { if (el) observer.observe(el); });
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(rafId);
+    };
   }, [products]);
 
   const scrollToCategory = useCallback((catId: number) => {
@@ -83,51 +126,95 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
     if (programmaticScrollTimer.current) window.clearTimeout(programmaticScrollTimer.current);
     setActiveCategory(catId);
 
+    // scrollend fires the instant smooth scroll finishes, but the
+    // observer's batched IntersectionObserverEntry for the post-landing
+    // viewport often arrives a frame or two AFTER scrollend. If we
+    // clear the suppression flag immediately, that delayed entry flips
+    // the strip to whatever's intersecting (often the bottom-most
+    // visible category — e.g. 8 instead of the clicked 5). Hold the
+    // flag for an extra 250ms after scrollend to let the observer
+    // settle into its post-scroll resting state.
     let released = false;
     const release = () => {
       if (released) return;
       released = true;
-      programmaticScrollRef.current = false;
-      window.removeEventListener('scrollend', release);
+      window.removeEventListener('scrollend', scrollEndHandler);
+      window.setTimeout(() => { programmaticScrollRef.current = false; }, 250);
     };
-    window.addEventListener('scrollend', release, { once: true });
+    const scrollEndHandler = () => release();
+    window.addEventListener('scrollend', scrollEndHandler, { once: true });
     programmaticScrollTimer.current = window.setTimeout(release, 1200);
 
-    // Header (h-20 = 80) + sticky nav row + breathing. The nav row is
-    // either the slim pill bar (~50px) or the taller photo strip
-    // (~140px including label) — derive from the toggle so the section
-    // lands flush below the sticky bar instead of being hidden under it.
+    // Header (h-20 = 80) + sticky nav row + breathing. Nav row height
+    // depends on whether the strip is on AND on the title_size (tiles
+    // grow from 96 → 112 → 128 across small / medium / large) so the
+    // section lands flush below the sticky bar instead of being hidden
+    // under it.
     const stripOn = branding.show_category_photos
       && categories.some((c: Record<string, any>) => c.image);
-    const navHeight = stripOn ? 150 : 50;
+    const stripHeight =
+      branding.title_size === 'large' ? 184
+      : branding.title_size === 'medium' ? 168
+      : 150;
+    const navHeight = stripOn ? stripHeight : 50;
     const top = el.getBoundingClientRect().top + window.scrollY - 80 - navHeight - 8;
     window.scrollTo({ top, behavior: 'smooth' });
-  }, [branding.show_category_photos, categories]);
+  }, [branding.show_category_photos, branding.title_size, categories]);
 
-  const getCartCount = (productId: number) =>
-    cart.filter(i => i.product === productId).reduce((s, i) => s + i.quantity, 0);
+  // Lookup map for cart count per product id — built once per cart
+  // change so each product card just does a Map.get instead of a fresh
+  // .filter().reduce() across the entire cart on every render. Combined
+  // with stable per-product click handlers below, this keeps memo'd
+  // ProductCards from re-reconciling when activeCategory changes.
+  const cartCountMap = useMemo(() => {
+    const m = new Map<number, number>();
+    for (const item of cart) {
+      m.set(item.product, (m.get(item.product) ?? 0) + item.quantity);
+    }
+    return m;
+  }, [cart]);
+  const getCartCount = useCallback(
+    (productId: number) => cartCountMap.get(productId) ?? 0,
+    [cartCountMap],
+  );
 
-  const getProductOptions = (product: Record<string, any>) => {
-    const optionIds = new Set([...(product.options || [])]);
-    // Also include category options
-    const cat = categories.find((c: any) => c.id === product.category);
-    if (cat?.options) cat.options.forEach((id: number) => optionIds.add(id));
-    return options.filter((o: any) => optionIds.has(o.id));
-  };
-
-  const onProductClick = (product: Record<string, any>) => {
+  const onProductClick = useCallback((product: Record<string, any>) => {
     // While paused, tapping a tile is a no-op — the product modal would
     // surface an "Add to cart" CTA that can't actually do anything.
     // Banner is already visible up top so the customer knows why.
     if (dineInPaused) return;
-    const productOptions = getProductOptions(product);
+    const optionIds = new Set<number>([...(product.options || [])]);
+    const cat = categories.find((c: any) => c.id === product.category);
+    if (cat?.options) cat.options.forEach((id: number) => optionIds.add(id));
+    const productOptions = options.filter((o: any) => optionIds.has(o.id));
     modalRef.current?.openModal({ product, options: productOptions, mode: ADD, item: null });
-  };
+  }, [dineInPaused, categories, options]);
 
-  const onProductEditClick = (item: Record<string, any>) => {
-    const productOptions = getProductOptions(item.product_data || {});
-    modalRef.current?.openModal({ product: item.product_data, options: productOptions, mode: EDIT, item });
-  };
+  const onProductEditClick = useCallback((item: Record<string, any>) => {
+    const product = item.product_data || {};
+    const optionIds = new Set<number>([...(product.options || [])]);
+    const cat = categories.find((c: any) => c.id === product.category);
+    if (cat?.options) cat.options.forEach((id: number) => optionIds.add(id));
+    const productOptions = options.filter((o: any) => optionIds.has(o.id));
+    modalRef.current?.openModal({ product, options: productOptions, mode: EDIT, item });
+  }, [categories, options]);
+
+  // Per-product click handler map. The naive pattern
+  // (`onClick={productClickHandlers.get(product.id)!}`) hands ProductCard a
+  // fresh closure on every MenuView render, which busts React.memo even
+  // when the underlying onProductClick is useCallback'd — so every
+  // observer-driven activeCategory change forces all ~400 product cards
+  // to re-render and the page stutters during scroll.
+  //
+  // This map is keyed by product.id and only rebuilds when the product
+  // list itself or the click handler (deps: dineInPaused, categories,
+  // options) actually changes, so each card receives a stable function
+  // reference and memo holds.
+  const productClickHandlers = useMemo(() => {
+    const map = new Map<number, () => void>();
+    for (const p of products) map.set(p.id, () => onProductClick(p));
+    return map;
+  }, [products, onProductClick]);
 
   if (menuLoading) {
     return (
@@ -277,20 +364,26 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
         [data-menu-scale='medium'] [data-product-name]   { font-size: 16px; }
         [data-menu-scale='medium'] [data-product-desc]   { font-size: 13px; }
         [data-menu-scale='medium'] [data-price]          { font-size: 18px; }
-        [data-menu-scale='medium'] [data-category-label] { font-size: 13px; }
+        [data-menu-scale='medium'] [data-category-label] { font-size: 14px; }
         [data-menu-scale='medium'] [data-category]                       { margin-bottom: 32px; }
         [data-menu-scale='medium'] [data-category] > h2                  { margin-bottom: 16px; }
         [data-menu-scale='medium'] [data-category] > [data-products-grid].grid { gap: 16px; }
         [data-menu-scale='medium'] [data-category] > [data-products-grid].luxe-product-list { gap: 22px; }
+        /* Strip tiles grow with title_size so the photo rail keeps
+           visual hierarchy with the bigger headings below. */
+        [data-menu-scale='medium'] [data-strip-tile]                     { width: 112px; }
+        [data-menu-scale='medium'] [data-strip-tile] [data-strip-thumb]  { width: 112px; height: 112px; }
 
         [data-menu-scale='large']  [data-product-name]   { font-size: 20px; }
         [data-menu-scale='large']  [data-product-desc]   { font-size: 16px; }
         [data-menu-scale='large']  [data-price]          { font-size: 22px; }
-        [data-menu-scale='large']  [data-category-label] { font-size: 15px; }
+        [data-menu-scale='large']  [data-category-label] { font-size: 16px; }
         [data-menu-scale='large']  [data-category]                       { margin-bottom: 40px; }
         [data-menu-scale='large']  [data-category] > h2                  { margin-bottom: 20px; }
         [data-menu-scale='large']  [data-category] > [data-products-grid].grid { gap: 20px; }
         [data-menu-scale='large']  [data-category] > [data-products-grid].luxe-product-list { gap: 28px; }
+        [data-menu-scale='large']  [data-strip-tile]                     { width: 128px; }
+        [data-menu-scale='large']  [data-strip-tile] [data-strip-thumb]  { width: 128px; height: 128px; }
       `}</style>
       <div
         className={`flex overflow-x-clip ${isLuxe ? 'luxe-menu' : ''}`}
@@ -330,11 +423,18 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
                   ref={el => { categoryRefs.current[cat.id] = el; }}
                   data-category={cat.id}
                   className={isCompact ? 'mb-4' : 'mb-6'}
-                  // scrollMarginTop matches the sticky-nav offset used by
-                  // scrollToCategory so jumping to a section lands flush
-                  // under whichever nav row is active (slim pill vs the
-                  // taller photo strip).
-                  style={{scrollMarginTop: renderCategoryStrip ? 238 : 138}}
+                  // scrollMarginTop matches the sticky-nav offset used
+                  // by scrollToCategory so jumping to a section lands
+                  // flush under whichever nav row is active. Strip
+                  // height scales with title_size (96→112→128 tile +
+                  // label), so the offset has to follow.
+                  style={{
+                    scrollMarginTop: renderCategoryStrip
+                      ? (titleSize === 'large' ? 272
+                         : titleSize === 'medium' ? 256
+                         : 238)
+                      : 138,
+                  }}
                 >
                   <h2 className={isLuxe ? undefined : headingClass}>
                     {cat.name}
@@ -348,7 +448,7 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
                         <ListProductCard
                           key={product.id}
                           product={product}
-                          onClick={() => onProductClick(product)}
+                          onClick={productClickHandlers.get(product.id)!}
                           cartCount={getCartCount(product.id)}
                         />
                       ))}
@@ -363,7 +463,7 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
                         <CompactProductCard
                           key={product.id}
                           product={product}
-                          onClick={() => onProductClick(product)}
+                          onClick={productClickHandlers.get(product.id)!}
                           cartCount={getCartCount(product.id)}
                         />
                       ))}
@@ -379,7 +479,7 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
                         <ProductCard
                           key={product.id}
                           product={product}
-                          onClick={() => onProductClick(product)}
+                          onClick={productClickHandlers.get(product.id)!}
                           cartCount={getCartCount(product.id)}
                         />
                       ))}
@@ -391,7 +491,7 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
                         <ProductCard
                           key={product.id}
                           product={product}
-                          onClick={() => onProductClick(product)}
+                          onClick={productClickHandlers.get(product.id)!}
                           cartCount={getCartCount(product.id)}
                         />
                       ))}

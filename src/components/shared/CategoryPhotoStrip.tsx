@@ -52,10 +52,12 @@ export default memo(function CategoryPhotoStrip({ categories, activeId, onSelect
               key={cat.id}
               ref={isActive ? activeRef : null}
               onClick={() => onSelect(cat.id)}
+              data-strip-tile
               className="flex-shrink-0 w-24"
               aria-label={cat.name}
             >
               <div
+                data-strip-thumb
                 className={`w-24 h-24 rounded-xl overflow-hidden bg-gray-100 ${
                   isActive
                     ? 'ring-4 ring-[var(--color-primary)] ring-offset-2 shadow'

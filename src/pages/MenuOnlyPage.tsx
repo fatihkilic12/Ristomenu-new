@@ -101,14 +101,19 @@ function MenuOnlyContent() {
     window.addEventListener('scrollend', release, { once: true });
     programmaticScrollTimer.current = window.setTimeout(release, 1200);
 
-    // Header (h-20 = 80) + sticky nav row + breathing. Strip is taller
-    // than the pill nav so the offset adapts to whichever is showing.
+    // Header (h-20 = 80) + sticky nav row + breathing. Strip height
+    // scales with title_size (96 → 112 → 128 tile + label) so the
+    // offset has to follow.
     const stripOn = branding.show_category_photos
       && categories.some((c: Record<string, any>) => c.image);
-    const navHeight = stripOn ? 150 : 50;
+    const stripHeight =
+      branding.title_size === 'large' ? 184
+      : branding.title_size === 'medium' ? 168
+      : 150;
+    const navHeight = stripOn ? stripHeight : 50;
     const top = el.getBoundingClientRect().top + window.scrollY - 80 - navHeight - 8;
     window.scrollTo({ top, behavior: 'smooth' });
-  }, [branding.show_category_photos, categories]);
+  }, [branding.show_category_photos, branding.title_size, categories]);
 
   if (configLoading) {
     return (
@@ -232,18 +237,22 @@ function MenuOnlyContent() {
                 [data-menu-scale='medium'] [data-product-name]   { font-size: 16px; }
                 [data-menu-scale='medium'] [data-product-desc]   { font-size: 13px; }
                 [data-menu-scale='medium'] [data-price]          { font-size: 18px; }
-                [data-menu-scale='medium'] [data-category-label] { font-size: 13px; }
+                [data-menu-scale='medium'] [data-category-label] { font-size: 14px; }
                 [data-menu-scale='medium'] [data-category]                       { margin-bottom: 32px; }
                 [data-menu-scale='medium'] [data-category] > h2                  { margin-bottom: 16px; }
                 [data-menu-scale='medium'] [data-category] > [data-products-grid].grid { gap: 16px; }
+                [data-menu-scale='medium'] [data-strip-tile]                     { width: 112px; }
+                [data-menu-scale='medium'] [data-strip-tile] [data-strip-thumb]  { width: 112px; height: 112px; }
 
                 [data-menu-scale='large']  [data-product-name]   { font-size: 20px; }
                 [data-menu-scale='large']  [data-product-desc]   { font-size: 16px; }
                 [data-menu-scale='large']  [data-price]          { font-size: 22px; }
-                [data-menu-scale='large']  [data-category-label] { font-size: 15px; }
+                [data-menu-scale='large']  [data-category-label] { font-size: 16px; }
                 [data-menu-scale='large']  [data-category]                       { margin-bottom: 40px; }
                 [data-menu-scale='large']  [data-category] > h2                  { margin-bottom: 20px; }
                 [data-menu-scale='large']  [data-category] > [data-products-grid].grid { gap: 20px; }
+                [data-menu-scale='large']  [data-strip-tile]                     { width: 128px; }
+                [data-menu-scale='large']  [data-strip-tile] [data-strip-thumb]  { width: 128px; height: 128px; }
               `}</style>
               <div className={isLuxe ? 'luxe-menu' : ''} data-title-size={titleSize} data-menu-scale={titleSize}>
                 {renderCategoryStrip && (
@@ -273,7 +282,13 @@ function MenuOnlyContent() {
                         // scrollMarginTop matches the sticky-nav offset
                         // so the section lands flush below the active row
                         // (slim pill vs taller photo strip).
-                        style={{scrollMarginTop: renderCategoryStrip ? 238 : 138}}
+                        style={{
+                          scrollMarginTop: renderCategoryStrip
+                            ? (titleSize === 'large' ? 272
+                               : titleSize === 'medium' ? 256
+                               : 238)
+                            : 138,
+                        }}
                       >
                         <h2 className={isLuxe ? 'capitalize' : headingClass}>
                           {cat.name}
