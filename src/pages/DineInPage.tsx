@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { getCompanyMenu } from '@/actions/store';
-import { useIsTabletMode } from '@/hooks/useIsTabletMode';
+import { useMenuRefresh } from '@/hooks/useMenuRefresh';
 import { CartProvider, useCart } from '@/context/CartContext';
 import { StoreConfigProvider, useStoreConfig } from '@/context/StoreConfigContext';
 import { DINE_IN } from '@/config/constants';
@@ -20,16 +20,14 @@ function DineInContent() {
   const { submitOrder, resetCart } = useCart();
   const [result, setResult] = useState<'success' | 'error' | 'closed' | null>(null);
 
-  const isTablet = useIsTabletMode();
+  // Tablets get push-driven refresh via Pusher (see useMenuRefresh).
+  // Customer QR phones get a single fetch — they leave the page within
+  // minutes, no realtime needed.
+  useMenuRefresh(storeId);
   const { data: menu, isLoading: menuLoading } = useQuery({
     queryKey: ['menu', storeId, table, i18n.language],
     queryFn: () => getCompanyMenu(storeId!, table!),
     enabled: !!storeId && !!table,
-    // In-restaurant tablets stay on the menu page for hours. Poll every
-    // 5 min so a sold-out flip in the Portal lands on the tablet without
-    // a manual reload. Customer QR phones (isTablet=false) skip polling.
-    refetchInterval: isTablet ? 5 * 60 * 1000 : false,
-    refetchIntervalInBackground: isTablet,
   });
 
   // Pre-cache product images as soon as the menu lands so the table can keep

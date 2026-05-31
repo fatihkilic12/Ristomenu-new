@@ -3,7 +3,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { getDeliveryMenu } from '@/actions/store';
-import { useIsTabletMode } from '@/hooks/useIsTabletMode';
+import { useMenuRefresh } from '@/hooks/useMenuRefresh';
 import { CartProvider, useCart } from '@/context/CartContext';
 // (we use useCart below to clear desired_time when the channel toggles)
 import { StoreConfigProvider, useStoreConfig } from '@/context/StoreConfigContext';
@@ -78,13 +78,11 @@ function OrderContent() {
 
   const effectiveType = supportsDelivery ? orderType : PICKUP;
 
-  const isTablet = useIsTabletMode();
+  useMenuRefresh(storeId);
   const { data: menu, isLoading } = useQuery({
     queryKey: ['delivery-menu', storeId, effectiveType, i18n.language],
     queryFn: () => getDeliveryMenu(storeId!, effectiveType),
     enabled: !!storeId && !configLoading,
-    refetchInterval: isTablet ? 5 * 60 * 1000 : false,
-    refetchIntervalInBackground: isTablet,
   });
 
   // Warm the image cache for offline resilience.

@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { getDeliveryMenu } from '@/actions/store';
-import { useIsTabletMode } from '@/hooks/useIsTabletMode';
+import { useMenuRefresh } from '@/hooks/useMenuRefresh';
 import { StoreConfigProvider, useStoreConfig } from '@/context/StoreConfigContext';
 import { EURO, IMAGE_ADDRESS, IMAGE_SERVER_ADDRESS, PICKUP } from '@/config/constants';
 import { collectMenuImageUrls, precacheImages } from '@/lib/imageCache';
@@ -33,16 +33,13 @@ function MenuOnlyContent() {
   const goToWebsite = () => { if (websiteUrl) window.location.href = websiteUrl; };
 
   // We re-use the delivery/pickup menu endpoint (it returns the full catalog).
-  // Nothing is ever submitted from this page.
-  const isTablet = useIsTabletMode();
+  // Nothing is ever submitted from this page. Tablets get realtime
+  // menu_updated events via Pusher; customer phones don't.
+  useMenuRefresh(storeId);
   const { data: menu, isLoading } = useQuery({
     queryKey: ['menu-only', storeId, i18n.language],
     queryFn: () => getDeliveryMenu(storeId!, PICKUP),
     enabled: !!storeId && !configLoading,
-    // This page is the canonical tablet display URL. Always-on tablets need
-    // periodic refresh so menu edits land within 5 minutes.
-    refetchInterval: isTablet ? 5 * 60 * 1000 : false,
-    refetchIntervalInBackground: isTablet,
   });
 
   const categories = menu?.menu?.categories || [];
