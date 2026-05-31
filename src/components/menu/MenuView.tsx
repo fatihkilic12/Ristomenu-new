@@ -140,20 +140,83 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
       <DineInPausedBanner/>
       {isLuxe && (
         <style>{`
+          /* Luxe — fine-dining feel. Paper texture + serif typography +
+             gold accent line on each category heading + larger spacing
+             so the menu reads like a printed insert, not a scrolling
+             list of food cards. */
           .luxe-menu {
             font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
-            background-color: #f7f1e6;
-            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.42 0 0 0 0 0.32 0 0 0 0 0.18 0 0 0 0.07 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
-            background-repeat: repeat;
+            background-color: #f3ead6;
+            background-image:
+              radial-gradient(circle at 20% 18%, rgba(120, 88, 50, 0.06), transparent 40%),
+              radial-gradient(circle at 82% 75%, rgba(60, 38, 22, 0.05), transparent 45%),
+              url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.42 0 0 0 0 0.32 0 0 0 0 0.18 0 0 0 0.09 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+            background-repeat: no-repeat, no-repeat, repeat;
+            color: #2c1810;
           }
+          /* Category heading — bigger, all-caps with letter-spacing,
+             gold hairline beneath. Reads like a section title on a
+             tasting-menu card. */
           .luxe-menu h2 {
             font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
-            font-weight: 600;
-            letter-spacing: 0.02em;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
             color: #2c1810;
-            font-size: 1.75rem;
-            border-bottom: 1px solid rgba(60, 38, 22, 0.18);
-            padding-bottom: 6px;
+            font-size: 1.5rem;
+            text-align: center;
+            margin-top: 28px;
+            margin-bottom: 22px;
+            padding: 0;
+            border: none;
+            position: relative;
+          }
+          .luxe-menu h2::after {
+            content: '';
+            display: block;
+            width: 60px;
+            height: 1px;
+            background: linear-gradient(to right, transparent, #b8945a, transparent);
+            margin: 12px auto 0;
+          }
+          /* Product cards lose the rounded photo grid in favour of a
+             borderless single-column list — each product takes its
+             own line like a printed menu entry. Override the grid
+             classes coming from ProductCard's wrapping div. */
+          .luxe-menu .luxe-product-list {
+            display: flex !important;
+            flex-direction: column;
+            gap: 18px;
+            background: transparent;
+          }
+          /* Strip the white card chrome inside Luxe so the paper
+             background shows through behind each product. */
+          .luxe-menu .luxe-product-list > button {
+            background: transparent !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            border-bottom: 1px dashed rgba(60, 38, 22, 0.18);
+            padding-bottom: 16px;
+          }
+          .luxe-menu .luxe-product-list > button:last-child {
+            border-bottom: none;
+          }
+          /* Body type — serif italic accents on descriptions, slightly
+             larger price for emphasis. */
+          .luxe-menu p, .luxe-menu span, .luxe-menu h3 {
+            font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
+            color: #2c1810;
+          }
+          .luxe-menu h3 {
+            font-weight: 600;
+            letter-spacing: 0.01em;
+            font-size: 1.15rem;
+          }
+          .luxe-menu p {
+            font-style: italic;
+            color: #5a4530;
+            font-size: 0.95rem;
+            line-height: 1.45;
           }
         `}</style>
       )}
@@ -212,10 +275,24 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
                         />
                       ))}
                     </div>
+                  ) : isLuxe ? (
+                    // Luxe — single-column list, each product gets a
+                    // dashed-underline like a printed menu entry. The
+                    // class is what the .luxe-product-list styles
+                    // above hook into to strip card chrome and stack
+                    // products vertically.
+                    <div className="luxe-product-list">
+                      {catProducts.map((product: Record<string, any>) => (
+                        <ProductCard
+                          key={product.id}
+                          product={product}
+                          onClick={() => onProductClick(product)}
+                          cartCount={getCartCount(product.id)}
+                        />
+                      ))}
+                    </div>
                   ) : (
-                    // Classic + Luxe both use the same grid + ProductCard.
-                    // Luxe gets its serif/paper feel from the wrapper +
-                    // styles above; the cards themselves stay clean.
+                    // Classic — photo-first grid (default).
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       {catProducts.map((product: Record<string, any>) => (
                         <ProductCard
