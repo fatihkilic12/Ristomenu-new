@@ -140,13 +140,14 @@ function MenuOnlyContent() {
             <span aria-hidden />
           )}
         </div>
-        {/* Middle: logo only */}
-        <div className="justify-self-center">
+        {/* Middle: logo only — matches DineInPage. Locked height, natural
+            width, object-contain so wide word-mark logos render uncropped. */}
+        <div className="justify-self-center min-w-0">
           {logo ? (
             <img
               src={logo}
               alt={company?.name}
-              className="w-12 h-12 rounded-xl object-cover ring-1 ring-white/15"
+              className="max-h-10 w-auto max-w-[40vw] object-contain"
             />
           ) : (
             <span className="font-bold text-lg capitalize">{company?.name}</span>

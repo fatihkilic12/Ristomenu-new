@@ -71,13 +71,16 @@ function DineInContent() {
             {t('common.table', 'Table {{number}}', { number: table })}
           </span>
         </div>
-        {/* Middle: logo only — branding speaks for itself */}
-        <div className="justify-self-center">
+        {/* Middle: logo only — branding speaks for itself.
+            Logos can be square or wide word-marks; lock the height so the
+            header stays compact and let the width follow the natural aspect
+            ratio. object-contain prevents cropping. */}
+        <div className="justify-self-center min-w-0">
           {logo ? (
             <img
               src={logo}
               alt={company?.name}
-              className="w-12 h-12 rounded-xl object-cover ring-white/15"
+              className="max-h-10 w-auto max-w-[40vw] object-contain"
             />
           ) : (
             <span className="font-bold text-lg capitalize">{company?.name}</span>

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { EURO, IMAGE_ADDRESS, IMAGE_SERVER_ADDRESS } from '@/config/constants';
 import { useStoreConfig } from '@/context/StoreConfigContext';
 import { getBranding } from '@/lib/branding';
+import { useLongPress } from '@/hooks/useLongPress';
 
 type Props = {
   product: Record<string, any>;
@@ -34,12 +35,18 @@ export default memo(function CompactProductCard({ product, onClick, cartCount = 
     }
   };
 
+  const press = useLongPress({
+    onClick,
+    onLongPress: onClick,
+    onPointerDown: preloadModalImage,
+    disabled: isSoldOut,
+  });
+
   return (
     <button
       type="button"
-      onClick={isSoldOut ? undefined : onClick}
-      onPointerDown={isSoldOut ? undefined : preloadModalImage}
-      className={`relative w-full text-left bg-white border-b border-[var(--color-border)] transition-colors active:bg-gray-50 ${
+      {...press}
+      className={`relative w-full text-left bg-white border-b border-[var(--color-border)] transition-colors active:bg-gray-50 select-none ${
         isSoldOut ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-gray-50'
       }`}
     >
@@ -68,37 +75,14 @@ export default memo(function CompactProductCard({ product, onClick, cartCount = 
           // than before, then the first letter of the product name as
           // a typography crutch. Was: barely-visible "?" on light grey —
           // looked like a layout bug.
-          <div className="w-16 h-16 shrink-0 rounded-lg overflow-hidden relative bg-gray-100">
-            {branding.banner_image ? (
-              <>
-                <img
-                  src={branding.banner_image}
-                  alt=""
-                  loading="lazy"
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-white/55"/>
-                {branding.logo ? (
-                  <img
-                    src={branding.logo}
-                    alt=""
-                    className="absolute inset-0 m-auto w-9 h-9 rounded-md object-cover opacity-90"
-                  />
-                ) : (
-                  <span className="absolute inset-0 flex items-center justify-center text-lg font-bold text-gray-700 capitalize">
-                    {(product.name?.trim().charAt(0) || '?').toUpperCase()}
-                  </span>
-                )}
-              </>
-            ) : branding.logo ? (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <img src={branding.logo} alt="" className="w-10 h-10 rounded-md object-cover opacity-70"/>
-              </div>
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center text-xl font-bold text-gray-400 capitalize">
-                {(product.name?.trim().charAt(0) || '?').toUpperCase()}
-              </div>
-            )}
+          // Neutral cutlery glyph — operator preference over banner/logo
+          // overlays which made every photoless row look identical.
+          <div className="w-16 h-16 shrink-0 rounded-lg overflow-hidden relative bg-gray-50 ring-1 ring-inset ring-gray-100 flex items-center justify-center">
+            <svg className="w-7 h-7 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 2v7a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V2"/>
+              <path d="M6 11v11"/>
+              <path d="M19 15V2a4 4 0 0 0-4 4v6a2 2 0 0 0 2 2h2v8"/>
+            </svg>
           </div>
         ) : null}
 

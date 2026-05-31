@@ -7,9 +7,15 @@
 // safe defaults for stores that haven't set up StorefrontSettings yet — the
 // caller gets a fully populated object and never has to null-check fields.
 //
+// Image fields (`logo`, `banner_image`) are normalised to absolute URLs
+// here — Django returns paths like `/media/images/test/...` and consumers
+// would otherwise need to remember to prefix the host on every <img> tag.
+//
 // Legacy locations (`menu_settings.logo` / `menu_settings.button_color` /
 // `menu_settings.header_color` / `settings.header_color` / top-level `img`)
 // are no longer consulted — the backend dropped them from the response.
+
+import { IMAGE_SERVER_ADDRESS } from '@/config/constants';
 
 // Server-side enum mirror — keep in sync with
 // StorefrontSettings.MenuLayout. Unknown values fall back to 'classic'
@@ -74,8 +80,8 @@ export function getBranding(company: any): Branding {
     background_color: pick(b.background_color),
     text_color:       pick(b.text_color),
     header_color:     pick(b.header_color),
-    logo:             pick(b.logo),
-    banner_image:     pick(b.banner_image),
+    logo:             absoluteUrl(b.logo),
+    banner_image:     absoluteUrl(b.banner_image),
     welcome_message:  pick(b.welcome_message),
     footer_text:      pick(b.footer_text),
     menu_layout:      normalizeLayout(b.menu_layout),
@@ -86,6 +92,15 @@ export function getBranding(company: any): Branding {
     instagram_url:    pick(b.instagram_url),
     facebook_url:     pick(b.facebook_url),
   };
+}
+
+// Promote a server media path (`/media/images/...`) to the absolute URL
+// the browser can actually fetch. Already-absolute URLs (https://…) pass
+// through unchanged so a CDN-hosted asset still works.
+function absoluteUrl(v: any): string | null {
+  if (v == null || v === '') return null;
+  const s = String(v);
+  return s.startsWith('/') ? `${IMAGE_SERVER_ADDRESS}${s}` : s;
 }
 
 // First non-null / non-empty value, else null

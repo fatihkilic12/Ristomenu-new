@@ -1,8 +1,7 @@
 import { memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EURO, IMAGE_ADDRESS, IMAGE_SERVER_ADDRESS } from '@/config/constants';
-import { useStoreConfig } from '@/context/StoreConfigContext';
-import { getBranding } from '@/lib/branding';
+import { useLongPress } from '@/hooks/useLongPress';
 
 type Props = {
   product: Record<string, any>;
@@ -13,8 +12,6 @@ type Props = {
 
 export default memo(function KioskProductCard({ product, onClick, cartCount = 0, showImages = true }: Props) {
   const { t } = useTranslation();
-  const { company } = useStoreConfig();
-  const branding = getBranding(company);
   const price = product.price != null ? (product.price / 100).toFixed(2) : null;
   const isSoldOut = product.is_sold_out;
   const rawUri = product.uri || (product.image ? IMAGE_ADDRESS(product.image) : null);
@@ -22,12 +19,24 @@ export default memo(function KioskProductCard({ product, onClick, cartCount = 0,
   const [imgError, setImgError] = useState(false);
 
   const hasImage = showImages && imgUrl && !imgError;
+  const preloadModalImage = () => {
+    if (imgUrl && !imgError) {
+      const img = new Image();
+      img.src = imgUrl;
+    }
+  };
+  const press = useLongPress({
+    onClick,
+    onLongPress: onClick,
+    onPointerDown: preloadModalImage,
+    disabled: isSoldOut,
+  });
 
   return (
     <button
       type="button"
-      onClick={isSoldOut ? undefined : onClick}
-      className={`relative w-full text-left rounded-3xl bg-white overflow-hidden transition-all shadow-[0_4px_18px_rgba(0,0,0,0.06)] active:scale-[0.97] active:shadow-[0_2px_8px_rgba(0,0,0,0.05)] flex flex-col ${
+      {...press}
+      className={`relative w-full text-left rounded-3xl bg-white overflow-hidden transition-all shadow-[0_4px_18px_rgba(0,0,0,0.06)] active:scale-[0.97] active:shadow-[0_2px_8px_rgba(0,0,0,0.05)] flex flex-col select-none ${
         isSoldOut ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
       }`}
     >
@@ -59,7 +68,7 @@ export default memo(function KioskProductCard({ product, onClick, cartCount = 0,
           />
         </div>
       ) : (
-        <NoImageFallback bannerImage={branding.banner_image} logo={branding.logo}/>
+        <NoImageFallback/>
       )}
 
       {/* Content */}
@@ -81,35 +90,10 @@ export default memo(function KioskProductCard({ product, onClick, cartCount = 0,
   );
 });
 
-function NoImageFallback({bannerImage, logo}: {bannerImage: string | null; logo: string | null}) {
-  // Cascading fallback by clarity:
-  //   1. Restaurant banner photo, dimmed, with the logo (when set)
-  //      centered on top. Reads as "this is our place, photo coming".
-  //   2. Logo at meaningful opacity (not the old ~20% wash that
-  //      looked like a layout bug).
-  //   3. Cutlery SVG at full opacity gray — fully visible final hedge.
-  if (bannerImage) {
-    return (
-      <div className="relative w-full aspect-square shrink-0 overflow-hidden">
-        <img src={bannerImage} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover"/>
-        <div className="absolute inset-0 bg-white/55"/>
-        {logo && (
-          <img
-            src={logo}
-            alt=""
-            className="absolute inset-0 m-auto w-24 h-24 rounded-2xl object-cover shadow opacity-95"
-          />
-        )}
-      </div>
-    );
-  }
-  if (logo) {
-    return (
-      <div className="relative w-full aspect-square shrink-0 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-        <img src={logo} alt="" className="w-28 h-28 rounded-2xl object-cover opacity-80"/>
-      </div>
-    );
-  }
+// Neutral cutlery glyph for products without a photo — same reasoning as
+// OrderProductCard: banner+logo overlays made every photoless tile identical,
+// which read noisier than a plain icon on dense grids.
+function NoImageFallback() {
   return (
     <div className="relative w-full aspect-square bg-gray-50 flex items-center justify-center shrink-0 ring-1 ring-inset ring-gray-100">
       <svg className="w-24 h-24 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">

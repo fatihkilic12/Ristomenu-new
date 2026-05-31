@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { EURO, IMAGE_ADDRESS, IMAGE_SERVER_ADDRESS } from '@/config/constants';
 import { useStoreConfig } from '@/context/StoreConfigContext';
 import { getBranding } from '@/lib/branding';
+import { useLongPress } from '@/hooks/useLongPress';
 
 type Props = {
   product: Record<string, any>;
@@ -29,12 +30,18 @@ export default memo(function OrderProductCard({ product, onClick, cartCount = 0 
     }
   };
 
+  const press = useLongPress({
+    onClick,
+    onLongPress: onClick,
+    onPointerDown: preloadModalImage,
+    disabled: isSoldOut,
+  });
+
   return (
     <button
       type="button"
-      onClick={isSoldOut ? undefined : onClick}
-      onPointerDown={isSoldOut ? undefined : preloadModalImage}
-      className={`group relative w-full text-left rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-accent)]/40 transition-all p-4 flex gap-4 min-h-[112px] ${
+      {...press}
+      className={`group relative w-full text-left rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-accent)]/40 transition-all p-4 flex gap-4 min-h-[112px] select-none ${
         isSoldOut ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer active:scale-[0.99]'
       }`}
     >
@@ -73,7 +80,7 @@ export default memo(function OrderProductCard({ product, onClick, cartCount = 0 
               onError={() => setImgError(true)}
             />
           ) : (
-            <NoImageFallback bannerImage={branding.banner_image} logo={branding.logo}/>
+            <NoImageFallback/>
           )}
         </div>
       )}
@@ -103,35 +110,11 @@ export default memo(function OrderProductCard({ product, onClick, cartCount = 0 
   );
 });
 
-// Placeholder when a product has no image. Cascades:
-//   1. Restaurant banner photo (dimmed) + logo overlay — reads as
-//      "this is our place, image coming". Most contextual signal.
-//   2. Logo at solid opacity on a neutral background.
-//   3. Cutlery glyph as the final hedge, now at a readable opacity
-//      so it doesn't look like a layout bug.
-function NoImageFallback({bannerImage, logo}: {bannerImage: string | null; logo: string | null}) {
-  if (bannerImage) {
-    return (
-      <div className="relative w-full h-full overflow-hidden">
-        <img src={bannerImage} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover"/>
-        <div className="absolute inset-0 bg-[var(--color-surface)]/55"/>
-        {logo && (
-          <img
-            src={logo}
-            alt=""
-            className="absolute inset-0 m-auto w-12 h-12 rounded-lg object-cover opacity-95"
-          />
-        )}
-      </div>
-    );
-  }
-  if (logo) {
-    return (
-      <div className="w-full h-full bg-[var(--color-surface-2)] flex items-center justify-center">
-        <img src={logo} alt="" className="w-14 h-14 rounded-lg object-cover opacity-80"/>
-      </div>
-    );
-  }
+// Neutral cutlery glyph for products without a photo. Operator preference:
+// using the restaurant banner/logo here made every photoless tile look the
+// same, which was noisy in long lists. The plain icon reads as "no photo"
+// without competing with real product imagery on neighbouring tiles.
+function NoImageFallback() {
   return (
     <div className="w-full h-full bg-[var(--color-surface-2)] flex items-center justify-center text-[var(--color-muted)] ring-1 ring-inset ring-[var(--color-border)]">
       <svg className="w-9 h-9 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">

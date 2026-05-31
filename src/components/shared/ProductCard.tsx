@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { EURO, IMAGE_ADDRESS, IMAGE_SERVER_ADDRESS } from '@/config/constants';
 import { useStoreConfig } from '@/context/StoreConfigContext';
 import { getBranding } from '@/lib/branding';
+import { useLongPress } from '@/hooks/useLongPress';
 
 type Props = {
   product: Record<string, any>;
@@ -37,14 +38,20 @@ export default memo(function ProductCard({ product, onClick, cartCount = 0 }: Pr
     }
   };
 
+  const press = useLongPress({
+    onClick,
+    onLongPress: onClick,
+    onPointerDown: preloadModalImage,
+    disabled: isSoldOut,
+  });
+
   // Text-only compact variant when product images are disabled store-wide.
   if (!renderImages) {
     return (
       <button
         type="button"
-        onClick={isSoldOut ? undefined : onClick}
-        onPointerDown={isSoldOut ? undefined : preloadModalImage}
-        className={`relative w-full h-full text-left rounded-2xl bg-white overflow-hidden transition-all shadow-[0_1px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)] active:scale-[0.97] flex flex-col min-h-[112px] ${
+        {...press}
+        className={`relative w-full h-full text-left rounded-2xl bg-white overflow-hidden transition-all shadow-[0_1px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)] active:scale-[0.97] flex flex-col min-h-[112px] select-none ${
           isSoldOut ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
         }`}
       >
@@ -83,9 +90,8 @@ export default memo(function ProductCard({ product, onClick, cartCount = 0 }: Pr
   return (
     <button
       type="button"
-      onClick={isSoldOut ? undefined : onClick}
-      onPointerDown={isSoldOut ? undefined : preloadModalImage}
-      className={`relative w-full h-full text-left rounded-2xl bg-white overflow-hidden transition-all shadow-[0_1px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)] active:scale-[0.97] flex flex-col ${
+      {...press}
+      className={`relative w-full h-full text-left rounded-2xl bg-white overflow-hidden transition-all shadow-[0_1px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)] active:scale-[0.97] flex flex-col select-none ${
         isSoldOut ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
       }`}
     >
@@ -118,41 +124,15 @@ export default memo(function ProductCard({ product, onClick, cartCount = 0 }: Pr
           )}
         </div>
       ) : (
-        // Fallback when the product has no photo. Cascading by clarity:
-        //   1. Restaurant banner image (most contextual — operators set
-        //      it on the storefront page, so it actually looks like the
-        //      restaurant) with a soft gradient overlay so the logo +
-        //      product name underneath stay readable.
-        //   2. Restaurant logo at 60% opacity on a tinted background
-        //      (was 20% — barely visible, looked like a layout bug).
-        //   3. Plate emoji at 50% opacity as the final hedge.
-        <div className="w-full aspect-[4/3] shrink-0 relative overflow-hidden">
-          {branding.banner_image ? (
-            <>
-              <img
-                src={branding.banner_image}
-                alt=""
-                loading="lazy"
-                className="absolute inset-0 w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-white/55 to-white/70"/>
-              {branding.logo && (
-                <img
-                  src={branding.logo}
-                  alt=""
-                  className="absolute inset-0 m-auto w-14 h-14 rounded-xl object-cover shadow-sm opacity-90"
-                />
-              )}
-            </>
-          ) : branding.logo ? (
-            <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-              <img src={branding.logo} alt="" className="w-16 h-16 rounded-xl object-cover opacity-60"/>
-            </div>
-          ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-              <span className="text-5xl opacity-50">🍽</span>
-            </div>
-          )}
+        // Neutral cutlery glyph for photoless products. Banner/logo overlays
+        // turned every photoless tile into a clone of the others, which read
+        // noisier than a plain icon on long lists.
+        <div className="w-full aspect-[4/3] shrink-0 relative overflow-hidden bg-gray-50 ring-1 ring-inset ring-gray-100 flex items-center justify-center">
+          <svg className="w-12 h-12 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 2v7a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V2"/>
+            <path d="M6 11v11"/>
+            <path d="M19 15V2a4 4 0 0 0-4 4v6a2 2 0 0 0 2 2h2v8"/>
+          </svg>
           {(isVegan || isVegetarian) && (
             <div className="absolute top-2 left-2 flex gap-1">
               {isVegan && <span className="bg-green-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">VEGAN</span>}
