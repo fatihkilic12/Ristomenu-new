@@ -230,11 +230,17 @@ function MenuOnlyContent() {
                 [data-menu-scale='small']  [data-product-desc]   { font-size: 10px; }
                 [data-menu-scale='small']  [data-price]          { font-size: 13px; }
                 [data-menu-scale='small']  [data-category-label] { font-size: 11px; }
+                [data-menu-scale='small']  [data-category]                       { margin-bottom: 16px; }
+                [data-menu-scale='small']  [data-category] > h2                  { margin-bottom: 8px; }
+                [data-menu-scale='small']  [data-category] > [data-products-grid].grid { gap: 8px; }
 
                 [data-menu-scale='large']  [data-product-name]   { font-size: 20px; }
                 [data-menu-scale='large']  [data-product-desc]   { font-size: 16px; }
                 [data-menu-scale='large']  [data-price]          { font-size: 22px; }
                 [data-menu-scale='large']  [data-category-label] { font-size: 15px; }
+                [data-menu-scale='large']  [data-category]                       { margin-bottom: 40px; }
+                [data-menu-scale='large']  [data-category] > h2                  { margin-bottom: 20px; }
+                [data-menu-scale='large']  [data-category] > [data-products-grid].grid { gap: 20px; }
               `}</style>
               <div className={isLuxe ? 'luxe-menu' : ''} data-title-size={titleSize} data-menu-scale={titleSize}>
                 {renderCategoryStrip && (
@@ -270,7 +276,7 @@ function MenuOnlyContent() {
                           {cat.name}
                         </h2>
                         {isCompact ? (
-                          <div className="rounded-lg overflow-hidden border border-[var(--color-border)] bg-white">
+                          <div data-products-grid className="rounded-lg overflow-hidden border border-[var(--color-border)] bg-white">
                             {catProducts.map((product: Record<string, any>) => (
                               <CompactProductCard
                                 key={product.id}
@@ -280,7 +286,7 @@ function MenuOnlyContent() {
                             ))}
                           </div>
                         ) : (
-                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                          <div data-products-grid className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                             {catProducts.map((product: Record<string, any>) => (
                               <ProductCard
                                 key={product.id}

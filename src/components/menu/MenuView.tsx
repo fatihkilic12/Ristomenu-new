@@ -272,11 +272,25 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
         [data-menu-scale='small']  [data-product-desc]   { font-size: 10px; }
         [data-menu-scale='small']  [data-price]          { font-size: 13px; }
         [data-menu-scale='small']  [data-category-label] { font-size: 11px; }
+        /* Tighter spacing for "Klein" so the menu reads denser. */
+        [data-menu-scale='small']  [data-category]                       { margin-bottom: 16px; }
+        [data-menu-scale='small']  [data-category] > h2                  { margin-bottom: 8px; }
+        [data-menu-scale='small']  [data-category] > [data-products-grid].grid { gap: 8px; }
 
         [data-menu-scale='large']  [data-product-name]   { font-size: 20px; }
         [data-menu-scale='large']  [data-product-desc]   { font-size: 16px; }
         [data-menu-scale='large']  [data-price]          { font-size: 22px; }
         [data-menu-scale='large']  [data-category-label] { font-size: 15px; }
+        /* Roomier spacing for "Groot" so the bigger type has breathing
+           room. Bumps category-to-category margin, the gap between the
+           heading and its product grid, and the inter-card gap on the
+           classic photo grid. Luxe / list / compact variants don't use
+           .grid so they're untouched here (their internal spacing is
+           driven by their own dashed-underline / divider layouts). */
+        [data-menu-scale='large']  [data-category]                       { margin-bottom: 40px; }
+        [data-menu-scale='large']  [data-category] > h2                  { margin-bottom: 20px; }
+        [data-menu-scale='large']  [data-category] > [data-products-grid].grid { gap: 20px; }
+        [data-menu-scale='large']  [data-category] > [data-products-grid].luxe-product-list { gap: 28px; }
       `}</style>
       <div
         className={`flex overflow-x-clip ${isLuxe ? 'luxe-menu' : ''}`}
@@ -329,7 +343,7 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
                     // Per-category override — wide rows with full
                     // descriptions. Designed for pizzas / pastas where
                     // every variant reads differently.
-                    <div className="rounded-lg overflow-hidden border border-[var(--color-border)] bg-white">
+                    <div data-products-grid className="rounded-lg overflow-hidden border border-[var(--color-border)] bg-white">
                       {catProducts.map((product: Record<string, any>) => (
                         <ListProductCard
                           key={product.id}
@@ -344,7 +358,7 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
                     // becomes a small thumbnail. Each row is its own
                     // tap-target with a divider line — denser scan than
                     // the classic 2/3-col grid.
-                    <div className="rounded-lg overflow-hidden border border-[var(--color-border)] bg-white">
+                    <div data-products-grid className="rounded-lg overflow-hidden border border-[var(--color-border)] bg-white">
                       {catProducts.map((product: Record<string, any>) => (
                         <CompactProductCard
                           key={product.id}
@@ -360,7 +374,7 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
                     // class is what the .luxe-product-list styles
                     // above hook into to strip card chrome and stack
                     // products vertically.
-                    <div className="luxe-product-list">
+                    <div data-products-grid className="luxe-product-list">
                       {catProducts.map((product: Record<string, any>) => (
                         <ProductCard
                           key={product.id}
@@ -372,7 +386,7 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
                     </div>
                   ) : (
                     // Classic — photo-first grid (default).
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <div data-products-grid className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       {catProducts.map((product: Record<string, any>) => (
                         <ProductCard
                           key={product.id}
