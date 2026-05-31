@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useStoreConfig } from '@/context/StoreConfigContext';
 import { getDineInPause } from '@/lib/dineIn';
-import { getBranding } from '@/lib/branding';
+import { getBranding, absoluteMediaUrl } from '@/lib/branding';
 import { ADD, EDIT } from '@/config/constants';
 import CategoryNav from '@/components/shared/CategoryNav';
 import ProductCard from '@/components/shared/ProductCard';
@@ -38,6 +38,12 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
   const modalRef = useRef<OptionModalRef>(null);
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
   const categoryRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  // Photo-strip refs — mirror the CategoryNav pattern (navRef on the
+  // scrolling container, activeRef on the active tile) so we can
+  // horizontally centre the active category-photo as the user scrolls
+  // through the page, matching the pill-nav UX.
+  const stripNavRef = useRef<HTMLDivElement | null>(null);
+  const stripActiveRef = useRef<HTMLButtonElement | null>(null);
   // While a programmatic scroll is in progress (user clicked a pill), suppress
   // the IntersectionObserver so the active pill stays on the clicked target
   // instead of flickering through every section that scrolls past.
@@ -74,6 +80,20 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
     return () => observer.disconnect();
   }, [products]);
 
+  // Centre the active category-photo tile inside the strip whenever the
+  // observer or a tile-click changes the active category, same UX as
+  // CategoryNav. No-op when the strip isn't mounted (toggle is off / no
+  // photos).
+  useEffect(() => {
+    const btn = stripActiveRef.current;
+    const nav = stripNavRef.current;
+    if (!btn || !nav) return;
+    const navRect = nav.getBoundingClientRect();
+    const btnRect = btn.getBoundingClientRect();
+    const scrollLeft = nav.scrollLeft + btnRect.left - navRect.left - navRect.width / 2 + btnRect.width / 2;
+    nav.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+  }, [activeCategory]);
+
   const scrollToCategory = useCallback((catId: number) => {
     const el = categoryRefs.current[catId];
     if (!el) return;
@@ -92,10 +112,16 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
     window.addEventListener('scrollend', release, { once: true });
     programmaticScrollTimer.current = window.setTimeout(release, 1200);
 
-    // Header (h-20 = 80) + sticky pill nav (~50) + breathing room
-    const top = el.getBoundingClientRect().top + window.scrollY - 138;
+    // Header (h-20 = 80) + sticky nav row + breathing. The nav row is
+    // either the slim pill bar (~50px) or the taller photo strip
+    // (~140px including label) — derive from the toggle so the section
+    // lands flush below the sticky bar instead of being hidden under it.
+    const stripOn = branding.show_category_photos
+      && categories.some((c: Record<string, any>) => c.image);
+    const navHeight = stripOn ? 150 : 50;
+    const top = el.getBoundingClientRect().top + window.scrollY - 80 - navHeight - 8;
     window.scrollTo({ top, behavior: 'smooth' });
-  }, []);
+  }, [branding.show_category_photos, categories]);
 
   const getCartCount = (productId: number) =>
     cart.filter(i => i.product === productId).reduce((s, i) => s + i.quantity, 0);
@@ -140,12 +166,15 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
 
   // Map title_size + layout to the h2 className for the category headings
   // (PIZZAS, DESSERTS …). Luxe has its own .luxe-menu h2 base size in the
-  // injected <style> below (1.5rem), so we scale around that with a class
-  // on the body element below; classic/compact use Tailwind sizes.
+  // injected <style> below, so we scale around that with a class on the
+  // body element below; classic/compact use Tailwind sizes.
+  // Sizes deliberately leaned UP after operator feedback that "large" felt
+  // closer to a regular heading — large should read as a clearly oversized
+  // poster-style title from across the table.
   const titleSizeClass: Record<typeof titleSize, string> =
     isCompact
-      ? {small: 'text-sm', medium: 'text-base', large: 'text-lg'}
-      : {small: 'text-base', medium: 'text-lg', large: 'text-2xl'};
+      ? {small: 'text-base', medium: 'text-xl', large: 'text-3xl'}
+      : {small: 'text-xl', medium: 'text-3xl', large: 'text-5xl'};
   // Static-string concat (not `mb-${n}`) so Tailwind's JIT scanner
   // can statically extract both `mb-2` and `mb-3` from the source.
   const headingClass = `${titleSizeClass[titleSize]} font-bold ${isCompact ? 'mb-2' : 'mb-3'} px-1`;
@@ -197,11 +226,12 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
             position: relative;
           }
           /* Title-size override (operator picks in Portal → Storefront).
-             Luxe defaults to "medium". Other sizes scale around the
-             1.5rem base proportionally so the gold hairline + spacing
-             still feel balanced. */
-          .luxe-menu[data-title-size='small'] h2  { font-size: 1.2rem; }
-          .luxe-menu[data-title-size='large'] h2  { font-size: 1.95rem; letter-spacing: 0.16em; }
+             Luxe defaults to "medium" (the .luxe-menu h2 base above).
+             Sizes leaned up after operator feedback that "large" felt
+             too tame — bump so it actually reads as oversized. */
+          .luxe-menu h2 { font-size: 2.25rem; }
+          .luxe-menu[data-title-size='small'] h2  { font-size: 1.6rem; }
+          .luxe-menu[data-title-size='large'] h2  { font-size: 3.25rem; letter-spacing: 0.18em; }
           .luxe-menu h2::after {
             content: '';
             display: block;
@@ -259,32 +289,55 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
         <div className="flex-1 min-w-0">
           {renderCategoryStrip && (
             // Horizontal, swipe-scrollable rail of category-photo tiles.
-            // Tap a tile → scrollToCategory jumps to the section.
-            // Uses the same scrollToCategory the pill nav uses, so the
-            // sticky CategoryNav highlights the new section automatically
-            // via the IntersectionObserver already in place.
-            <div className="px-3 pt-3 pb-1">
-              <div className="flex gap-3 overflow-x-auto scrollbar-none -mx-3 px-3 pb-1">
-                {photoCategories.map((cat: Record<string, any>) => (
-                  <button
-                    key={cat.id}
-                    onClick={() => scrollToCategory(cat.id)}
-                    className="flex-shrink-0 w-24 group"
-                    aria-label={cat.name}
-                  >
-                    <div className="w-24 h-24 rounded-xl overflow-hidden bg-gray-100 border border-[var(--color-border)]">
-                      <img
-                        src={cat.image}
-                        alt=""
-                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                        loading="lazy"
-                      />
-                    </div>
-                    <div className="mt-1.5 text-xs font-medium text-center text-[var(--color-text)] line-clamp-2 leading-tight">
-                      {cat.name}
-                    </div>
-                  </button>
-                ))}
+            // Sticky like the pill nav so it stays in view while scrolling
+            // through long menus. Tap → scrollToCategory (same handler as
+            // CategoryNav). Active tile gets a primary-coloured ring +
+            // bolder label, mirroring the pill-nav active state.
+            <div
+              ref={stripNavRef}
+              className="sticky top-20 z-30 bg-white/85 backdrop-blur-xl border-b border-gray-100 overflow-x-auto scrollbar-hide"
+            >
+              <div className="flex gap-3 px-3 py-2.5">
+                {photoCategories.map((cat: Record<string, any>) => {
+                  const isActive = cat.id === activeCategory;
+                  return (
+                    <button
+                      key={cat.id}
+                      ref={isActive ? stripActiveRef : null}
+                      onClick={() => scrollToCategory(cat.id)}
+                      className="flex-shrink-0 w-24 group"
+                      aria-label={cat.name}
+                    >
+                      <div
+                        className={`w-24 h-24 rounded-xl overflow-hidden bg-gray-100 transition-shadow ${
+                          isActive
+                            ? 'ring-4 ring-[var(--color-primary)] ring-offset-2 shadow'
+                            : 'border border-[var(--color-border)]'
+                        }`}
+                      >
+                        <img
+                          // API surfaces `/media/images/…` relative paths;
+                          // promote to absolute so the browser hits the
+                          // Django host, not the storefront's Vite/CDN
+                          // origin.
+                          src={absoluteMediaUrl(cat.image) ?? ''}
+                          alt=""
+                          className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                          loading="lazy"
+                        />
+                      </div>
+                      <div
+                        className={`mt-1.5 text-xs text-center line-clamp-2 leading-tight ${
+                          isActive
+                            ? 'font-bold text-[var(--color-primary)]'
+                            : 'font-medium text-[var(--color-text)]'
+                        }`}
+                      >
+                        {cat.name}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -311,7 +364,12 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
                   key={cat.id}
                   ref={el => { categoryRefs.current[cat.id] = el; }}
                   data-category={cat.id}
-                  className={isCompact ? 'mb-4 scroll-mt-36' : 'mb-6 scroll-mt-36'}
+                  className={isCompact ? 'mb-4' : 'mb-6'}
+                  // scrollMarginTop matches the sticky-nav offset used by
+                  // scrollToCategory so jumping to a section lands flush
+                  // under whichever nav row is active (slim pill vs the
+                  // taller photo strip).
+                  style={{scrollMarginTop: renderCategoryStrip ? 238 : 138}}
                 >
                   <h2 className={isLuxe ? undefined : headingClass}>
                     {cat.name}

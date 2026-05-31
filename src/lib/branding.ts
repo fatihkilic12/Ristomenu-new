@@ -108,12 +108,15 @@ export function getBranding(company: any): Branding {
 
 // Promote a server media path (`/media/images/...`) to the absolute URL
 // the browser can actually fetch. Already-absolute URLs (https://…) pass
-// through unchanged so a CDN-hosted asset still works.
-function absoluteUrl(v: any): string | null {
+// through unchanged so a CDN-hosted asset still works. Exported so menu
+// renderers can reuse it for category/product images that the API
+// surfaces as relative paths.
+export function absoluteMediaUrl(v: any): string | null {
   if (v == null || v === '') return null;
   const s = String(v);
   return s.startsWith('/') ? `${IMAGE_SERVER_ADDRESS}${s}` : s;
 }
+const absoluteUrl = absoluteMediaUrl;
 
 // First non-null / non-empty value, else null
 function pick(...vals: any[]): string | null {

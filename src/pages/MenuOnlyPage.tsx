@@ -7,7 +7,7 @@ import { useMenuRefresh } from '@/hooks/useMenuRefresh';
 import { StoreConfigProvider, useStoreConfig } from '@/context/StoreConfigContext';
 import { EURO, IMAGE_ADDRESS, IMAGE_SERVER_ADDRESS, PICKUP } from '@/config/constants';
 import { collectMenuImageUrls, precacheImages } from '@/lib/imageCache';
-import { getBranding } from '@/lib/branding';
+import { getBranding, absoluteMediaUrl } from '@/lib/branding';
 import LanguageSelector from '@/components/shared/LanguageSelector';
 import StoreFooter from '@/components/shared/StoreFooter';
 import CategoryNav from '@/components/shared/CategoryNav';
@@ -48,6 +48,11 @@ function MenuOnlyContent() {
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
   const [openProduct, setOpenProduct] = useState<Record<string, any> | null>(null);
   const categoryRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  // Photo-strip refs — mirror CategoryNav: navRef on the scrolling
+  // container, activeRef on the active tile, used by the useEffect below
+  // to keep the active tile horizontally centred.
+  const stripNavRef = useRef<HTMLDivElement | null>(null);
+  const stripActiveRef = useRef<HTMLButtonElement | null>(null);
   const programmaticScrollRef = useRef(false);
   const programmaticScrollTimer = useRef<number | null>(null);
 
@@ -82,6 +87,18 @@ function MenuOnlyContent() {
     return () => observer.disconnect();
   }, [products]);
 
+  // Centre the active category tile inside the photo strip whenever the
+  // active category changes (observer or tile-click), mirroring CategoryNav.
+  useEffect(() => {
+    const btn = stripActiveRef.current;
+    const nav = stripNavRef.current;
+    if (!btn || !nav) return;
+    const navRect = nav.getBoundingClientRect();
+    const btnRect = btn.getBoundingClientRect();
+    const scrollLeft = nav.scrollLeft + btnRect.left - navRect.left - navRect.width / 2 + btnRect.width / 2;
+    nav.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+  }, [activeCategory]);
+
   const scrollToCategory = useCallback((catId: number) => {
     const el = categoryRefs.current[catId];
     if (!el) return;
@@ -100,10 +117,14 @@ function MenuOnlyContent() {
     window.addEventListener('scrollend', release, { once: true });
     programmaticScrollTimer.current = window.setTimeout(release, 1200);
 
-    // Header (h-20 = 80) + sticky pill nav (~50) + breathing room
-    const top = el.getBoundingClientRect().top + window.scrollY - 138;
+    // Header (h-20 = 80) + sticky nav row + breathing. Strip is taller
+    // than the pill nav so the offset adapts to whichever is showing.
+    const stripOn = branding.show_category_photos
+      && categories.some((c: Record<string, any>) => c.image);
+    const navHeight = stripOn ? 150 : 50;
+    const top = el.getBoundingClientRect().top + window.scrollY - 80 - navHeight - 8;
     window.scrollTo({ top, behavior: 'smooth' });
-  }, []);
+  }, [branding.show_category_photos, categories]);
 
   if (configLoading) {
     return (
@@ -177,10 +198,13 @@ function MenuOnlyContent() {
           const isLuxe = layout === 'luxe';
           const isCompact = layout === 'compact';
           const titleSize = branding.title_size;
+          // Sizes leaned up so "large" reads as a clearly oversized
+          // poster-style heading; previous large (text-2xl, 24px) felt
+          // closer to a regular section title.
           const titleSizeClass: Record<typeof titleSize, string> =
             isCompact
-              ? {small: 'text-sm', medium: 'text-base', large: 'text-lg'}
-              : {small: 'text-base', medium: 'text-lg', large: 'text-2xl'};
+              ? {small: 'text-base', medium: 'text-xl', large: 'text-3xl'}
+              : {small: 'text-xl', medium: 'text-3xl', large: 'text-5xl'};
           // Static-string concat so Tailwind JIT statically picks up both classes.
           const headingClass = `${titleSizeClass[titleSize]} font-bold ${isCompact ? 'mb-2' : 'mb-3'} px-1 capitalize`;
           const photoCategories = categories.filter(
@@ -206,40 +230,61 @@ function MenuOnlyContent() {
                     border-bottom: 1px solid rgba(60, 38, 22, 0.18);
                     padding-bottom: 6px;
                   }
-                  /* Title-size scales the Luxe heading proportionally
-                     so the border + spacing still feel balanced. */
-                  .luxe-menu[data-title-size='small'] h2 { font-size: 1.4rem; }
-                  .luxe-menu[data-title-size='large'] h2 { font-size: 2.2rem; }
+                  /* Title-size bumps — operator feedback that the
+                     prior "large" felt too tame. Now reads as a real
+                     fine-dining-menu heading. */
+                  .luxe-menu h2 { font-size: 2.4rem; }
+                  .luxe-menu[data-title-size='small'] h2 { font-size: 1.7rem; }
+                  .luxe-menu[data-title-size='large'] h2 { font-size: 3.5rem; }
                 `}</style>
               )}
               <div className={isLuxe ? 'luxe-menu' : ''} data-title-size={titleSize}>
                 {renderCategoryStrip && (
                   // Horizontal, swipe-scrollable rail of category-photo
-                  // tiles. Tap a tile → scrollToCategory jumps to the
-                  // matching section. Same component shape as the dine-in
-                  // build in MenuView.
-                  <div className="px-3 pt-3 pb-1">
-                    <div className="flex gap-3 overflow-x-auto scrollbar-none -mx-3 px-3 pb-1">
-                      {photoCategories.map((cat: Record<string, any>) => (
-                        <button
-                          key={cat.id}
-                          onClick={() => scrollToCategory(cat.id)}
-                          className="flex-shrink-0 w-24 group"
-                          aria-label={cat.name}
-                        >
-                          <div className="w-24 h-24 rounded-xl overflow-hidden bg-gray-100 border border-[var(--color-border)]">
-                            <img
-                              src={cat.image}
-                              alt=""
-                              className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                              loading="lazy"
-                            />
-                          </div>
-                          <div className="mt-1.5 text-xs font-medium text-center text-[var(--color-text)] line-clamp-2 leading-tight">
-                            {cat.name}
-                          </div>
-                        </button>
-                      ))}
+                  // tiles. Sticky like the pill nav so it stays in view
+                  // while scrolling. Tap → scrollToCategory; active tile
+                  // gets a primary ring + bolder label.
+                  <div
+                    ref={stripNavRef}
+                    className="sticky top-20 z-30 bg-white/85 backdrop-blur-xl border-b border-gray-100 overflow-x-auto scrollbar-hide"
+                  >
+                    <div className="flex gap-3 px-3 py-2.5">
+                      {photoCategories.map((cat: Record<string, any>) => {
+                        const isActive = cat.id === activeCategory;
+                        return (
+                          <button
+                            key={cat.id}
+                            ref={isActive ? stripActiveRef : null}
+                            onClick={() => scrollToCategory(cat.id)}
+                            className="flex-shrink-0 w-24 group"
+                            aria-label={cat.name}
+                          >
+                            <div
+                              className={`w-24 h-24 rounded-xl overflow-hidden bg-gray-100 transition-shadow ${
+                                isActive
+                                  ? 'ring-4 ring-[var(--color-primary)] ring-offset-2 shadow'
+                                  : 'border border-[var(--color-border)]'
+                              }`}
+                            >
+                              <img
+                                src={absoluteMediaUrl(cat.image) ?? ''}
+                                alt=""
+                                className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                                loading="lazy"
+                              />
+                            </div>
+                            <div
+                              className={`mt-1.5 text-xs text-center line-clamp-2 leading-tight ${
+                                isActive
+                                  ? 'font-bold text-[var(--color-primary)]'
+                                  : 'font-medium text-[var(--color-text)]'
+                              }`}
+                            >
+                              {cat.name}
+                            </div>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -259,7 +304,11 @@ function MenuOnlyContent() {
                         key={cat.id}
                         ref={el => { categoryRefs.current[cat.id] = el; }}
                         data-category={cat.id}
-                        className={isCompact ? 'mb-4 scroll-mt-36' : 'mb-6 scroll-mt-36'}
+                        className={isCompact ? 'mb-4' : 'mb-6'}
+                        // scrollMarginTop matches the sticky-nav offset
+                        // so the section lands flush below the active row
+                        // (slim pill vs taller photo strip).
+                        style={{scrollMarginTop: renderCategoryStrip ? 238 : 138}}
                       >
                         <h2 className={isLuxe ? 'capitalize' : headingClass}>
                           {cat.name}
