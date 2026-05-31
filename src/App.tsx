@@ -12,6 +12,8 @@ import OrderPage from '@/pages/OrderPage';
 import CheckoutPage from '@/pages/CheckoutPage';
 import OrderTrackingPage from '@/pages/OrderTrackingPage';
 import MenuOnlyPage from '@/pages/MenuOnlyPage';
+import PrivacyPage from '@/pages/PrivacyPage';
+import TermsPage from '@/pages/TermsPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,6 +33,8 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
           <Route path="/company/:storeId" element={<LandingPage />} />
           <Route path="/company/:storeId/table" element={<TablePage />} />
           <Route path="/company/:storeId/kiosk" element={<KioskPage />} />

@@ -169,7 +169,9 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Pricing */}
+      {/* Pricing — module-based, matches PRICING.md.
+          Menu module is the required base (€50, includes 10 tablets).
+          Add-ons stack on top: Online ordering €30, Kiosk €25, KDS €15. */}
       <section id="pricing" className="py-20 px-6">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
@@ -177,34 +179,57 @@ export default function HomePage() {
             <h2 className="text-4xl sm:text-5xl font-bold tracking-tight leading-tight">
               No commissions<span className="text-[#a48589]">.</span> Ever<span className="text-[#a48589]">.</span>
             </h2>
-            <p className="mt-4 text-[#7a5b6e] text-lg">Flat monthly fee. Cancel anytime.</p>
+            <p className="mt-4 text-[#7a5b6e] text-lg">Flat monthly fee. Modular add-ons. Cancel anytime.</p>
           </div>
 
           <div className="grid sm:grid-cols-3 gap-6">
             <PriceCard
-              tier="Starter"
-              price="29"
-              desc="QR menu for your tables"
-              features={['Unlimited orders', 'QR code per table', 'Multi-language', 'POS integration', 'Custom branding']}
+              tier="Menu"
+              price="50"
+              desc="QR menu + POS integration"
+              features={[
+                '10 tablets included',
+                'Unlimited orders',
+                'QR code per table',
+                'Multi-language menu',
+                'POS integration (Untill)',
+                'Custom branding',
+              ]}
             />
             <PriceCard
-              tier="Pro"
-              price="59"
-              desc="Tablets + online pickup"
-              features={['Everything in Starter', 'Tablet ordering (€1/tablet)', 'Online pickup page', 'Online payments', 'Self-service tablet pairing']}
+              tier="Restaurant"
+              price="80"
+              desc="Menu + online ordering"
+              features={[
+                'Everything in Menu',
+                'Online pickup & delivery',
+                'Online payments (Mollie/Stripe)',
+                'Order tracking page',
+                'Customer notifications',
+              ]}
               featured
             />
             <PriceCard
               tier="Complete"
-              price="89"
+              price="120"
               desc="Full platform access"
-              features={['Everything in Pro', 'Self-service kiosk', 'Delivery ordering', 'Order tracking', 'Priority support']}
+              features={[
+                'Everything in Restaurant',
+                'Self-service kiosk',
+                'Kitchen display (KDS)',
+                'Auto table assignment',
+                'Priority support',
+              ]}
             />
           </div>
 
-          <p className="text-center text-[13px] text-[#a48589] mt-8">
-            All prices excl. VAT · Tablets: €1/tablet/month · No setup fees
-          </p>
+          <div className="text-center text-[13px] text-[#7a5b6e] mt-10 space-y-1">
+            <p>
+              <span className="font-semibold text-[#3b1f4b]">À la carte:</span>{' '}
+              Online ordering €30 · Kiosk €25 · Kitchen display €15 · Advanced tablet €15
+            </p>
+            <p>Extra tablets: €15 per 10 beyond the included 10 · All prices excl. VAT · No setup fees</p>
+          </div>
         </div>
       </section>
 
