@@ -149,13 +149,14 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
   // (PIZZAS, DESSERTS …). Luxe has its own .luxe-menu h2 base size in the
   // injected <style> below, so we scale around that with a class on the
   // body element below; classic/compact use Tailwind sizes.
-  // Sizes deliberately leaned UP after operator feedback that "large" felt
-  // closer to a regular heading — large should read as a clearly oversized
-  // poster-style title from across the table.
+  // Scale shifted UP per operator: what was the medium step now lives
+  // at "small" so even the baseline storefront feels confident — the
+  // new medium lands halfway to "large" so the picker still has three
+  // distinct visual steps.
   const titleSizeClass: Record<typeof titleSize, string> =
     isCompact
-      ? {small: 'text-base', medium: 'text-xl', large: 'text-3xl'}
-      : {small: 'text-xl', medium: 'text-3xl', large: 'text-5xl'};
+      ? {small: 'text-xl', medium: 'text-2xl', large: 'text-3xl'}
+      : {small: 'text-3xl', medium: 'text-4xl', large: 'text-5xl'};
   // Static-string concat (not `mb-${n}`) so Tailwind's JIT scanner
   // can statically extract both `mb-2` and `mb-3` from the source.
   const headingClass = `${titleSizeClass[titleSize]} font-bold ${isCompact ? 'mb-2' : 'mb-3'} px-1`;
@@ -207,12 +208,12 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
             position: relative;
           }
           /* Title-size override (operator picks in Portal → Storefront).
-             Luxe defaults to "medium" (the .luxe-menu h2 base above).
-             Sizes leaned up after operator feedback that "large" felt
-             too tame — bump so it actually reads as oversized. */
-          .luxe-menu h2 { font-size: 2.25rem; }
-          .luxe-menu[data-title-size='small'] h2  { font-size: 1.6rem; }
-          .luxe-menu[data-title-size='large'] h2  { font-size: 3.25rem; letter-spacing: 0.18em; }
+             Three distinct steps after the scale was shifted up — what
+             used to be "medium" now lives at "small", new "medium" is
+             halfway to large. */
+          .luxe-menu[data-title-size='small']  h2 { font-size: 2.25rem; }
+          .luxe-menu[data-title-size='medium'] h2 { font-size: 2.75rem; }
+          .luxe-menu[data-title-size='large']  h2 { font-size: 3.25rem; letter-spacing: 0.18em; }
           .luxe-menu h2::after {
             content: '';
             display: block;
@@ -268,25 +269,24 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
           operator's "Klein/Middel/Groot" choice ripples through the
           whole menu, not just the section headings. */}
       <style>{`
-        [data-menu-scale='small']  [data-product-name]   { font-size: 12px; }
-        [data-menu-scale='small']  [data-product-desc]   { font-size: 10px; }
-        [data-menu-scale='small']  [data-price]          { font-size: 13px; }
-        [data-menu-scale='small']  [data-category-label] { font-size: 11px; }
-        /* Tighter spacing for "Klein" so the menu reads denser. */
-        [data-menu-scale='small']  [data-category]                       { margin-bottom: 16px; }
-        [data-menu-scale='small']  [data-category] > h2                  { margin-bottom: 8px; }
-        [data-menu-scale='small']  [data-category] > [data-products-grid].grid { gap: 8px; }
+        /* Scale shifted up — "Klein" is now what "Middel" used to be
+           (the Tailwind defaults baked into each ProductCard), so no
+           rule fires for small. "Middel" gets a half-step bump, "Groot"
+           keeps the old large values. Operator: every storefront still
+           has three distinct visual steps. */
+        [data-menu-scale='medium'] [data-product-name]   { font-size: 16px; }
+        [data-menu-scale='medium'] [data-product-desc]   { font-size: 13px; }
+        [data-menu-scale='medium'] [data-price]          { font-size: 18px; }
+        [data-menu-scale='medium'] [data-category-label] { font-size: 13px; }
+        [data-menu-scale='medium'] [data-category]                       { margin-bottom: 32px; }
+        [data-menu-scale='medium'] [data-category] > h2                  { margin-bottom: 16px; }
+        [data-menu-scale='medium'] [data-category] > [data-products-grid].grid { gap: 16px; }
+        [data-menu-scale='medium'] [data-category] > [data-products-grid].luxe-product-list { gap: 22px; }
 
         [data-menu-scale='large']  [data-product-name]   { font-size: 20px; }
         [data-menu-scale='large']  [data-product-desc]   { font-size: 16px; }
         [data-menu-scale='large']  [data-price]          { font-size: 22px; }
         [data-menu-scale='large']  [data-category-label] { font-size: 15px; }
-        /* Roomier spacing for "Groot" so the bigger type has breathing
-           room. Bumps category-to-category margin, the gap between the
-           heading and its product grid, and the inter-card gap on the
-           classic photo grid. Luxe / list / compact variants don't use
-           .grid so they're untouched here (their internal spacing is
-           driven by their own dashed-underline / divider layouts). */
         [data-menu-scale='large']  [data-category]                       { margin-bottom: 40px; }
         [data-menu-scale='large']  [data-category] > h2                  { margin-bottom: 20px; }
         [data-menu-scale='large']  [data-category] > [data-products-grid].grid { gap: 20px; }

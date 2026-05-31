@@ -182,13 +182,14 @@ function MenuOnlyContent() {
           const isLuxe = layout === 'luxe';
           const isCompact = layout === 'compact';
           const titleSize = branding.title_size;
-          // Sizes leaned up so "large" reads as a clearly oversized
-          // poster-style heading; previous large (text-2xl, 24px) felt
-          // closer to a regular section title.
+          // Scale shifted UP — what used to be "medium" is the new
+          // "small", so even the baseline storefront feels confident.
+          // "Medium" lands halfway to "large" to keep three distinct
+          // visual steps.
           const titleSizeClass: Record<typeof titleSize, string> =
             isCompact
-              ? {small: 'text-base', medium: 'text-xl', large: 'text-3xl'}
-              : {small: 'text-xl', medium: 'text-3xl', large: 'text-5xl'};
+              ? {small: 'text-xl', medium: 'text-2xl', large: 'text-3xl'}
+              : {small: 'text-3xl', medium: 'text-4xl', large: 'text-5xl'};
           // Static-string concat so Tailwind JIT statically picks up both classes.
           const headingClass = `${titleSizeClass[titleSize]} font-bold ${isCompact ? 'mb-2' : 'mb-3'} px-1 capitalize`;
           const photoCategories = categories.filter(
@@ -214,25 +215,27 @@ function MenuOnlyContent() {
                     border-bottom: 1px solid rgba(60, 38, 22, 0.18);
                     padding-bottom: 6px;
                   }
-                  /* Title-size bumps — operator feedback that the
-                     prior "large" felt too tame. Now reads as a real
-                     fine-dining-menu heading. */
-                  .luxe-menu h2 { font-size: 2.4rem; }
-                  .luxe-menu[data-title-size='small'] h2 { font-size: 1.7rem; }
-                  .luxe-menu[data-title-size='large'] h2 { font-size: 3.5rem; }
+                  /* Title-size — three distinct steps after the scale
+                     was shifted up. Small inherits what used to be
+                     medium, medium lands halfway to large. */
+                  .luxe-menu[data-title-size='small']  h2 { font-size: 2.4rem; }
+                  .luxe-menu[data-title-size='medium'] h2 { font-size: 2.95rem; }
+                  .luxe-menu[data-title-size='large']  h2 { font-size: 3.5rem; }
                 `}</style>
               )}
               {/* title_size globally scales every product-card text:
                   name, description AND price. Targets data-attrs the
                   three ProductCard variants stamp on text elements. */}
               <style>{`
-                [data-menu-scale='small']  [data-product-name]   { font-size: 12px; }
-                [data-menu-scale='small']  [data-product-desc]   { font-size: 10px; }
-                [data-menu-scale='small']  [data-price]          { font-size: 13px; }
-                [data-menu-scale='small']  [data-category-label] { font-size: 11px; }
-                [data-menu-scale='small']  [data-category]                       { margin-bottom: 16px; }
-                [data-menu-scale='small']  [data-category] > h2                  { margin-bottom: 8px; }
-                [data-menu-scale='small']  [data-category] > [data-products-grid].grid { gap: 8px; }
+                /* Scale shifted up — "Klein" inherits the Tailwind
+                   defaults baked into each ProductCard (no rule). */
+                [data-menu-scale='medium'] [data-product-name]   { font-size: 16px; }
+                [data-menu-scale='medium'] [data-product-desc]   { font-size: 13px; }
+                [data-menu-scale='medium'] [data-price]          { font-size: 18px; }
+                [data-menu-scale='medium'] [data-category-label] { font-size: 13px; }
+                [data-menu-scale='medium'] [data-category]                       { margin-bottom: 32px; }
+                [data-menu-scale='medium'] [data-category] > h2                  { margin-bottom: 16px; }
+                [data-menu-scale='medium'] [data-category] > [data-products-grid].grid { gap: 16px; }
 
                 [data-menu-scale='large']  [data-product-name]   { font-size: 20px; }
                 [data-menu-scale='large']  [data-product-desc]   { font-size: 16px; }
