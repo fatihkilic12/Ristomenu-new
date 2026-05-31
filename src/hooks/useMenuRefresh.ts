@@ -3,71 +3,52 @@ import {useQueryClient} from '@tanstack/react-query';
 
 import {useIsTabletMode} from './useIsTabletMode';
 
-// Pusher-driven menu refresh for in-restaurant tablets.
+// Menu refresh hook for in-restaurant tablets.
 //
-// The server emits `menu_updated` on the public channel `menu-<slug>`
-// every time a Product / Category / OptionGroup is saved or deleted in
-// the Portal. When this hook is mounted on a tablet, we subscribe to
-// that channel and invalidate the menu-related query caches so the next
-// frame refetches.
+// IMPORTANT: this hook does NOT open a Pusher connection. The native
+// TabletMenuApp shell already holds a Pusher connection for
+// tablet_flicker + tablet_battery_request — at 1000 tablets that's
+// already 1000 connections, and opening a second one from inside the
+// WebView would double the count for no functional gain.
 //
-// Gated on `useIsTabletMode()`. Customer phones (QR scan) never
-// subscribe — they fetch once on page load and that's the end of it,
-// matching their actual usage pattern.
+// Instead we expose a `window.__refetchMenu()` callback. The native
+// shell subscribes to menu_updated on its single connection; on
+// receipt it calls `webView.injectJavaScript('window.__refetchMenu &&
+// window.__refetchMenu()')`, which hits this function and triggers
+// the same react-query invalidations the old Pusher subscription did.
 //
-// pusher-js is pulled in via dynamic import so the ~30KB bundle only
-// ships on tablets, not in the customer-phone path.
-export function useMenuRefresh(storeSlug: string | undefined) {
+// Customer phones (not in tablet mode) skip everything — they don't
+// stay on the menu page long enough to care about realtime updates.
+declare global {
+    interface Window {
+        __refetchMenu?: () => void;
+    }
+}
+
+export function useMenuRefresh(_storeSlug: string | undefined) {
     const isTablet = useIsTabletMode();
     const queryClient = useQueryClient();
 
     useEffect(() => {
-        if (!isTablet || !storeSlug) return;
+        if (!isTablet) return;
 
-        const key = import.meta.env.VITE_PUSHER_KEY as string | undefined;
-        const cluster = (import.meta.env.VITE_PUSHER_CLUSTER as string | undefined) || 'eu';
-        if (!key) {
-            // Pusher key not configured — fall back to no realtime refresh.
-            // Customers don't care, tablets will need a manual reload until
-            // VITE_PUSHER_KEY is set in the storefront's env.
-            return;
-        }
-
-        let cancelled = false;
-        let cleanup: (() => void) | null = null;
-
-        (async () => {
-            const {default: Pusher} = await import('pusher-js');
-            if (cancelled) return;
-
-            const client = new Pusher(key, {cluster});
-            const channel = client.subscribe(`menu-${storeSlug}`);
-            const handler = () => {
-                // Invalidate every menu-flavoured cache key. React-query
-                // dedupes the actual refetch when multiple keys share an
-                // in-flight fetcher, so this is cheap even on a page that
-                // doesn't currently render the matching component.
-                queryClient.invalidateQueries({queryKey: ['menu']});
-                queryClient.invalidateQueries({queryKey: ['menu-only']});
-                queryClient.invalidateQueries({queryKey: ['delivery-menu']});
-                queryClient.invalidateQueries({queryKey: ['kiosk-menu']});
-                // Branding / hours / settings can also change in the
-                // Portal — invalidate the store config cache too so the
-                // tablet picks up colour or hours edits.
-                queryClient.invalidateQueries({queryKey: ['store-config']});
-            };
-            channel.bind('menu_updated', handler);
-
-            cleanup = () => {
-                channel.unbind('menu_updated', handler);
-                client.unsubscribe(`menu-${storeSlug}`);
-                client.disconnect();
-            };
-        })();
+        window.__refetchMenu = () => {
+            // Invalidate every menu-flavoured cache key. React-query
+            // dedupes the actual refetch across keys that share an
+            // in-flight fetcher, so this is cheap even on a page that
+            // doesn't currently render the matching component.
+            queryClient.invalidateQueries({queryKey: ['menu']});
+            queryClient.invalidateQueries({queryKey: ['menu-only']});
+            queryClient.invalidateQueries({queryKey: ['delivery-menu']});
+            queryClient.invalidateQueries({queryKey: ['kiosk-menu']});
+            // Branding / hours / settings can also change in the
+            // Portal — invalidate the store config cache too so the
+            // tablet picks up colour or hours edits.
+            queryClient.invalidateQueries({queryKey: ['store-config']});
+        };
 
         return () => {
-            cancelled = true;
-            if (cleanup) cleanup();
+            delete window.__refetchMenu;
         };
-    }, [isTablet, storeSlug, queryClient]);
+    }, [isTablet, queryClient]);
 }
