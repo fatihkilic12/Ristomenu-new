@@ -55,10 +55,42 @@ export default memo(function CompactProductCard({ product, onClick, cartCount = 
             />
           </div>
         ) : showImages ? (
-          // No-image fallback — keep the layout stable when the operator
-          // hasn't uploaded a photo yet so the row doesn't shift.
-          <div className="w-16 h-16 shrink-0 rounded-lg bg-gray-100 flex items-center justify-center text-xl font-bold text-gray-300 capitalize">
-            {(product.name?.trim().charAt(0) || '?').toUpperCase()}
+          // No-image fallback — cascade by clarity: restaurant banner
+          // (clearly "this is our place"), then logo at higher opacity
+          // than before, then the first letter of the product name as
+          // a typography crutch. Was: barely-visible "?" on light grey —
+          // looked like a layout bug.
+          <div className="w-16 h-16 shrink-0 rounded-lg overflow-hidden relative bg-gray-100">
+            {branding.banner_image ? (
+              <>
+                <img
+                  src={branding.banner_image}
+                  alt=""
+                  loading="lazy"
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-white/55"/>
+                {branding.logo ? (
+                  <img
+                    src={branding.logo}
+                    alt=""
+                    className="absolute inset-0 m-auto w-9 h-9 rounded-md object-cover opacity-90"
+                  />
+                ) : (
+                  <span className="absolute inset-0 flex items-center justify-center text-lg font-bold text-gray-700 capitalize">
+                    {(product.name?.trim().charAt(0) || '?').toUpperCase()}
+                  </span>
+                )}
+              </>
+            ) : branding.logo ? (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <img src={branding.logo} alt="" className="w-10 h-10 rounded-md object-cover opacity-70"/>
+              </div>
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center text-xl font-bold text-gray-400 capitalize">
+                {(product.name?.trim().charAt(0) || '?').toUpperCase()}
+              </div>
+            )}
           </div>
         ) : null}
 

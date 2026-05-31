@@ -106,11 +106,40 @@ export default memo(function ProductCard({ product, onClick, cartCount = 0 }: Pr
           )}
         </div>
       ) : (
-        <div className="w-full aspect-[4/3] bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center shrink-0 relative">
-          {branding.logo ? (
-            <img src={branding.logo} alt="" className="w-12 h-12 rounded-xl object-cover opacity-20" />
+        // Fallback when the product has no photo. Cascading by clarity:
+        //   1. Restaurant banner image (most contextual — operators set
+        //      it on the storefront page, so it actually looks like the
+        //      restaurant) with a soft gradient overlay so the logo +
+        //      product name underneath stay readable.
+        //   2. Restaurant logo at 60% opacity on a tinted background
+        //      (was 20% — barely visible, looked like a layout bug).
+        //   3. Plate emoji at 50% opacity as the final hedge.
+        <div className="w-full aspect-[4/3] shrink-0 relative overflow-hidden">
+          {branding.banner_image ? (
+            <>
+              <img
+                src={branding.banner_image}
+                alt=""
+                loading="lazy"
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-white/40 via-white/55 to-white/70"/>
+              {branding.logo && (
+                <img
+                  src={branding.logo}
+                  alt=""
+                  className="absolute inset-0 m-auto w-14 h-14 rounded-xl object-cover shadow-sm opacity-90"
+                />
+              )}
+            </>
+          ) : branding.logo ? (
+            <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+              <img src={branding.logo} alt="" className="w-16 h-16 rounded-xl object-cover opacity-60"/>
+            </div>
           ) : (
-            <span className="text-3xl opacity-10">🍽</span>
+            <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+              <span className="text-5xl opacity-50">🍽</span>
+            </div>
           )}
           {(isVegan || isVegetarian) && (
             <div className="absolute top-2 left-2 flex gap-1">

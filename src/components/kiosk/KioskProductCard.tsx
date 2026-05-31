@@ -1,6 +1,8 @@
 import { memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EURO, IMAGE_ADDRESS, IMAGE_SERVER_ADDRESS } from '@/config/constants';
+import { useStoreConfig } from '@/context/StoreConfigContext';
+import { getBranding } from '@/lib/branding';
 
 type Props = {
   product: Record<string, any>;
@@ -11,6 +13,8 @@ type Props = {
 
 export default memo(function KioskProductCard({ product, onClick, cartCount = 0, showImages = true }: Props) {
   const { t } = useTranslation();
+  const { company } = useStoreConfig();
+  const branding = getBranding(company);
   const price = product.price != null ? (product.price / 100).toFixed(2) : null;
   const isSoldOut = product.is_sold_out;
   const rawUri = product.uri || (product.image ? IMAGE_ADDRESS(product.image) : null);
@@ -55,7 +59,7 @@ export default memo(function KioskProductCard({ product, onClick, cartCount = 0,
           />
         </div>
       ) : (
-        <NoImageFallback />
+        <NoImageFallback bannerImage={branding.banner_image} logo={branding.logo}/>
       )}
 
       {/* Content */}
@@ -77,13 +81,41 @@ export default memo(function KioskProductCard({ product, onClick, cartCount = 0,
   );
 });
 
-function NoImageFallback() {
+function NoImageFallback({bannerImage, logo}: {bannerImage: string | null; logo: string | null}) {
+  // Cascading fallback by clarity:
+  //   1. Restaurant banner photo, dimmed, with the logo (when set)
+  //      centered on top. Reads as "this is our place, photo coming".
+  //   2. Logo at meaningful opacity (not the old ~20% wash that
+  //      looked like a layout bug).
+  //   3. Cutlery SVG at full opacity gray — fully visible final hedge.
+  if (bannerImage) {
+    return (
+      <div className="relative w-full aspect-square shrink-0 overflow-hidden">
+        <img src={bannerImage} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover"/>
+        <div className="absolute inset-0 bg-white/55"/>
+        {logo && (
+          <img
+            src={logo}
+            alt=""
+            className="absolute inset-0 m-auto w-24 h-24 rounded-2xl object-cover shadow opacity-95"
+          />
+        )}
+      </div>
+    );
+  }
+  if (logo) {
+    return (
+      <div className="relative w-full aspect-square shrink-0 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <img src={logo} alt="" className="w-28 h-28 rounded-2xl object-cover opacity-80"/>
+      </div>
+    );
+  }
   return (
     <div className="relative w-full aspect-square bg-gray-50 flex items-center justify-center shrink-0 ring-1 ring-inset ring-gray-100">
-      <svg className="w-20 h-20 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 2v7a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V2" />
-        <path d="M6 11v11" />
-        <path d="M19 15V2a4 4 0 0 0-4 4v6a2 2 0 0 0 2 2h2v8" />
+      <svg className="w-24 h-24 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 2v7a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V2"/>
+        <path d="M6 11v11"/>
+        <path d="M19 15V2a4 4 0 0 0-4 4v6a2 2 0 0 0 2 2h2v8"/>
       </svg>
     </div>
   );
