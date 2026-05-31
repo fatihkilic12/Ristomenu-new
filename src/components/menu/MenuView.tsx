@@ -7,6 +7,7 @@ import { ADD, EDIT } from '@/config/constants';
 import CategoryNav from '@/components/shared/CategoryNav';
 import ProductCard from '@/components/shared/ProductCard';
 import CompactProductCard from '@/components/shared/CompactProductCard';
+import ListProductCard from '@/components/shared/ListProductCard';
 import CartSidebar from '@/components/shared/CartSidebar';
 import CartMobileBar from '@/components/shared/CartMobileBar';
 import DineInPausedBanner from '@/components/shared/DineInPausedBanner';
@@ -165,6 +166,13 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
             {categories.map((cat: Record<string, any>) => {
               const catProducts = products.filter((p: any) => p.category === cat.id);
               if (catProducts.length === 0) return null;
+              // Per-category override: 'list' shows wide rows with the
+              // full product description, regardless of the store-wide
+              // menu_layout. Operator picks this in Portal → Menu →
+              // Categories → <category> → Weergave op storefront.
+              // 'default' (or anything else) falls through to the
+              // store-wide layout below.
+              const isCategoryList = cat.display_style === 'list';
               return (
                 <div
                   key={cat.id}
@@ -175,7 +183,21 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
                   <h2 className={isCompact ? 'text-base font-bold mb-2 px-1' : 'text-lg font-bold mb-3 px-1'}>
                     {cat.name}
                   </h2>
-                  {isCompact ? (
+                  {isCategoryList ? (
+                    // Per-category override — wide rows with full
+                    // descriptions. Designed for pizzas / pastas where
+                    // every variant reads differently.
+                    <div className="rounded-lg overflow-hidden border border-[var(--color-border)] bg-white">
+                      {catProducts.map((product: Record<string, any>) => (
+                        <ListProductCard
+                          key={product.id}
+                          product={product}
+                          onClick={() => onProductClick(product)}
+                          cartCount={getCartCount(product.id)}
+                        />
+                      ))}
+                    </div>
+                  ) : isCompact ? (
                     // List-style: products stack vertically; image
                     // becomes a small thumbnail. Each row is its own
                     // tap-target with a divider line — denser scan than
