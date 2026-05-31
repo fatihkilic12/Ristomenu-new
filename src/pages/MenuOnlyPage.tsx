@@ -14,6 +14,7 @@ import CategoryNav from '@/components/shared/CategoryNav';
 import CategoryPhotoStrip from '@/components/shared/CategoryPhotoStrip';
 import ProductCard from '@/components/shared/ProductCard';
 import CompactProductCard from '@/components/shared/CompactProductCard';
+import ListProductCard from '@/components/shared/ListProductCard';
 
 function safeHostname(url: string): string | null {
   try {
@@ -273,6 +274,13 @@ function MenuOnlyContent() {
                   {categories.map((cat: Record<string, any>) => {
                     const catProducts = products.filter((p: any) => p.category === cat.id);
                     if (catProducts.length === 0) return null;
+                    // Per-category override: 'list' shows wide rows with
+                    // the full product description, ignoring the
+                    // store-wide menu_layout. Matches the same branch
+                    // already in MenuView (dine-in) so a pizzas /
+                    // pastas operator's choice in Portal → Menu →
+                    // Categories propagates to the menu-only view too.
+                    const isCategoryList = cat.display_style === 'list';
                     return (
                       <div
                         key={cat.id}
@@ -293,7 +301,17 @@ function MenuOnlyContent() {
                         <h2 className={isLuxe ? 'capitalize' : headingClass}>
                           {cat.name}
                         </h2>
-                        {isCompact ? (
+                        {isCategoryList ? (
+                          <div data-products-grid className="rounded-lg overflow-hidden border border-[var(--color-border)] bg-white">
+                            {catProducts.map((product: Record<string, any>) => (
+                              <ListProductCard
+                                key={product.id}
+                                product={product}
+                                onClick={() => setOpenProduct(product)}
+                              />
+                            ))}
+                          </div>
+                        ) : isCompact ? (
                           <div data-products-grid className="rounded-lg overflow-hidden border border-[var(--color-border)] bg-white">
                             {catProducts.map((product: Record<string, any>) => (
                               <CompactProductCard
