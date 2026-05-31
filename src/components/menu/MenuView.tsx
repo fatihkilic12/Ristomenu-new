@@ -288,7 +288,12 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
               </div>
             </div>
           )}
-          <CategoryNav categories={categories} activeId={activeCategory} onSelect={scrollToCategory} />
+          {/* Pill CategoryNav is redundant when the photo strip is on —
+              both render the same labels in the same scroll-on-tap role.
+              Show the pills only when the strip is hidden. */}
+          {!renderCategoryStrip && (
+            <CategoryNav categories={categories} activeId={activeCategory} onSelect={scrollToCategory} />
+          )}
 
           <div className="px-3 py-4">
             {categories.map((cat: Record<string, any>) => {

@@ -243,7 +243,12 @@ function MenuOnlyContent() {
                     </div>
                   </div>
                 )}
-                <CategoryNav categories={categories} activeId={activeCategory} onSelect={scrollToCategory} />
+                {/* Pill nav is redundant when the photo strip is on —
+                    both labels, same scroll-on-tap. Show pills only when
+                    the strip is hidden. */}
+                {!renderCategoryStrip && (
+                  <CategoryNav categories={categories} activeId={activeCategory} onSelect={scrollToCategory} />
+                )}
 
                 <div className="px-3 py-4">
                   {categories.map((cat: Record<string, any>) => {
