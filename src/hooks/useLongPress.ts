@@ -19,7 +19,10 @@ type Options = {
   delay?: number;
 };
 
-function vibrate(ms: number | number[]) {
+// Exported so single-purpose buttons (back, confirm, close) can fire the
+// same 10ms tap tick without pulling in the full long-press machinery.
+// Android only — iOS Safari ignores Vibration API silently.
+export function vibrate(ms: number | number[]) {
   if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
     try { navigator.vibrate(ms); } catch { /* ignored on browsers that gate this */ }
   }
