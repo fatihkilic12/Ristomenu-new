@@ -35,11 +35,21 @@ export function collectMenuImageUrls(menu: any): string[] {
 
   for (const p of (menu?.menu?.products || [])) {
     add(p.uri);
-    if (p.image) add(p.image, true);
+    // Products serialise p.image as the FK PK (an integer) AND p.uri as
+    // the storage URL. Either resolves the same asset, but `uri` is the
+    // cheaper path because it points straight at the CDN, no Django
+    // round-trip via /api/v2/image/<id>/. Only fall back to the id
+    // helper when uri is missing.
+    if (!p.uri && typeof p.image === 'number') add(p.image, true);
   }
   for (const c of (menu?.menu?.categories || [])) {
-    add(c.uri);
-    if (c.image) add(c.image, true);
+    // Categories don't expose a separate `uri` field — the storefront
+    // serializer surfaces the storage URL directly under `image`.
+    // Passing the URL through `IMAGE_ADDRESS()` (the previous isId path)
+    // produced the broken
+    //   /api/v2/image/https://storage.googleapis.com/.../webp/
+    // pattern that double-fetched every category image on page load.
+    add(c.image);
   }
   return Array.from(urls);
 }
