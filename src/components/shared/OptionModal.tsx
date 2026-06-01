@@ -4,6 +4,7 @@ import { EURO, ADD, EDIT, IMAGE_ADDRESS, IMAGE_SERVER_ADDRESS } from '@/config/c
 import { useCart } from '@/context/CartContext';
 import { useStoreConfig } from '@/context/StoreConfigContext';
 import { getBranding } from '@/lib/branding';
+import { useModalBackClose } from '@/hooks/useModalBackClose';
 
 type ModalState = {
   open: boolean;
@@ -59,6 +60,10 @@ const OptionModal = forwardRef(function OptionModal(_props: {}, ref: Ref<OptionM
   }));
 
   const close = () => setState(s => ({ ...s, open: false }));
+
+  // Hardware-back / browser-back closes the modal. Required for the
+  // TabletMenuApp WebView — see useModalBackClose for the full story.
+  useModalBackClose(state.open, close);
 
   // Prevent background scroll when modal is open
   useEffect(() => {

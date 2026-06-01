@@ -4,10 +4,12 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { getDeliveryMenu } from '@/actions/store';
 import { useMenuRefresh } from '@/hooks/useMenuRefresh';
+import { useModalBackClose } from '@/hooks/useModalBackClose';
 import { StoreConfigProvider, useStoreConfig } from '@/context/StoreConfigContext';
 import { EURO, IMAGE_ADDRESS, IMAGE_SERVER_ADDRESS, PICKUP } from '@/config/constants';
 import { collectMenuImageUrls, precacheImages } from '@/lib/imageCache';
 import { getBranding } from '@/lib/branding';
+import { vibrate } from '@/hooks/useLongPress';
 import LanguageSelector from '@/components/shared/LanguageSelector';
 import StoreFooter from '@/components/shared/StoreFooter';
 import CategoryNav from '@/components/shared/CategoryNav';
@@ -371,6 +373,9 @@ function ProductInfoModal({ product, showAllergens, onClose }: {
     return () => { document.body.style.overflow = ''; };
   }, []);
 
+  // Hardware-back / browser-back closes the modal — see useModalBackClose.
+  useModalBackClose(true, onClose);
+
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" onClick={onClose}>
       <div className="fixed inset-0 bg-black/50" />
@@ -448,7 +453,8 @@ function ProductInfoModal({ product, showAllergens, onClose }: {
           <button
             type="button"
             onClick={onClose}
-            className="w-full py-3.5 rounded-xl font-semibold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] transition-colors text-[15px] inline-flex items-center justify-center gap-2"
+            onPointerDown={e => { if (e.pointerType === 'touch') vibrate(10); }}
+            className="w-full py-3.5 rounded-xl font-semibold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] active:bg-[var(--color-primary-hover)] active:scale-[0.98] transition-all text-[15px] inline-flex items-center justify-center gap-2"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <line x1="19" y1="12" x2="5" y2="12" />

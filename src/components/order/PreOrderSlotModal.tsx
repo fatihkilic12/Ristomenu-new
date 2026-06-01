@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import PreOrderSlotPicker from '@/components/order/PreOrderSlotPicker';
+import { useModalBackClose } from '@/hooks/useModalBackClose';
 
 export interface PreOrderSlotModalProps {
   open: boolean;
@@ -79,6 +80,12 @@ export default function PreOrderSlotModal({
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [open, required, onClose]);
+
+  // Hardware-back / browser-back closes the modal — but only when the
+  // customer is allowed to dismiss it. In `required` mode (store closed
+  // for the chosen channel) we explicitly don't wire back, mirroring the
+  // Escape + backdrop-click suppression above.
+  useModalBackClose(open && !required, onClose);
 
   // Lock body scroll while the modal is open. Matches the rest of the
   // storefront so the menu page behind doesn't jiggle.
