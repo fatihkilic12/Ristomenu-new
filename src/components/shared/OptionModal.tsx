@@ -68,38 +68,6 @@ const OptionModal = forwardRef(function OptionModal(_props: {}, ref: Ref<OptionM
     }
   }, [state.open]);
 
-  // Extra close paths so the operator never gets stuck:
-  //   - Escape key on desktop / hardware-keyboard tablets.
-  //   - Browser back button (popstate). We push a history entry on
-  //     open so the back gesture pops it and we intercept the popstate
-  //     to call close() — the WebView treats this as "back" too, so
-  //     Android's edge-swipe back gesture also dismisses the modal
-  //     instead of leaving the operator stranded.
-  //   The visible close button is duplicated to the top-right (added
-  //   below in the JSX) for the same reason: Android's system back
-  //   gesture sits in a ~24px strip along the left edge and was
-  //   eating taps on the top-left button on some tablets.
-  useEffect(() => {
-    if (!state.open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') close();
-    };
-    const onPop = () => close();
-    window.addEventListener('keydown', onKey);
-    // Push a sentinel state so the next "back" lands on it.
-    window.history.pushState({ optionModal: true }, '');
-    window.addEventListener('popstate', onPop);
-    return () => {
-      window.removeEventListener('keydown', onKey);
-      window.removeEventListener('popstate', onPop);
-      // If the modal is closing for any reason other than popstate,
-      // unwind our sentinel so the browser history stays clean.
-      if (window.history.state?.optionModal) {
-        try { window.history.back(); } catch { /* noop */ }
-      }
-    };
-  }, [state.open]);
-
   const toggleOption = useCallback((groupId: number, itemId: number, group: Record<string, any>) => {
     setSelected(prev => {
       const groupSel = { ...(prev[groupId] || {}) };
@@ -215,7 +183,6 @@ const OptionModal = forwardRef(function OptionModal(_props: {}, ref: Ref<OptionM
           onClick={close}
           className="absolute top-4 left-4 z-20 w-12 h-12 rounded-full bg-black/50 text-white flex items-center justify-center backdrop-blur-sm hover:bg-black/70 shadow-lg"
           aria-label="Close"
-          style={{touchAction: 'manipulation'}}
         >
           <svg
             width="22"
@@ -229,33 +196,6 @@ const OptionModal = forwardRef(function OptionModal(_props: {}, ref: Ref<OptionM
           >
             <path d="M19 12H5"/>
             <path d="M12 19l-7-7 7-7"/>
-          </svg>
-        </button>
-        {/* Mirror close button on the right — Android's system back
-            gesture lives in a ~24px strip on the LEFT edge of the
-            screen and was eating taps on the top-left button on some
-            tablets, leaving the operator stuck in the modal. The
-            right edge has no equivalent gesture, so this button is
-            always reachable. Both close paths land at the same
-            handler. */}
-        <button
-          onClick={close}
-          className="absolute top-4 right-4 z-20 w-12 h-12 rounded-full bg-black/50 text-white flex items-center justify-center backdrop-blur-sm hover:bg-black/70 shadow-lg"
-          aria-label="Close"
-          style={{touchAction: 'manipulation'}}
-        >
-          <svg
-            width="22"
-            height="22"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M18 6L6 18"/>
-            <path d="M6 6l12 12"/>
           </svg>
         </button>
 
