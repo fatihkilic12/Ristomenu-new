@@ -68,19 +68,36 @@ const OptionModal = forwardRef(function OptionModal(_props: {}, ref: Ref<OptionM
     }
   }, [state.open]);
 
-  // Escape key closes the modal on desktop + hardware-keyboard tablets.
-  // We deliberately do NOT push a history sentinel here — that conflicts
-  // with react-router's own popstate handling and caused the modal to
-  // immediately close on open. The top-right X button (added below in
-  // the JSX) is what gives tablet operators a guaranteed close path
-  // outside Android's left-edge back-gesture strip.
+  // Extra close paths so the operator never gets stuck:
+  //   - Escape key on desktop / hardware-keyboard tablets.
+  //   - Browser back button (popstate). We push a history entry on
+  //     open so the back gesture pops it and we intercept the popstate
+  //     to call close() — the WebView treats this as "back" too, so
+  //     Android's edge-swipe back gesture also dismisses the modal
+  //     instead of leaving the operator stranded.
+  //   The visible close button is duplicated to the top-right (added
+  //   below in the JSX) for the same reason: Android's system back
+  //   gesture sits in a ~24px strip along the left edge and was
+  //   eating taps on the top-left button on some tablets.
   useEffect(() => {
     if (!state.open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') close();
     };
+    const onPop = () => close();
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    // Push a sentinel state so the next "back" lands on it.
+    window.history.pushState({ optionModal: true }, '');
+    window.addEventListener('popstate', onPop);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('popstate', onPop);
+      // If the modal is closing for any reason other than popstate,
+      // unwind our sentinel so the browser history stays clean.
+      if (window.history.state?.optionModal) {
+        try { window.history.back(); } catch { /* noop */ }
+      }
+    };
   }, [state.open]);
 
   const toggleOption = useCallback((groupId: number, itemId: number, group: Record<string, any>) => {
