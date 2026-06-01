@@ -390,17 +390,29 @@ function ProductInfoModal({ product, showAllergens, onClose }: {
         className="relative z-10 w-full h-[100dvh] sm:h-auto sm:rounded-2xl sm:max-w-xl sm:max-h-[90dvh] flex flex-col bg-white shadow-2xl overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
-        {/* Back button shifted to left-12 to clear Android's
-            left-edge back-gesture strip — same fix as OptionModal. */}
         <button
           onClick={onClose}
-          className="absolute top-4 left-12 z-20 w-12 h-12 rounded-full bg-black/50 text-white flex items-center justify-center backdrop-blur-sm hover:bg-black/70 shadow-lg"
+          className="absolute top-4 left-4 z-20 w-12 h-12 rounded-full bg-black/50 text-white flex items-center justify-center backdrop-blur-sm hover:bg-black/70 shadow-lg"
           aria-label="Close"
           style={{touchAction: 'manipulation'}}
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <line x1="19" y1="12" x2="5" y2="12" />
             <polyline points="12 19 5 12 12 5" />
+          </svg>
+        </button>
+        {/* Mirror close to right edge — Android system back-gesture
+            sits on the LEFT edge and was eating left-button taps on
+            tablets, leaving the operator stuck. */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 z-20 w-12 h-12 rounded-full bg-black/50 text-white flex items-center justify-center backdrop-blur-sm hover:bg-black/70 shadow-lg"
+          aria-label="Close"
+          style={{touchAction: 'manipulation'}}
+        >
+          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
         </button>
 

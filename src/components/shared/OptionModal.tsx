@@ -194,13 +194,9 @@ const OptionModal = forwardRef(function OptionModal(_props: {}, ref: Ref<OptionM
             reported it was barely visible on the tablet. SVG honours
             the wrapping <button>'s sizing consistently across desktop
             Chrome, iOS Safari, and Android WebView. */}
-        {/* Back button. Positioned at left-12 (48px from edge) rather
-            than left-4 (16px) so it sits outside Android's ~24px
-            left-edge back-gesture strip — taps used to get eaten by
-            the OS and operators were getting stuck on the modal. */}
         <button
           onClick={close}
-          className="absolute top-4 left-12 z-20 w-12 h-12 rounded-full bg-black/50 text-white flex items-center justify-center backdrop-blur-sm hover:bg-black/70 shadow-lg"
+          className="absolute top-4 left-4 z-20 w-12 h-12 rounded-full bg-black/50 text-white flex items-center justify-center backdrop-blur-sm hover:bg-black/70 shadow-lg"
           aria-label="Close"
           style={{touchAction: 'manipulation'}}
         >
@@ -216,6 +212,33 @@ const OptionModal = forwardRef(function OptionModal(_props: {}, ref: Ref<OptionM
           >
             <path d="M19 12H5"/>
             <path d="M12 19l-7-7 7-7"/>
+          </svg>
+        </button>
+        {/* Mirror close button on the right — Android's system back
+            gesture lives in a ~24px strip on the LEFT edge of the
+            screen and was eating taps on the top-left button on some
+            tablets, leaving the operator stuck in the modal. The
+            right edge has no equivalent gesture, so this button is
+            always reachable. Both close paths land at the same
+            handler. */}
+        <button
+          onClick={close}
+          className="absolute top-4 right-4 z-20 w-12 h-12 rounded-full bg-black/50 text-white flex items-center justify-center backdrop-blur-sm hover:bg-black/70 shadow-lg"
+          aria-label="Close"
+          style={{touchAction: 'manipulation'}}
+        >
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M18 6L6 18"/>
+            <path d="M6 6l12 12"/>
           </svg>
         </button>
 
