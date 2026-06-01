@@ -18,12 +18,14 @@ type BackHandler = () => void;
 
 const stack: BackHandler[] = [];
 
-function dispatchToStack() {
-    // LIFO — the most recently opened modal wins. Each handler runs
-    // exactly once; if it wants to "consume" the back, it should unmount
-    // itself synchronously (calling onClose typically does that).
+function dispatchToStack(e: Event) {
+    // LIFO — the most recently opened modal wins. preventDefault tells
+    // the TabletMenuApp shell that the back press was consumed by a
+    // modal, so it should NOT fall through to window.history.back().
     const top = stack[stack.length - 1];
-    if (top) top();
+    if (!top) return;
+    e.preventDefault();
+    top();
 }
 
 let installed = false;
