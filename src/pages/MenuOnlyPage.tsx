@@ -371,23 +371,16 @@ function ProductInfoModal({ product, showAllergens, onClose }: {
     return () => { document.body.style.overflow = ''; };
   }, []);
 
-  // Same defensive close-path bundle as OptionModal: Escape on
-  // keyboard, browser/history back, and a mirror close button on the
-  // right edge so Android's left-edge back gesture never strands the
-  // tablet in this read-only modal.
+  // Escape closes the modal. (We dropped the history.pushState /
+  // popstate trick that OptionModal originally tried — it conflicted
+  // with react-router and prevented the modal from opening at all.)
+  // The mirror close button on the right edge below is what gives
+  // tablet operators a guaranteed close path outside Android's
+  // left-edge back-gesture strip.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    const onPop = () => onClose();
     window.addEventListener('keydown', onKey);
-    window.history.pushState({productInfoModal: true}, '');
-    window.addEventListener('popstate', onPop);
-    return () => {
-      window.removeEventListener('keydown', onKey);
-      window.removeEventListener('popstate', onPop);
-      if (window.history.state?.productInfoModal) {
-        try { window.history.back(); } catch { /* noop */ }
-      }
-    };
+    return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
   return (
