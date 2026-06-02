@@ -51,6 +51,31 @@ function LandingContent() {
   const ps = company.pickup_settings;
   const isOpen = company.is_open;
 
+  // SEO — assembled once per render from branding + store fields so each
+  // restaurant's QR-code landing page shows its own title and meta when
+  // shared in WhatsApp / Facebook / Twitter. Pure dynamic <title>/<meta>
+  // elements; React 19 hoists them into <head> automatically (no
+  // react-helmet needed). Note: this is client-rendered, so the static
+  // <title> in index.html is what Googlebot sees on first crawl until JS
+  // executes — fine for modern bots but worth keeping in mind if we ever
+  // add SSR / prerendering.
+  const storeName = company.name || storeId || 'Restaurant';
+  const cityPart = company.location?.city ? ` in ${company.location.city}` : '';
+  const seoTitle = `${storeName} — Bestel online${cityPart}`;
+  const seoDescription =
+    (branding.welcome_message?.trim()) ||
+    `Bekijk het menu van ${storeName}${cityPart} en bestel direct. ` +
+    [supportsDelivery && 'levering', supportsPickup && 'afhaal', 'dine-in']
+      .filter(Boolean)
+      .join(', ') + '.';
+  // OG image priority: banner > logo > none. Banners are wider and read
+  // better in WhatsApp / Twitter cards; logos work fine as a fallback.
+  const seoImage = bannerImage || logo || undefined;
+  // Theme color drives the browser chrome (Chrome address bar on Android,
+  // PWA tab strip). Falls back to the storefront primary so each store
+  // chrome matches its brand. Skip if the store hasn't set a primary.
+  const seoThemeColor = branding.primary_color || undefined;
+
   const hoursByDay: Record<number, { start: number; end: number }[]> = {};
   hours.forEach((h: any) => {
     if (!hoursByDay[h.day_of_week]) hoursByDay[h.day_of_week] = [];
@@ -59,6 +84,23 @@ function LandingContent() {
 
   return (
     <div className="min-h-dvh bg-[#fafafa]">
+      {/* SEO — React 19 hoists these into <head>. */}
+      <title>{seoTitle}</title>
+      <meta name="description" content={seoDescription} />
+      {seoThemeColor && <meta name="theme-color" content={seoThemeColor} />}
+      {logo && <link rel="icon" type="image/png" href={logo} />}
+      {/* Open Graph — WhatsApp / Facebook / LinkedIn previews. */}
+      <meta property="og:type" content="restaurant.restaurant" />
+      <meta property="og:title" content={seoTitle} />
+      <meta property="og:description" content={seoDescription} />
+      <meta property="og:site_name" content={storeName} />
+      {seoImage && <meta property="og:image" content={seoImage} />}
+      {/* Twitter / X — summary_large_image renders the banner big. */}
+      <meta name="twitter:card" content={seoImage ? 'summary_large_image' : 'summary'} />
+      <meta name="twitter:title" content={seoTitle} />
+      <meta name="twitter:description" content={seoDescription} />
+      {seoImage && <meta name="twitter:image" content={seoImage} />}
+
       {/* Hero */}
       <div className="relative h-56 sm:h-64 bg-gradient-to-b from-black/80 to-black/40 overflow-hidden">
         {bannerImage ? (
