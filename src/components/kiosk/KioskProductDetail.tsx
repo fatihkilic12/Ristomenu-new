@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { EURO, ADD, EDIT, IMAGE_ADDRESS, IMAGE_SERVER_ADDRESS } from '@/config/constants';
 import { useCart } from '@/context/CartContext';
 import KioskMealBuilder from '@/components/kiosk/KioskMealBuilder';
+import { getAllergenIcon, getAllergenLabel } from '@/lib/allergens';
 
 const FALLBACK_GRADIENTS = [
   'from-amber-100 via-orange-50 to-rose-100',
@@ -195,11 +196,19 @@ export default function KioskProductDetail({ params, showAllergens = true, allow
           )}
           {showAllergens && product.allergens?.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-5">
-              {product.allergens.map((a: string) => (
-                <span key={a} className="text-base px-4 py-2 rounded-full bg-amber-50 text-amber-700 border border-amber-200 font-semibold">
-                  {a}
-                </span>
-              ))}
+              {product.allergens.map((a: string) => {
+                const label = getAllergenLabel(a, t);
+                return (
+                  <span
+                    key={a}
+                    title={label}
+                    className="inline-flex items-center gap-2 text-lg px-4 py-2 rounded-full bg-amber-50 text-amber-800 border border-amber-200 font-semibold"
+                  >
+                    <span aria-hidden className="text-xl">{getAllergenIcon(a)}</span>
+                    <span>{label}</span>
+                  </span>
+                );
+              })}
             </div>
           )}
         </div>

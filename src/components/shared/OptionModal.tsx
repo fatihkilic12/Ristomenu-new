@@ -5,6 +5,7 @@ import { useCart } from '@/context/CartContext';
 import { useStoreConfig } from '@/context/StoreConfigContext';
 import { getBranding } from '@/lib/branding';
 import { useModalBackClose } from '@/hooks/useModalBackClose';
+import { getAllergenIcon, getAllergenLabel } from '@/lib/allergens';
 
 type ModalState = {
   open: boolean;
@@ -170,7 +171,27 @@ const OptionModal = forwardRef(function OptionModal(_props: {}, ref: Ref<OptionM
       }`}
       onClick={close}
       aria-hidden={!open}
+      data-option-scale={branding.title_size}
     >
+      {/* Mirrors the [data-menu-scale] block in MenuView so the operator's
+          "Algemene tekstgrootte" choice (small/medium/large) also drives
+          the dine-in option modal — sizes, extras, helper copy. Operator
+          feedback on tablets was that the radio rows were too small to
+          read at "Klein"; baseline Tailwind sizes below were bumped a
+          step and medium/large add proportional jumps from there. */}
+      <style>{`
+        [data-option-scale='medium'] [data-option-group-name]   { font-size: 17px; }
+        [data-option-scale='medium'] [data-option-helper]       { font-size: 13px; }
+        [data-option-scale='medium'] [data-option-required]     { font-size: 11px; }
+        [data-option-scale='medium'] [data-option-name]         { font-size: 16px; }
+        [data-option-scale='medium'] [data-option-price]        { font-size: 15px; }
+
+        [data-option-scale='large']  [data-option-group-name]   { font-size: 19px; }
+        [data-option-scale='large']  [data-option-helper]       { font-size: 15px; }
+        [data-option-scale='large']  [data-option-required]     { font-size: 12px; }
+        [data-option-scale='large']  [data-option-name]         { font-size: 18px; }
+        [data-option-scale='large']  [data-option-price]        { font-size: 16px; }
+      `}</style>
       <div className="fixed inset-0 bg-black/60" />
       <div
         className={`relative z-10 w-full h-[100dvh] sm:h-auto sm:rounded-2xl sm:max-w-xl sm:max-h-[90dvh] flex flex-col bg-[var(--color-surface)] text-[var(--color-text)] shadow-2xl transition-transform duration-150 ease-out ${
@@ -232,12 +253,28 @@ const OptionModal = forwardRef(function OptionModal(_props: {}, ref: Ref<OptionM
               <p className="text-sm text-[var(--color-muted)] leading-relaxed mt-1.5">{product.description}</p>
             )}
 
-            {/* Allergens */}
+            {/* Allergens — icon + readable label.
+                The old slug-only chip ("gluten") was hard to read on
+                tablets (text-[10px] + dark:text-amber-300 fired in dark
+                mode and dropped contrast to ~2.5:1). Now: 13px text,
+                emoji icon for instant recognition, pinned to a dark
+                amber tone that works on both OS themes. `title` keeps
+                the full label hoverable for desktop tooltips. */}
             {branding.show_allergens && product.allergens?.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-3">
-                {product.allergens.map((a: string) => (
-                  <span key={a} className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 font-medium">{a}</span>
-                ))}
+                {product.allergens.map((a: string) => {
+                  const label = getAllergenLabel(a, t);
+                  return (
+                    <span
+                      key={a}
+                      title={label}
+                      className="inline-flex items-center gap-1 text-[13px] px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-800 border border-amber-500/30 font-medium"
+                    >
+                      <span aria-hidden>{getAllergenIcon(a)}</span>
+                      <span>{label}</span>
+                    </span>
+                  );
+                })}
               </div>
             )}
 
@@ -252,8 +289,8 @@ const OptionModal = forwardRef(function OptionModal(_props: {}, ref: Ref<OptionM
           </div>
 
           <div className="p-5">
-            {/* Divider before options */}
-            {options.length > 0 && <div className="border-t border-[var(--color-border)] mb-2" />}
+            {/* The sticky header above already draws a bottom border,
+                so an extra divider here would stack two lines. */}
 
             {/* Option groups */}
             {options.map((group: Record<string, any>) => {
@@ -271,8 +308,11 @@ const OptionModal = forwardRef(function OptionModal(_props: {}, ref: Ref<OptionM
                 >
                   <div className="flex justify-between items-center mb-2">
                     <div>
-                      <h3 className="font-semibold text-[15px] capitalize">{group.name}</h3>
-                      <p className={`text-[11px] ${errored ? 'text-red-500 font-semibold' : 'text-[var(--color-muted)]'}`}>
+                      <h3 data-option-group-name className="font-semibold text-[15px] capitalize">{group.name}</h3>
+                      <p
+                        data-option-helper
+                        className={`text-[13px] ${errored ? 'text-red-500 font-semibold' : 'text-[var(--color-muted)]'}`}
+                      >
                         {isRequired
                           ? t('restaurants.options.choose_from', { min: group.min, max: group.max, defaultValue: `Choose ${group.min}–${group.max}` })
                           : t('restaurants.options.choose_max', { max: group.max, defaultValue: `Choose up to ${group.max}` })
@@ -280,11 +320,22 @@ const OptionModal = forwardRef(function OptionModal(_props: {}, ref: Ref<OptionM
                       </p>
                     </div>
                     {isRequired && (
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                        isSatisfied
-                          ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300'
-                          : 'bg-red-500/15 text-red-600 dark:text-red-300'
-                      }`}>
+                      // Tailwind's `dark:` variants react to the OS's
+                      // prefers-color-scheme, but the storefront forces a
+                      // light surface palette via CSS vars regardless of
+                      // OS mode. Mixing the two produced a light-red
+                      // glyph on a light-red bg (contrast ≈ 1.5:1) for
+                      // operators whose tablet was set to dark. Pin to
+                      // the dark-text/light-bg variant so contrast stays
+                      // ~7:1 in both modes.
+                      <span
+                        data-option-required
+                        className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                          isSatisfied
+                            ? 'bg-emerald-500/20 text-emerald-800'
+                            : 'bg-red-500/20 text-red-700'
+                        }`}
+                      >
                         {isSatisfied ? '✓' : t('restaurants.options.required', 'Required')}
                       </span>
                     )}
@@ -313,12 +364,19 @@ const OptionModal = forwardRef(function OptionModal(_props: {}, ref: Ref<OptionM
                           }`}>
                             {isSelected && <span className="text-white text-[10px] font-bold">✓</span>}
                           </span>
-                          <span className="text-sm flex-1 text-left">{item.name}</span>
+                          <span data-option-name className="text-[15px] flex-1 text-left">{item.name}</span>
                           {itemPrice > 0 && (
-                            <span className="text-xs font-medium text-[var(--color-muted)]">+{EURO}{itemPrice.toFixed(2)}</span>
+                            // Functional info — bump to full --color-text
+                            // contrast so a glance reads "what does this
+                            // cost extra". --color-muted at OK contrast
+                            // still felt washed next to the option name.
+                            <span data-option-price className="text-sm font-medium text-[var(--color-text)]">+{EURO}{itemPrice.toFixed(2)}</span>
                           )}
                           {itemPrice === 0 && (
-                            <span className="text-[10px] text-[var(--color-muted)] opacity-60">{t('common.free', 'Free')}</span>
+                            // Removed the opacity-60 stack — combined with
+                            // --color-muted it dropped to ~2.5:1 on white
+                            // (failed WCAG AA). Plain muted text now.
+                            <span data-option-price className="text-xs text-[var(--color-muted)]">{t('common.free', 'Free')}</span>
                           )}
                         </button>
                       );

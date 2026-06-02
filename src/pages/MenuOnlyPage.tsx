@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { getDeliveryMenu } from '@/actions/store';
 import { useMenuRefresh } from '@/hooks/useMenuRefresh';
 import { useModalBackClose } from '@/hooks/useModalBackClose';
+import { getAllergenIcon, getAllergenLabel } from '@/lib/allergens';
 import { StoreConfigProvider, useStoreConfig } from '@/context/StoreConfigContext';
 import { EURO, IMAGE_ADDRESS, IMAGE_SERVER_ADDRESS, PICKUP } from '@/config/constants';
 import { collectMenuImageUrls, precacheImages } from '@/lib/imageCache';
@@ -429,11 +430,19 @@ function ProductInfoModal({ product, showAllergens, onClose }: {
                   {t('menu_only.allergens', 'Allergens')}
                 </p>
                 <div className="flex flex-wrap gap-1.5">
-                  {product.allergens.map((a: string) => (
-                    <span key={a} className="text-xs px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 font-medium">
-                      {a}
-                    </span>
-                  ))}
+                  {product.allergens.map((a: string) => {
+                    const label = getAllergenLabel(a, t);
+                    return (
+                      <span
+                        key={a}
+                        title={label}
+                        className="inline-flex items-center gap-1 text-[13px] px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 font-medium"
+                      >
+                        <span aria-hidden>{getAllergenIcon(a)}</span>
+                        <span>{label}</span>
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
             )}
