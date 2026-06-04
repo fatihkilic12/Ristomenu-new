@@ -6,7 +6,7 @@ import { getDeliveryMenu } from '@/actions/store';
 import { useMenuRefresh } from '@/hooks/useMenuRefresh';
 import { useModalBackClose } from '@/hooks/useModalBackClose';
 import { useIsTabletMode } from '@/hooks/useIsTabletMode';
-import { useIdleReload } from '@/hooks/useIdleReload';
+import { useIdleAction } from '@/hooks/useIdleAction';
 import { getAllergenIcon, getAllergenLabel } from '@/lib/allergens';
 import { StoreConfigProvider, useStoreConfig } from '@/context/StoreConfigContext';
 import { EURO, IMAGE_ADDRESS, IMAGE_SERVER_ADDRESS, PICKUP } from '@/config/constants';
@@ -44,13 +44,13 @@ function MenuOnlyContent() {
   // menu_updated events via Pusher; customer phones don't.
   useMenuRefresh(storeId);
 
-  // Reset between customers — only on TabletMenuApp installations (the
-  // ?tablet=1 sessionStorage flag set by useIsTabletMode). After 5
-  // minutes without a real touch, reload so the next customer lands at
-  // the top with the first category active. Customer phones browsing
-  // /menu directly never trip this.
+  // Tablet-only between-customer cleanup (?tablet=1 sessionStorage flag).
+  // Two soft tiers, no hard reload:
+  //   - 60s idle  → close any open product modal
+  //   - 4min idle → scroll back to the first category
+  // The actions themselves are wired further down once `categories` /
+  // `scrollToCategory` are in scope.
   const isTablet = useIsTabletMode();
-  useIdleReload(isTablet, 5 * 60 * 1000);
   const { data: menu, isLoading } = useQuery({
     queryKey: ['menu-only', storeId, i18n.language],
     queryFn: () => getDeliveryMenu(storeId!, PICKUP),
@@ -128,6 +128,29 @@ function MenuOnlyContent() {
     const top = el.getBoundingClientRect().top + window.scrollY - 80 - navHeight - 8;
     window.scrollTo({ top, behavior: 'smooth' });
   }, [branding.show_category_photos, branding.title_size, categories]);
+
+  // Tier 1 — after 60s idle, just dismiss any open product modal so the
+  // next customer doesn't walk up to mid-product chrome blocking the
+  // page. Scroll + active category stay where they were.
+  useIdleAction(isTablet, 60 * 1000, () => {
+    setOpenProduct(null);
+  });
+
+  // Tier 2 — after 4min idle (longer than tier 1, so it fires only when
+  // tier 1's modal-close didn't get any new touches), scroll back to the
+  // first category. The IntersectionObserver picks up the new visibility
+  // and re-activates the first pill on its own; we also set it
+  // explicitly so the active state flips immediately.
+  useIdleAction(isTablet, 4 * 60 * 1000, () => {
+    setOpenProduct(null);
+    const first = categories[0]?.id ?? null;
+    if (first != null) {
+      setActiveCategory(first);
+      scrollToCategory(first);
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  });
 
   if (configLoading) {
     return (
