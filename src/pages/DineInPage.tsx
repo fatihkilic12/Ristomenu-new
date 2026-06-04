@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { getCompanyMenu } from '@/actions/store';
@@ -17,6 +17,7 @@ import OrderResultModal from '@/components/shared/OrderResultModal';
 
 function DineInContent() {
   const { storeId, table } = useParams<{ storeId: string; table: string }>();
+  const navigate = useNavigate();
   const { company, loading: configLoading } = useStoreConfig();
   const { t, i18n } = useTranslation();
   const { submitOrder, resetCart } = useCart();
@@ -28,13 +29,31 @@ function DineInContent() {
   useMenuRefresh(storeId);
 
   // Swallow Android hardware back on tablets — the only sanctioned exit
-  // from a seated table is the operator's 5-second long-press gesture in
-  // the TabletMenuApp shell. Without this, history.back() takes the
-  // guest back to TablePage and lets them re-pick a table mid-order.
-  // Modal handlers push later, so option/result modals still close on
-  // back via the LIFO stack in useModalBackClose.
+  // from a seated table is the 5-finger tap gesture wired below.
+  // Without this, history.back() takes the guest back to TablePage and
+  // lets them re-pick a table mid-order. Modal handlers push later, so
+  // option/result modals still close on back via the LIFO stack in
+  // useModalBackClose.
   const isTablet = useIsTabletMode();
   useModalBackClose(isTablet, () => {});
+
+  // 5-finger tap → bounce back to /table (the slug-picker / table-number
+  // entry). Replaces the older long-press-corner gesture which staff kept
+  // missing on the floor. Only armed in tablet mode so a customer on
+  // their phone can't accidentally jump back. We listen on capture so
+  // the gesture wins over any product-card tap underneath.
+  useEffect(() => {
+    if (!isTablet || !storeId) return;
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches && e.touches.length >= 5) {
+        e.preventDefault();
+        e.stopPropagation();
+        navigate(`/company/${storeId}/table`);
+      }
+    };
+    window.addEventListener('touchstart', onTouchStart, { passive: false, capture: true });
+    return () => window.removeEventListener('touchstart', onTouchStart, { capture: true } as any);
+  }, [isTablet, storeId, navigate]);
   const { data: menu, isLoading: menuLoading } = useQuery({
     queryKey: ['menu', storeId, table, i18n.language],
     queryFn: () => getCompanyMenu(storeId!, table!),
