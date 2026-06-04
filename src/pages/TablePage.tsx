@@ -34,7 +34,7 @@ function TableContent() {
       {/* Store name */}
       <div className="mb-10 text-center">
         {logo && (
-          <img src={logo} alt="" className="w-12 h-12 rounded-xl object-cover mx-auto mb-3 opacity-80" />
+          <img src={logo} alt="" className="w-full max-h-15 object-contain mb-6 opacity-80" />
         )}
         <p className="text-white/30 text-xs font-medium uppercase tracking-[0.2em]">{t('common.table_number', 'Table number')}</p>
       </div>

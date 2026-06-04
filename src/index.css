@@ -34,26 +34,31 @@
   color: var(--color-text);
 }
 
+/* !important on every variable so the inline styles StoreConfigContext
+   writes from `branding.background_color` / `text_color` / `header_color`
+   don't pin the order/checkout pages to the store's light-mode palette.
+   The brand identity still bleeds through via --color-primary / --color-accent
+   which we don't override here. */
 .theme-order.theme-order-dark {
-  --color-bg: #0f0f10;
-  --color-text: #ffffff;
-  --color-surface: #1a1a1c;
-  --color-surface-2: #232325;
-  --color-border: #2a2a2d;
-  --color-header: #0a0a0b;
-  --color-header-text: #ffffff;
-  --color-muted: #9ca3af;
+  --color-bg: #0f0f10 !important;
+  --color-text: #ffffff !important;
+  --color-surface: #1a1a1c !important;
+  --color-surface-2: #232325 !important;
+  --color-border: #2a2a2d !important;
+  --color-header: #0a0a0b !important;
+  --color-header-text: #ffffff !important;
+  --color-muted: #9ca3af !important;
 }
 
 .theme-order.theme-order-light {
-  --color-bg: #fafafa;
-  --color-text: #18181b;
-  --color-surface: #ffffff;
-  --color-surface-2: #f4f4f5;
-  --color-border: #e4e4e7;
-  --color-header: #ffffff;
-  --color-header-text: #18181b;
-  --color-muted: #71717a;
+  --color-bg: #fafafa !important;
+  --color-text: #18181b !important;
+  --color-surface: #ffffff !important;
+  --color-surface-2: #f4f4f5 !important;
+  --color-border: #e4e4e7 !important;
+  --color-header: #ffffff !important;
+  --color-header-text: #18181b !important;
+  --color-muted: #71717a !important;
 }
 
 

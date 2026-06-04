@@ -83,7 +83,11 @@
     "welcome_personal": "Salut !",
     "hey": "Salut",
     "open": "Ouvert",
-    "back_to_website": "Retour au site web"
+    "back_to_website": "Retour au site web",
+    "back": "Retour",
+    "close": "Fermer",
+    "edit": "Modifier",
+    "your_pick": "votre choix"
   },
   "checkout": {
     "title": "Paiement",
@@ -114,7 +118,13 @@
       "sub": "Comment souhaitez-vous payer ?",
       "cash": "Espèces",
       "cash_on_delivery": "Vous payez en espèces à la livraison.",
-      "cash_on_pickup": "Vous payez en espèces au retrait."
+      "cash_on_pickup": "Vous payez en espèces au retrait.",
+      "bancontact_at_door": "Bancontact à la porte",
+      "pin_at_pickup": "PIN au retrait"
+    },
+    "min_order": {
+      "short": "Le montant minimum de commande est de {{min}} — ajoutez encore {{missing}}.",
+      "cta": "Min. {{min}} — ajoutez {{missing}}"
     }
   },
   "tracking": {
@@ -161,7 +171,10 @@
       "just_now": "à l'instant",
       "minutes_ago": "il y a {{count}} min",
       "hours_ago": "il y a {{count}}h"
-    }
+    },
+    "awaiting_confirmation_title": "En attente de confirmation du restaurant",
+    "awaiting_confirmation_sub": "Nous avons envoyé votre commande au restaurant. Vous verrez une confirmation dès qu'ils l'auront acceptée.",
+    "cancelled_with_reason": "Le restaurant a refusé : {{reason}}"
   },
   "menu_only": {
     "allergens": "Allergènes",
@@ -233,6 +246,9 @@
         "cancel": "Annuler",
         "save": "Enregistrer",
         "add": "Ajouter une remarque"
+      },
+      "upsell": {
+        "title": "N'oubliez pas…"
       }
     },
     "note": "Remarque"
@@ -314,6 +330,57 @@
     "tracking": {
       "delivery_scheduled": "Scheduled for delivery at {{time}}",
       "pickup_scheduled": "Scheduled for pickup at {{time}}"
+    },
+    "or_schedule": "Ou planifier"
+  },
+  "pause": {
+    "banner": {
+      "delivery_unavailable": "La livraison n'est pas disponible pour le moment",
+      "pickup_unavailable": "Le retrait n'est pas disponible pour le moment",
+      "try_again_after": "Réessayez après {{time}}.",
+      "try_delivery": "Essayez la livraison ou revenez plus tard.",
+      "try_pickup": "Essayez le retrait ou revenez plus tard."
+    },
+    "unavailable_short": "Temporairement indisponible"
+  },
+  "menu": {
+    "dinein_paused": {
+      "title": "Commandes momentanément suspendues",
+      "default_reason": "La cuisine est un peu occupée. N'hésitez pas à parcourir la carte — nous reprenons dès que possible.",
+      "until": "Reprise vers {{time}}"
     }
+  },
+  "kiosk": {
+    "upsell": {
+      "eyebrow": "N'oubliez pas",
+      "title": "Voulez-vous quelque chose avec ça ?",
+      "subtitle": "Complétez votre commande — un seul appui pour ajouter.",
+      "skip": "Non merci, continuer",
+      "cart": {
+        "eyebrow": "N'oubliez pas",
+        "title": "Complétez la commande"
+      }
+    },
+    "combo": {
+      "hero_eyebrow": "Composez votre menu",
+      "hero_help": "Encore {{count}} choix et votre menu est complet.",
+      "review_title": "Prêt à ajouter",
+      "review_base": "Plat principal",
+      "step_indicator": "Étape {{current}} sur {{total}}",
+      "slot_required": "Choisissez {{count}}",
+      "slot_optional": "Facultatif",
+      "included": "Inclus",
+      "start": "Commencer",
+      "next_review": "Vérifier et confirmer",
+      "skip": "Ignorer",
+      "next": "Suivant",
+      "add_meal": "Ajouter le menu"
+    }
+  },
+  "paused_hero": {
+    "title": "{{channel}} est temporairement indisponible",
+    "until": "Jusqu'à {{time}}",
+    "switch_to": "Continuer avec {{channel}}",
+    "try_later": "Veuillez réessayer plus tard."
   }
 }

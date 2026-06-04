@@ -83,7 +83,11 @@
     "welcome_personal": "Hey there!",
     "hey": "Hi",
     "open": "Open",
-    "back_to_website": "Back to website"
+    "back_to_website": "Back to website",
+    "back": "Back",
+    "close": "Close",
+    "edit": "Edit",
+    "your_pick": "your pick"
   },
   "checkout": {
     "title": "Checkout",
@@ -114,7 +118,9 @@
       "sub": "How would you like to pay?",
       "cash": "Cash",
       "cash_on_delivery": "You'll pay cash on delivery.",
-      "cash_on_pickup": "You'll pay cash when you pick up your order."
+      "cash_on_pickup": "You'll pay cash when you pick up your order.",
+      "bancontact_at_door": "Bancontact at door",
+      "pin_at_pickup": "PIN at pickup"
     },
     "min_order": {
       "short": "Minimum order value is {{min}} — add {{missing}} more.",
@@ -165,7 +171,10 @@
       "just_now": "just now",
       "minutes_ago": "{{count}} min ago",
       "hours_ago": "{{count}}h ago"
-    }
+    },
+    "awaiting_confirmation_title": "Waiting for the restaurant to accept",
+    "awaiting_confirmation_sub": "We've sent your order to the restaurant. You'll see a confirmation as soon as they accept it.",
+    "cancelled_with_reason": "The restaurant declined: {{reason}}"
   },
   "menu_only": {
     "allergens": "Allergens",
@@ -237,6 +246,9 @@
         "cancel": "Cancel",
         "save": "Save",
         "add": "Add a note"
+      },
+      "upsell": {
+        "title": "Don't forget…"
       }
     },
     "note": "Note"
@@ -328,6 +340,47 @@
     "tracking": {
       "delivery_scheduled": "Scheduled for delivery at {{time}}",
       "pickup_scheduled": "Scheduled for pickup at {{time}}"
+    },
+    "or_schedule": "Or schedule"
+  },
+  "menu": {
+    "dinein_paused": {
+      "title": "Orders temporarily paused",
+      "default_reason": "The kitchen is a bit busy. Feel free to browse the menu — we'll resume as soon as possible.",
+      "until": "Resuming around {{time}}"
     }
+  },
+  "kiosk": {
+    "upsell": {
+      "eyebrow": "Don't forget",
+      "title": "Want something with that?",
+      "subtitle": "Round out your order — one tap to add.",
+      "skip": "No thanks, continue",
+      "cart": {
+        "eyebrow": "Don't forget",
+        "title": "Round it out"
+      }
+    },
+    "combo": {
+      "hero_eyebrow": "Build your meal",
+      "hero_help": "{{count}} more choice{{count, plural, one {} other {s}}} and your meal is ready.",
+      "review_title": "Ready to add",
+      "review_base": "Main",
+      "step_indicator": "Step {{current}} of {{total}}",
+      "slot_required": "Pick {{count}}",
+      "slot_optional": "Optional",
+      "included": "Included",
+      "start": "Start",
+      "next_review": "Review and confirm",
+      "skip": "Skip",
+      "next": "Next",
+      "add_meal": "Add meal"
+    }
+  },
+  "paused_hero": {
+    "title": "{{channel}} is temporarily unavailable",
+    "until": "Until {{time}}",
+    "switch_to": "Continue with {{channel}}",
+    "try_later": "Please try again later."
   }
 }

@@ -83,7 +83,11 @@
     "welcome_personal": "Hallo!",
     "hey": "Hi",
     "open": "Geöffnet",
-    "back_to_website": "Zurück zur Website"
+    "back_to_website": "Zurück zur Website",
+    "back": "Zurück",
+    "close": "Schließen",
+    "edit": "Bearbeiten",
+    "your_pick": "deine Auswahl"
   },
   "checkout": {
     "title": "Kasse",
@@ -114,7 +118,13 @@
       "sub": "Wie möchten Sie bezahlen?",
       "cash": "Bar",
       "cash_on_delivery": "Sie zahlen bar bei Lieferung.",
-      "cash_on_pickup": "Sie zahlen bar bei Abholung."
+      "cash_on_pickup": "Sie zahlen bar bei Abholung.",
+      "bancontact_at_door": "Bancontact an der Tür",
+      "pin_at_pickup": "PIN bei Abholung"
+    },
+    "min_order": {
+      "short": "Der Mindestbestellwert beträgt {{min}} — füge noch {{missing}} hinzu.",
+      "cta": "Min. {{min}} — füge {{missing}} hinzu"
     }
   },
   "tracking": {
@@ -161,7 +171,10 @@
       "just_now": "gerade eben",
       "minutes_ago": "vor {{count}} Min",
       "hours_ago": "vor {{count}}h"
-    }
+    },
+    "awaiting_confirmation_title": "Warten auf Bestätigung des Restaurants",
+    "awaiting_confirmation_sub": "Wir haben deine Bestellung an das Restaurant gesendet. Du erhältst eine Bestätigung, sobald sie angenommen wurde.",
+    "cancelled_with_reason": "Das Restaurant hat abgelehnt: {{reason}}"
   },
   "menu_only": {
     "allergens": "Allergene",
@@ -233,6 +246,9 @@
         "cancel": "Abbrechen",
         "save": "Speichern",
         "add": "Notiz hinzufügen"
+      },
+      "upsell": {
+        "title": "Nicht vergessen…"
       }
     },
     "note": "Notiz"
@@ -314,6 +330,57 @@
     "tracking": {
       "delivery_scheduled": "Scheduled for delivery at {{time}}",
       "pickup_scheduled": "Scheduled for pickup at {{time}}"
+    },
+    "or_schedule": "Oder planen"
+  },
+  "pause": {
+    "banner": {
+      "delivery_unavailable": "Lieferung ist derzeit nicht verfügbar",
+      "pickup_unavailable": "Abholung ist derzeit nicht verfügbar",
+      "try_again_after": "Versuche es nach {{time}} erneut.",
+      "try_delivery": "Probiere Lieferung oder schau später noch einmal vorbei.",
+      "try_pickup": "Probiere Abholung oder schau später noch einmal vorbei."
+    },
+    "unavailable_short": "Vorübergehend nicht verfügbar"
+  },
+  "menu": {
+    "dinein_paused": {
+      "title": "Bestellungen vorübergehend pausiert",
+      "default_reason": "Die Küche ist gerade etwas voll. Schau dir gern die Karte an — wir machen so schnell wie möglich weiter.",
+      "until": "Fortsetzung gegen {{time}}"
     }
+  },
+  "kiosk": {
+    "upsell": {
+      "eyebrow": "Nicht vergessen",
+      "title": "Möchtest du etwas dazu?",
+      "subtitle": "Mach deine Bestellung komplett — ein Tipp zum Hinzufügen.",
+      "skip": "Nein danke, weiter",
+      "cart": {
+        "eyebrow": "Nicht vergessen",
+        "title": "Mach es komplett"
+      }
+    },
+    "combo": {
+      "hero_eyebrow": "Stell dein Menü zusammen",
+      "hero_help": "Noch {{count}} Auswahl und dein Menü ist fertig.",
+      "review_title": "Bereit zum Hinzufügen",
+      "review_base": "Hauptgericht",
+      "step_indicator": "Schritt {{current}} von {{total}}",
+      "slot_required": "Wähle {{count}}",
+      "slot_optional": "Optional",
+      "included": "Inklusive",
+      "start": "Loslegen",
+      "next_review": "Prüfen und bestätigen",
+      "skip": "Überspringen",
+      "next": "Weiter",
+      "add_meal": "Menü hinzufügen"
+    }
+  },
+  "paused_hero": {
+    "title": "{{channel}} ist vorübergehend nicht verfügbar",
+    "until": "Bis {{time}}",
+    "switch_to": "Mit {{channel}} fortfahren",
+    "try_later": "Bitte versuche es später erneut."
   }
 }

@@ -13,9 +13,9 @@ import { collectMenuImageUrls, precacheImages } from '@/lib/imageCache';
 import { getBranding } from '@/lib/branding';
 import LanguageSelector from '@/components/shared/LanguageSelector';
 import StoreFooter from '@/components/shared/StoreFooter';
-import PauseBanner from '@/components/shared/PauseBanner';
 import OrderMenuView, { triggerOrderEditItem } from '@/components/order/OrderMenuView';
 import OrderCartPanel from '@/components/order/OrderCartPanel';
+import { isChannelPaused, formatPauseUntil } from '@/lib/pause';
 
 function OrderContent() {
   const { storeId } = useParams<{ storeId: string }>();
@@ -89,6 +89,26 @@ function OrderContent() {
   useEffect(() => {
     if (menu) precacheImages(collectMenuImageUrls(menu));
   }, [menu]);
+
+  // Hardware/browser-back hijack: customers reach order.<store>.be from the
+  // restaurant's own website. When they press back we want them on
+  // <store>.be again — not on whichever SPA route happens to sit on top of
+  // history. Push a sentinel entry on mount; the first back press fires
+  // popstate, we redirect full-page to the configured website URL. Only
+  // runs once the store config landed and only when Portal → Links →
+  // Website is set.
+  const websiteForBack = company ? (getBranding(company).website_url || null) : null;
+  useEffect(() => {
+    if (!websiteForBack) return;
+    if (!(window.history.state && window.history.state.orderBackGuard)) {
+      window.history.pushState({ orderBackGuard: true }, '');
+    }
+    const onPop = () => {
+      window.location.href = websiteForBack;
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, [websiteForBack]);
 
   if (configLoading) {
     return (
@@ -196,17 +216,6 @@ function OrderContent() {
             </div>
           )}
 
-          {/* Pause banner — only renders when the currently selected channel
-              is paused server-side. Trust `is_paused` from the API; don't
-              re-run the clock-compare on the client. */}
-          <div className="px-4 sm:px-6 pt-4">
-            <PauseBanner
-              orderType={effectiveType}
-              deliverySettings={ds}
-              pickupSettings={ps}
-            />
-          </div>
-
           {/* Restaurant info */}
           <div className={`px-4 sm:px-6 pb-2 ${hasBanner ? 'pt-6' : 'pt-6'}`}>
             {/* Prominent order-mode label — always visible so users know if they're
@@ -261,8 +270,29 @@ function OrderContent() {
             </div>
           </div>
 
-          {/* Menu */}
-          <OrderMenuView menu={menu} menuLoading={isLoading} />
+          {/* Menu — replaced with a paused-channel hero when the operator
+              has paused the currently selected channel. The hero offers a
+              one-tap switch to the other channel when it's both supported
+              AND not paused itself. */}
+          {(() => {
+            const currentChannel = effectiveType === DELIVERY ? ds : ps;
+            const otherChannel = effectiveType === DELIVERY ? ps : ds;
+            const otherType = effectiveType === DELIVERY ? PICKUP : DELIVERY;
+            const otherSupported = effectiveType === DELIVERY ? supportsPickup : supportsDelivery;
+            if (isChannelPaused(currentChannel)) {
+              return (
+                <PausedChannelHero
+                  channel={effectiveType}
+                  channelSettings={currentChannel}
+                  otherType={otherType}
+                  otherSupported={otherSupported}
+                  otherPaused={isChannelPaused(otherChannel)}
+                  onSwitchChannel={handleChangeType}
+                />
+              );
+            }
+            return <OrderMenuView menu={menu} menuLoading={isLoading} />;
+          })()}
         </div>
 
         {/* Cart sidebar (desktop) */}
@@ -300,19 +330,23 @@ function OrderContent() {
 
 function BrandContent({ company }: { company: any }) {
   const logo = getBranding(company).logo;
+  // When the store has a logo the wordmark already includes the name — render
+  // just the logo (object-contain so wide wordmarks aren't cropped to a
+  // 36×36 square like before). Store name only shows as a fallback.
+  if (logo) {
+    return (
+      <img
+        src={logo}
+        alt={company?.name}
+        className="max-h-10 w-auto max-w-[60vw] sm:max-w-[40vw] object-contain"
+      />
+    );
+  }
   return (
     <>
-      {logo ? (
-        <img
-          src={logo}
-          alt=""
-          className="w-9 h-9 rounded-lg object-cover ring-1 ring-black/10"
-        />
-      ) : (
-        <span className="w-9 h-9 rounded-lg bg-[var(--color-accent)]/20 flex items-center justify-center text-base font-extrabold capitalize" aria-hidden>
-          {(company?.name?.trim().charAt(0) || '?').toUpperCase()}
-        </span>
-      )}
+      <span className="w-9 h-9 rounded-lg bg-[var(--color-accent)]/20 flex items-center justify-center text-base font-extrabold capitalize" aria-hidden>
+        {(company?.name?.trim().charAt(0) || '?').toUpperCase()}
+      </span>
       <span className="font-extrabold text-base truncate capitalize">
         {company?.name || ''}
       </span>
@@ -327,13 +361,88 @@ function safeHostname(url: string): string | null {
   } catch { return null; }
 }
 
+/* ─── Paused-channel hero ──────────────────────────────────────
+   Shown in the main column instead of the menu when the operator
+   pauses the currently selected channel. The CTA flips the customer
+   to the other channel in-place (no navigation) so they keep their
+   cart and don't have to re-enter contact info.                  */
+function PausedChannelHero({
+  channel,
+  channelSettings,
+  otherType,
+  otherSupported,
+  otherPaused,
+  onSwitchChannel,
+}: {
+  channel: string;
+  channelSettings: any;
+  otherType: string;
+  otherSupported: boolean;
+  otherPaused: boolean;
+  onSwitchChannel: (next: string) => void;
+}) {
+  const { t, i18n } = useTranslation();
+  const reason = (channelSettings?.pause_reason || '').trim();
+  const until = formatPauseUntil(channelSettings?.paused_until, i18n.language);
+
+  const channelLabel = channel === DELIVERY
+    ? t('common.delivery', 'Levering')
+    : t('common.pickup', 'Afhalen');
+  const otherLabel = otherType === DELIVERY
+    ? t('common.delivery', 'Levering')
+    : t('common.pickup', 'Afhalen');
+
+  const canSwitch = otherSupported && !otherPaused;
+
+  return (
+    <div className="px-4 sm:px-6 py-10 sm:py-16 flex justify-center">
+      <div className="w-full max-w-xl bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl p-6 sm:p-10 text-center">
+        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-orange-500/15 mb-5">
+          <span className="text-4xl" aria-hidden>⏸️</span>
+        </div>
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--color-text)] leading-tight">
+          {t('paused_hero.title', '{{channel}} is tijdelijk uitgeschakeld', { channel: channelLabel })}
+        </h2>
+        {reason && (
+          <p className="text-base text-[var(--color-muted)] mt-3 leading-snug">
+            {reason}
+          </p>
+        )}
+        {until && (
+          <p className="text-sm text-[var(--color-muted)] mt-3">
+            {t('paused_hero.until', 'Tot {{time}}', { time: until })}
+          </p>
+        )}
+        {canSwitch ? (
+          <button
+            type="button"
+            onClick={() => onSwitchChannel(otherType)}
+            className="mt-7 inline-flex items-center gap-2 px-6 h-12 rounded-xl font-bold bg-[var(--color-text)] text-[var(--color-bg)] hover:opacity-90 transition-opacity"
+          >
+            <span aria-hidden>{otherType === DELIVERY ? '🚴' : '🛍️'}</span>
+            {t('paused_hero.switch_to', 'Verder met {{channel}}', { channel: otherLabel })}
+          </button>
+        ) : (
+          <p className="mt-7 text-sm text-[var(--color-muted)]">
+            {t('paused_hero.try_later', 'Probeer het later opnieuw.')}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function Badge({ children, color, icon }: { children: React.ReactNode; color?: 'green' | 'orange' | 'red'; icon?: React.ReactNode }) {
+  // Light mode uses solid pastels (bg-X-100 + text-X-800) for proper WCAG-AA
+  // contrast — the previous bg-X-500/15 + text-X-600 combo washed out on
+  // white. Dark mode keeps the subtle accent-tint look via a [.theme-order-
+  // dark_&] override so the pills don't shout on a dark surface.
   const cls = color === 'green'
-    ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border-emerald-500/30'
+    ? 'bg-emerald-100 text-emerald-800 border-emerald-300 [.theme-order-dark_&]:bg-emerald-500/15 [.theme-order-dark_&]:text-emerald-200 [.theme-order-dark_&]:border-emerald-500/40'
     : color === 'orange'
-      ? 'bg-orange-500/15 text-orange-700 dark:text-orange-300 border-orange-500/30'
+      ? 'bg-orange-100 text-orange-800 border-orange-300 [.theme-order-dark_&]:bg-orange-500/15 [.theme-order-dark_&]:text-orange-200 [.theme-order-dark_&]:border-orange-500/40'
       : color === 'red'
-        ? 'bg-red-500/15 text-red-600 dark:text-red-300 border-red-500/30'
+        ? 'bg-red-100 text-red-800 border-red-300 [.theme-order-dark_&]:bg-red-500/15 [.theme-order-dark_&]:text-red-200 [.theme-order-dark_&]:border-red-500/40'
         : 'bg-[var(--color-surface)] text-[var(--color-muted)] border-[var(--color-border)]';
   return (
     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${cls}`}>
@@ -393,7 +502,7 @@ function MobileCartBar({ effectiveType, bothActive, onChangeType, onConfirm, ds,
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="lg:hidden fixed bottom-4 left-4 right-4 z-30 bg-[var(--color-accent)] text-white h-14 rounded-2xl px-5 flex items-center justify-between font-bold shadow-2xl"
+        className="lg:hidden fixed bottom-4 left-4 right-4 z-30 bg-[var(--color-text)] text-[var(--color-bg)] h-14 rounded-2xl px-5 flex items-center justify-between font-bold shadow-2xl"
       >
         <span className="flex items-center gap-2.5">
           <span className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center text-sm">

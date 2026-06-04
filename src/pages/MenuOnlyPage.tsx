@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { getDeliveryMenu } from '@/actions/store';
 import { useMenuRefresh } from '@/hooks/useMenuRefresh';
 import { useModalBackClose } from '@/hooks/useModalBackClose';
+import { useIsTabletMode } from '@/hooks/useIsTabletMode';
+import { useIdleReload } from '@/hooks/useIdleReload';
 import { getAllergenIcon, getAllergenLabel } from '@/lib/allergens';
 import { StoreConfigProvider, useStoreConfig } from '@/context/StoreConfigContext';
 import { EURO, IMAGE_ADDRESS, IMAGE_SERVER_ADDRESS, PICKUP } from '@/config/constants';
@@ -41,6 +43,14 @@ function MenuOnlyContent() {
   // Nothing is ever submitted from this page. Tablets get realtime
   // menu_updated events via Pusher; customer phones don't.
   useMenuRefresh(storeId);
+
+  // Reset between customers — only on TabletMenuApp installations (the
+  // ?tablet=1 sessionStorage flag set by useIsTabletMode). After 5
+  // minutes without a real touch, reload so the next customer lands at
+  // the top with the first category active. Customer phones browsing
+  // /menu directly never trip this.
+  const isTablet = useIsTabletMode();
+  useIdleReload(isTablet, 5 * 60 * 1000);
   const { data: menu, isLoading } = useQuery({
     queryKey: ['menu-only', storeId, i18n.language],
     queryFn: () => getDeliveryMenu(storeId!, PICKUP),

@@ -44,6 +44,40 @@ function formatDayLabel(key: string, locale: string, t: (k: string, def: string)
   }
 }
 
+// Short pill-friendly day label: "Vandaag" / "Morgen" / "Wo 25" — the
+// horizontal scroll row in the 'full' variant needs each pill to stay
+// narrow enough that ~3 pills fit on a phone width without scrolling
+// every time. We keep the long label (above) for the cart-panel summary.
+function formatDayPill(key: string, locale: string, t: (k: string, def: string) => string): { primary: string; secondary?: string } {
+  const [y, m, d] = key.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const diffDays = Math.round((date.getTime() - today.getTime()) / 86_400_000);
+  if (diffDays === 0) return { primary: t('preorder.today', 'Today') };
+  if (diffDays === 1) return { primary: t('preorder.tomorrow', 'Tomorrow') };
+  try {
+    const weekday = date.toLocaleDateString(locale, { weekday: 'short' });
+    const dayNum = date.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
+    return { primary: weekday, secondary: dayNum };
+  } catch {
+    return { primary: key };
+  }
+}
+
+// "HH:MM" of the slot's start time. Backend may return either ISO or a
+// pre-formatted label; we prefer parsing the ISO so the locale formatter
+// keeps i18n consistent (24h vs 12h).
+function formatSlotTime(slot: PreOrderSlot, locale: string): string {
+  const d = new Date(slot.start);
+  if (Number.isNaN(d.getTime())) return slot.label || '';
+  try {
+    return d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return slot.label || '';
+  }
+}
+
 export default function PreOrderSlotPicker({
   storeSlug,
   orderType,
@@ -119,6 +153,12 @@ export default function PreOrderSlotPicker({
   const handleAsapClick = () => {
     if (asapDisabled) return;
     setMode('asap');
+    // Clear local day/slot too — the data-sync useEffect only reacts to
+    // fresh server data, not to `value` going from a slot to null. Without
+    // this the day pill + time pill stay visually highlighted even though
+    // the parent's draft is back to ASAP.
+    setSelectedDay('');
+    setSelectedSlot('');
     onChange(null);
   };
 
@@ -170,88 +210,6 @@ export default function PreOrderSlotPicker({
           : 'p-5 sm:p-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] space-y-4'
       }
     >
-      {variant === 'full' && (
-        <div>
-          <h3 className="font-bold text-base text-[var(--color-text)]">
-            {t('preorder.title', 'When would you like your order?')}
-          </h3>
-          {!currentlyOpen && (
-            <p className="text-sm text-[var(--color-muted)] mt-1">
-              {t(
-                'preorder.closed_subtitle',
-                "We're currently closed. Pick a time below to schedule your order.",
-              )}
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* ASAP option — hidden entirely in compact mode (the cart panel already
-          has its own ASAP CTA when the store is open). */}
-      {!hideAsap && variant === 'full' && (
-        <label
-          className={`flex items-start gap-3 p-3 rounded-xl border-2 transition-colors ${
-            mode === 'asap'
-              ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/5'
-              : 'border-[var(--color-border)] bg-[var(--color-surface-2)]'
-          } ${asapDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-          title={
-            asapDisabled
-              ? t('preorder.asap_disabled_tooltip', 'Restaurant is currently closed — pick a time')
-              : undefined
-          }
-        >
-          <input
-            type="radio"
-            name="preorder-mode"
-            checked={mode === 'asap'}
-            onChange={handleAsapClick}
-            disabled={asapDisabled}
-            className="mt-0.5 accent-[var(--color-accent)]"
-          />
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-[var(--color-text)]">
-              {t('preorder.asap', 'As soon as possible')}
-            </p>
-            {asapDisabled && (
-              <p className="text-xs text-[var(--color-muted)] mt-0.5">
-                {t('preorder.asap_disabled', 'Restaurant is currently closed — pick a time below.')}
-              </p>
-            )}
-          </div>
-        </label>
-      )}
-
-      {/* "Order for later" row — only the day/time selects in compact mode */}
-      {variant === 'full' && !hideAsap && (
-        <label
-          className={`flex items-start gap-3 p-3 rounded-xl border-2 transition-colors ${
-            mode === 'later'
-              ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/5'
-              : 'border-[var(--color-border)] bg-[var(--color-surface-2)]'
-          } ${empty ? 'opacity-60' : 'cursor-pointer'}`}
-        >
-          <input
-            type="radio"
-            name="preorder-mode"
-            checked={mode === 'later'}
-            onChange={() => setMode('later')}
-            disabled={empty}
-            className="mt-0.5 accent-[var(--color-accent)]"
-          />
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-[var(--color-text)]">
-              {t('preorder.schedule', 'Order for later')}
-            </p>
-            {!empty && (
-              <p className="text-xs text-[var(--color-muted)] mt-0.5">
-                {t('preorder.schedule_sub', 'Pick a date and time below.')}
-              </p>
-            )}
-          </div>
-        </label>
-      )}
-
       {/* Empty-state message: the operator disabled pre-orders or no slots fall
           within the configured window. Trust `detail` from the server. */}
       {empty && detail && (
@@ -272,53 +230,171 @@ export default function PreOrderSlotPicker({
         </p>
       )}
 
-      {/* Day + Time selects. Disabled when there are no slots. */}
-      <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 ${empty ? 'opacity-50 pointer-events-none' : ''}`}>
-        <label className="block">
-          <span className="block text-xs font-semibold text-[var(--color-muted)] mb-1.5">
-            {t('preorder.date', 'Date')}
-          </span>
-          <select
-            value={selectedDay}
-            onChange={e => handleDayChange(e.target.value)}
-            disabled={empty}
-            className="w-full px-4 py-3 rounded-xl border-2 border-[var(--color-border)] focus:border-[var(--color-accent)] focus:outline-none text-base bg-[var(--color-surface)] text-[var(--color-text)] transition-colors disabled:cursor-not-allowed"
-          >
-            <option value="">
-              {t('preorder.pick_day', 'Choose a day…')}
-            </option>
-            {dayKeys.map(key => (
-              <option key={key} value={key}>
-                {formatDayLabel(key, i18n.language, (k, def) => t(k, def))}
-              </option>
-            ))}
-          </select>
-        </label>
+      {variant === 'full' ? (
+        <>
+          {/* ASAP big tile — one tap commits to "right now". Hidden when the
+              modal is in required mode (closed channel) or the caller asked
+              to hide it. Disabled-with-hint when channel is currently closed
+              so the customer immediately understands why scheduling is the
+              only path. */}
+          {!hideAsap && (
+            <button
+              type="button"
+              onClick={handleAsapClick}
+              disabled={asapDisabled}
+              className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 transition-colors text-left ${
+                mode === 'asap'
+                  ? 'border-[var(--color-text)] bg-[var(--color-text)]/5'
+                  : 'border-[var(--color-border)] bg-[var(--color-surface-2)] hover:border-[var(--color-text)]/40'
+              } ${asapDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+            >
+              <span className="text-2xl shrink-0" aria-hidden>⚡</span>
+              <span className="flex-1 min-w-0">
+                <span className="block font-semibold text-[var(--color-text)]">
+                  {t('preorder.asap', 'As soon as possible')}
+                </span>
+                {asapDisabled && (
+                  <span className="block text-xs text-[var(--color-muted)] mt-0.5">
+                    {t('preorder.asap_disabled', 'Restaurant is currently closed — pick a time below.')}
+                  </span>
+                )}
+              </span>
+              {mode === 'asap' && !asapDisabled && (
+                <svg className="w-5 h-5 text-[var(--color-text)] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              )}
+            </button>
+          )}
 
-        <label className="block">
-          <span className="block text-xs font-semibold text-[var(--color-muted)] mb-1.5">
-            {t('preorder.time', 'Time')}
-          </span>
-          <select
-            value={selectedSlot}
-            onChange={e => handleSlotChange(e.target.value)}
-            disabled={empty || !selectedDay}
-            className="w-full px-4 py-3 rounded-xl border-2 border-[var(--color-border)] focus:border-[var(--color-accent)] focus:outline-none text-base bg-[var(--color-surface)] text-[var(--color-text)] transition-colors disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <option value="">
-              {selectedDay
-                ? t('preorder.pick_time', 'Choose a time…')
-                : t('preorder.pick_day_first', 'Pick a day first')}
-            </option>
-            {selectedDay &&
-              (grouped[selectedDay] || []).map(slot => (
-                <option key={slot.start} value={slot.start}>
-                  {slot.label}
+          {/* "Plan vooruit" divider — only when ASAP tile is above it. */}
+          {!hideAsap && !empty && (
+            <div className="flex items-center gap-3 text-xs font-bold uppercase tracking-wider text-[var(--color-muted)]">
+              <span className="h-px flex-1 bg-[var(--color-border)]" />
+              <span>{t('preorder.or_schedule', 'Or schedule')}</span>
+              <span className="h-px flex-1 bg-[var(--color-border)]" />
+            </div>
+          )}
+
+          {/* Day pills — horizontal scroll. Pick one to reveal the time grid. */}
+          {!empty && (
+            <div>
+              <p className="text-xs font-semibold text-[var(--color-muted)] mb-2">
+                {t('preorder.date', 'Date')}
+              </p>
+              <div className="flex gap-2 overflow-x-auto -mx-1 px-1 pb-1 scrollbar-hide snap-x">
+                {dayKeys.map(key => {
+                  const label = formatDayPill(key, i18n.language, (k, def) => t(k, def));
+                  const active = selectedDay === key;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => handleDayChange(key)}
+                      className={`shrink-0 snap-start min-w-[88px] px-3 py-2 rounded-xl border-2 transition-colors text-center capitalize ${
+                        active
+                          ? 'border-[var(--color-text)] bg-[var(--color-text)]/5 text-[var(--color-text)]'
+                          : 'border-[var(--color-border)] bg-[var(--color-surface-2)] text-[var(--color-text)] hover:border-[var(--color-text)]/40'
+                      }`}
+                    >
+                      <span className="block text-sm font-bold leading-tight">{label.primary}</span>
+                      {label.secondary && (
+                        <span className="block text-xs text-[var(--color-muted)] mt-0.5">{label.secondary}</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Time grid — appears once a day is picked. Hides entirely until
+              then so the picker doesn't dangle an empty grid. */}
+          {!empty && selectedDay && (
+            <div>
+              <p className="text-xs font-semibold text-[var(--color-muted)] mb-2">
+                {t('preorder.time', 'Time')}
+              </p>
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                {(grouped[selectedDay] || []).map(slot => {
+                  const active = selectedSlot === slot.start;
+                  return (
+                    <button
+                      key={slot.start}
+                      type="button"
+                      onClick={() => handleSlotChange(slot.start)}
+                      className={`px-2 py-2.5 rounded-xl border-2 text-sm font-bold transition-colors tabular-nums ${
+                        active
+                          ? 'border-[var(--color-text)] bg-[var(--color-text)] text-[var(--color-bg)]'
+                          : 'border-[var(--color-border)] bg-[var(--color-surface-2)] text-[var(--color-text)] hover:border-[var(--color-text)]/40'
+                      }`}
+                    >
+                      {formatSlotTime(slot, i18n.language)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Hint when no day is picked yet (and ASAP not applicable) so the
+              customer knows why no time grid is visible. */}
+          {!empty && !selectedDay && hideAsap && (
+            <p className="text-sm text-[var(--color-muted)]">
+              {t('preorder.pick_day_first', 'Pick a day first')}
+            </p>
+          )}
+        </>
+      ) : (
+        // Compact variant — keep the legacy two-select layout for the
+        // cart-sidebar where the picker has to live in a narrow column.
+        <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 ${empty ? 'opacity-50 pointer-events-none' : ''}`}>
+          <label className="block">
+            <span className="block text-xs font-semibold text-[var(--color-muted)] mb-1.5">
+              {t('preorder.date', 'Date')}
+            </span>
+            <select
+              value={selectedDay}
+              onChange={e => handleDayChange(e.target.value)}
+              disabled={empty}
+              className="w-full px-4 py-3 rounded-xl border-2 border-[var(--color-border)] focus:border-[var(--color-accent)] focus:outline-none text-base bg-[var(--color-surface)] text-[var(--color-text)] transition-colors disabled:cursor-not-allowed"
+            >
+              <option value="">
+                {t('preorder.pick_day', 'Choose a day…')}
+              </option>
+              {dayKeys.map(key => (
+                <option key={key} value={key}>
+                  {formatDayLabel(key, i18n.language, (k, def) => t(k, def))}
                 </option>
               ))}
-          </select>
-        </label>
-      </div>
+            </select>
+          </label>
+
+          <label className="block">
+            <span className="block text-xs font-semibold text-[var(--color-muted)] mb-1.5">
+              {t('preorder.time', 'Time')}
+            </span>
+            <select
+              value={selectedSlot}
+              onChange={e => handleSlotChange(e.target.value)}
+              disabled={empty || !selectedDay}
+              className="w-full px-4 py-3 rounded-xl border-2 border-[var(--color-border)] focus:border-[var(--color-accent)] focus:outline-none text-base bg-[var(--color-surface)] text-[var(--color-text)] transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <option value="">
+                {selectedDay
+                  ? t('preorder.pick_time', 'Choose a time…')
+                  : t('preorder.pick_day_first', 'Pick a day first')}
+              </option>
+              {selectedDay &&
+                (grouped[selectedDay] || []).map(slot => (
+                  <option key={slot.start} value={slot.start}>
+                    {slot.label}
+                  </option>
+                ))}
+            </select>
+          </label>
+        </div>
+      )}
     </div>
   );
 }

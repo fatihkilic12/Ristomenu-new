@@ -138,23 +138,39 @@ function CheckoutContent({ orderType }: { orderType: string }) {
 
   const paymentMethods = company?.payment_methods || [];
   const enabledMethods: { slug: string; label: string; emoji: string }[] = useMemo(() => {
+    // Cash is implicit on every storefront (always falls back to pay-at-door /
+    // pay-at-counter). Keep it first in the list. The loop below skips a
+    // server-side 'cash' entry so we don't render two cash tiles.
     const list: { slug: string; label: string; emoji: string }[] = [];
     list.push({ slug: 'cash', label: t('checkout.payment.cash', 'Cash'), emoji: '💶' });
+    const map: Record<string, { label: string; emoji: string }> = {
+      ideal:              { label: 'iDEAL',                                                                emoji: '🏦' },
+      bancontact:         { label: 'Bancontact',                                                           emoji: '💳' },
+      creditcard:         { label: 'Credit card',                                                          emoji: '💳' },
+      applepay:           { label: 'Apple Pay',                                                            emoji: '🍎' },
+      googlepay:          { label: 'Google Pay',                                                           emoji: '🅖' },
+      paypal:             { label: 'PayPal',                                                               emoji: '🅿️' },
+      bancontact_at_door: { label: t('checkout.payment.bancontact_at_door', 'Bancontact at door'),         emoji: '💳' },
+      pin_at_pickup:      { label: t('checkout.payment.pin_at_pickup', 'PIN at pickup'),                   emoji: '💳' },
+    };
+    // Channel-restricted offline methods. Bancontact-aan-deur only makes
+    // sense for delivery (driver brings the terminal); PIN-bij-afhalen
+    // only for pickup (counter terminal at the restaurant).
+    const onlyOn: Record<string, 'delivery' | 'pickup'> = {
+      bancontact_at_door: 'delivery',
+      pin_at_pickup:      'pickup',
+    };
+    const seen = new Set<string>(['cash']);
     for (const m of paymentMethods) {
       const slug = (m.slug || '').toLowerCase();
-      const map: Record<string, { label: string; emoji: string }> = {
-        ideal:        { label: 'iDEAL',          emoji: '🏦' },
-        bancontact:   { label: 'Bancontact',     emoji: '💳' },
-        creditcard:   { label: 'Credit card',    emoji: '💳' },
-        applepay:     { label: 'Apple Pay',      emoji: '🍎' },
-        googlepay:    { label: 'Google Pay',     emoji: '🅖' },
-        paypal:       { label: 'PayPal',         emoji: '🅿️' },
-      };
-      const meta = map[slug] || { label: m.slug, emoji: '💳' };
+      if (seen.has(slug)) continue;
+      if (onlyOn[slug] && onlyOn[slug] !== orderType) continue;
+      seen.add(slug);
+      const meta = map[slug] || { label: m.slug.replace(/_/g, ' '), emoji: '💳' };
       list.push({ slug: m.slug, label: meta.label, emoji: meta.emoji });
     }
     return list;
-  }, [paymentMethods, t]);
+  }, [paymentMethods, orderType, t]);
 
   const requiredFilled =
     details.name.trim() &&
@@ -260,20 +276,21 @@ function CheckoutContent({ orderType }: { orderType: string }) {
             }`}
             aria-label={t('checkout.back_to_menu', 'Back to menu')}
           >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <line x1="19" y1="12" x2="5" y2="12" />
               <polyline points="12 19 5 12 12 5" />
             </svg>
-            {logo && (
+            {logo ? (
               <img
                 src={logo}
-                alt=""
-                className="w-9 h-9 rounded-lg object-cover ring-1 ring-black/10"
+                alt={company?.name}
+                className="max-h-10 w-auto max-w-[60vw] sm:max-w-[40vw] object-contain"
               />
+            ) : (
+              <span className="font-extrabold text-base truncate capitalize">
+                {company?.name || ''}
+              </span>
             )}
-            <span className="font-extrabold text-base truncate capitalize">
-              {company?.name || ''}
-            </span>
           </button>
 
           <div className="flex items-center gap-1.5 shrink-0">
@@ -302,18 +319,18 @@ function CheckoutContent({ orderType }: { orderType: string }) {
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Page title + mode badge */}
           <div>
-            <div className="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-full border border-[var(--color-accent)]/40 bg-[var(--color-accent)]/10">
-              <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-pulse" aria-hidden />
-              <span className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--color-text)]">
+            <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full border border-[var(--color-accent)]/60 bg-[var(--color-accent)]/15">
+              <span className="w-2 h-2 rounded-full bg-[var(--color-accent)] animate-pulse" aria-hidden />
+              <span className="text-[13px] font-bold uppercase tracking-[0.06em] text-[var(--color-text)]">
                 {isDelivery ? t('common.delivery', 'Delivery') : t('common.pickup', 'Pickup')}
               </span>
               {isDelivery && ds && (
-                <span className="text-xs font-medium text-[var(--color-muted)]">
+                <span className="text-[13px] font-semibold text-[var(--color-text)]/80">
                   · {ds.duration_min || 20}-{ds.duration_max || 45} min
                 </span>
               )}
               {isPickup && ps && (
-                <span className="text-xs font-medium text-[var(--color-muted)]">
+                <span className="text-[13px] font-semibold text-[var(--color-text)]/80">
                   · ±{ps.duration || 20} min
                 </span>
               )}
@@ -365,7 +382,7 @@ function CheckoutContent({ orderType }: { orderType: string }) {
                   <button
                     type="button"
                     onClick={() => setPickerOpen(true)}
-                    className="shrink-0 text-sm font-semibold text-[var(--color-accent)] hover:underline"
+                    className="shrink-0 text-sm font-semibold text-[var(--color-text)] underline underline-offset-2 hover:no-underline"
                   >
                     {t('preorder.change', 'Change time')}
                   </button>
@@ -374,7 +391,7 @@ function CheckoutContent({ orderType }: { orderType: string }) {
                 <button
                   type="button"
                   onClick={() => setPickerOpen(true)}
-                  className="w-full h-12 rounded-xl font-bold text-sm bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] transition-colors"
+                  className="w-full h-12 rounded-xl font-bold text-sm bg-[var(--color-text)] text-[var(--color-bg)] hover:opacity-90 transition-opacity"
                 >
                   {t('preorder.cta_pick_time', 'Pick a time to continue')}
                 </button>
@@ -405,7 +422,7 @@ function CheckoutContent({ orderType }: { orderType: string }) {
                     <button
                       type="button"
                       onClick={() => setPickerOpen(true)}
-                      className="text-sm font-semibold text-[var(--color-accent)] hover:underline"
+                      className="text-sm font-semibold text-[var(--color-text)] underline underline-offset-2 hover:no-underline"
                     >
                       {t('preorder.change', 'Change time')}
                     </button>
@@ -426,7 +443,7 @@ function CheckoutContent({ orderType }: { orderType: string }) {
                   <button
                     type="button"
                     onClick={() => setPickerOpen(true)}
-                    className="text-sm font-semibold text-[var(--color-accent)] hover:underline"
+                    className="text-sm font-semibold text-[var(--color-text)] underline underline-offset-2 hover:no-underline"
                   >
                     {t('preorder.order_for_later', 'Order for later?')}
                   </button>
@@ -571,9 +588,7 @@ function CheckoutContent({ orderType }: { orderType: string }) {
                     }`}
                   >
                     <span className="text-2xl">{m.emoji}</span>
-                    <span className={`text-sm font-semibold ${
-                      paymentMethod === m.slug ? 'text-[var(--color-accent)]' : 'text-[var(--color-text)]'
-                    }`}>
+                    <span className="text-sm font-semibold text-[var(--color-text)]">
                       {m.label}
                     </span>
                   </button>
@@ -608,7 +623,7 @@ function CheckoutContent({ orderType }: { orderType: string }) {
               {cart.map(item => (
                 <div key={item.id} className="flex justify-between text-sm gap-3">
                   <span className="flex-1 capitalize">
-                    <span className="font-bold text-[var(--color-accent)] mr-1.5">{item.quantity}×</span>
+                    <span className="font-bold text-[var(--color-text)] mr-1.5">{item.quantity}×</span>
                     <span className="text-[var(--color-text)]">{item.product_data?.name}</span>
                   </span>
                   <span className="font-semibold text-[var(--color-text)] whitespace-nowrap">
@@ -683,7 +698,7 @@ function CheckoutContent({ orderType }: { orderType: string }) {
             type="button"
             onClick={handleSubmit}
             disabled={loading || !requiredFilled || belowMin || cart.length === 0 || channelPaused || mustPickSlot}
-            className="flex-1 max-w-md h-14 rounded-xl font-extrabold text-white bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="flex-1 max-w-md h-14 rounded-xl font-extrabold bg-[var(--color-text)] text-[var(--color-bg)] hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading ? (
               <span className="flex items-center gap-2">

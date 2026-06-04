@@ -194,10 +194,19 @@ function TrackingContent() {
             }`}
             aria-label={websiteUrl ? t('common.back_to_website', 'Back to website') : t('tracking.back_to_menu', 'Back to menu')}
           >
-            {logo && (
-              <img src={logo} alt="" className="w-9 h-9 rounded-lg object-cover ring-1 ring-black/10" />
+            <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <line x1="19" y1="12" x2="5" y2="12" />
+              <polyline points="12 19 5 12 12 5" />
+            </svg>
+            {logo ? (
+              <img
+                src={logo}
+                alt={company?.name}
+                className="max-h-10 w-auto max-w-[60vw] sm:max-w-[40vw] object-contain"
+              />
+            ) : (
+              <span className="font-extrabold text-base truncate capitalize">{company?.name || ''}</span>
             )}
-            <span className="font-extrabold text-base truncate capitalize">{company?.name || ''}</span>
           </button>
 
           <div className="flex items-center gap-1.5 shrink-0">
@@ -386,7 +395,7 @@ function TrackingContent() {
             <h2 className="font-bold text-base text-[var(--color-text)]">
               {t('tracking.your_order', 'Your order')}
             </h2>
-            <span className="text-xs uppercase tracking-wider font-bold text-[var(--color-accent)]">
+            <span className="text-xs uppercase tracking-wider font-bold text-[var(--color-text)]">
               {isDelivery ? t('common.delivery', 'Delivery') : t('common.pickup', 'Pickup')}
             </span>
           </div>
@@ -395,7 +404,7 @@ function TrackingContent() {
               <div key={i} className="flex justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm capitalize">
-                    <span className="font-bold text-[var(--color-accent)] mr-1.5">{item.quantity}×</span>
+                    <span className="font-bold text-[var(--color-text)] mr-1.5">{item.quantity}×</span>
                     <span className="text-[var(--color-text)]">{item.name}</span>
                   </p>
                   {item.options?.length > 0 && (
@@ -449,20 +458,16 @@ function TrackingContent() {
                 {order.client_info.phone_number && (
                   <Row
                     k={t('checkout.phone', 'Phone')}
-                    v={
-                      <a href={`tel:${order.client_info.phone_number}`} className="text-[var(--color-accent)] hover:underline">
-                        {order.client_info.phone_number}
-                      </a>
-                    }
+                    v={order.client_info.phone_number}
                   />
                 )}
                 {order.email && (
                   <Row
                     k={t('checkout.email', 'Email')}
                     v={
-                      <a href={`mailto:${order.email}`} className="text-[var(--color-accent)] hover:underline truncate inline-block max-w-full align-middle">
+                      <span className="truncate inline-block max-w-full align-middle">
                         {order.email}
-                      </a>
+                      </span>
                     }
                   />
                 )}
@@ -494,7 +499,7 @@ function TrackingContent() {
                 </p>
                 {company?.phone && (
                   <p className="mt-2 pt-2 border-t border-[var(--color-border)]">
-                    <a href={`tel:${company.phone}`} className="text-[var(--color-accent)] hover:underline text-sm font-semibold">
+                    <a href={`tel:${company.phone}`} className="text-[var(--color-text)] underline underline-offset-2 hover:no-underline text-sm font-semibold">
                       📞 {company.phone}
                     </a>
                   </p>
@@ -529,7 +534,7 @@ function TrackingContent() {
                 <button
                   type="button"
                   onClick={goToMenu}
-                  className="h-12 px-6 rounded-xl font-bold text-white bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] transition-colors"
+                  className="h-12 px-6 rounded-xl font-bold bg-[var(--color-text)] text-[var(--color-bg)] hover:opacity-90 transition-opacity"
                 >
                   {t('tracking.order_again', 'Order again')}
                 </button>
@@ -549,7 +554,7 @@ function TrackingContent() {
               <button
                 type="button"
                 onClick={goToMenu}
-                className="text-[var(--color-accent)] hover:underline font-semibold inline-flex items-center gap-1"
+                className="text-[var(--color-text)] underline underline-offset-2 hover:no-underline font-semibold inline-flex items-center gap-1"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                   <line x1="19" y1="12" x2="5" y2="12" />

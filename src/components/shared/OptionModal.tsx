@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useMemo, forwardRef, useImperativeHandle, type Ref } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { EURO, ADD, EDIT, IMAGE_ADDRESS, IMAGE_SERVER_ADDRESS } from '@/config/constants';
 import { useCart } from '@/context/CartContext';
@@ -164,9 +165,14 @@ const OptionModal = forwardRef(function OptionModal(_props: {}, ref: Ref<OptionM
   const imgUrl = rawUri && rawUri.startsWith('/') ? `${IMAGE_SERVER_ADDRESS}${rawUri}` : rawUri;
   const basePrice = product.price != null ? (product.price / 100).toFixed(2) : null;
 
-  return (
+  // Portal — see PreOrderSlotModal for the rationale. Without this the
+  // modal renders inside the order-page menu tree, where it could end up
+  // visually behind the sticky category-pill nav (which sits in its own
+  // backdrop-filter stacking context). Rendering to body avoids that
+  // entirely.
+  return createPortal(
     <div
-      className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center transition-opacity duration-150 ${
+      className={`fixed inset-0 z-[100] flex items-end sm:items-center justify-center transition-opacity duration-150 ${
         open ? 'opacity-100' : 'opacity-0 pointer-events-none'
       }`}
       onClick={close}
@@ -431,7 +437,8 @@ const OptionModal = forwardRef(function OptionModal(_props: {}, ref: Ref<OptionM
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 });
 

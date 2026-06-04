@@ -83,7 +83,11 @@
     "welcome_personal": "Hé daar!",
     "hey": "Hoi",
     "open": "Geopend",
-    "back_to_website": "Terug naar website"
+    "back_to_website": "Terug naar website",
+    "back": "Terug",
+    "close": "Sluiten",
+    "edit": "Wijzigen",
+    "your_pick": "je keuze"
   },
   "checkout": {
     "title": "Afrekenen",
@@ -114,7 +118,9 @@
       "sub": "Hoe wil je betalen?",
       "cash": "Contant",
       "cash_on_delivery": "Je betaalt contant bij levering.",
-      "cash_on_pickup": "Je betaalt contant bij afhalen."
+      "cash_on_pickup": "Je betaalt contant bij afhalen.",
+      "bancontact_at_door": "Bancontact aan deur",
+      "pin_at_pickup": "PIN bij afhalen"
     },
     "min_order": {
       "short": "Minimum bestelbedrag is {{min}} — voeg nog {{missing}} toe.",
@@ -165,7 +171,10 @@
       "just_now": "zojuist",
       "minutes_ago": "{{count}} min geleden",
       "hours_ago": "{{count}}u geleden"
-    }
+    },
+    "awaiting_confirmation_title": "Wachten op bevestiging van het restaurant",
+    "awaiting_confirmation_sub": "We hebben je bestelling naar het restaurant gestuurd. Je krijgt een bevestiging zodra ze hem accepteren.",
+    "cancelled_with_reason": "Het restaurant heeft afgewezen: {{reason}}"
   },
   "menu_only": {
     "allergens": "Allergenen",
@@ -237,6 +246,9 @@
         "cancel": "Annuleren",
         "save": "Opslaan",
         "add": "Notitie Toevoegen"
+      },
+      "upsell": {
+        "title": "Vergeet niet…"
       }
     },
     "note": "Notitie"
@@ -302,6 +314,47 @@
     "tracking": {
       "delivery_scheduled": "Gepland voor levering om {{time}}",
       "pickup_scheduled": "Gepland voor afhalen om {{time}}"
+    },
+    "or_schedule": "Of plan vooruit"
+  },
+  "menu": {
+    "dinein_paused": {
+      "title": "Bestellingen tijdelijk gepauzeerd",
+      "default_reason": "De keuken is even druk. Bekijk gerust het menu — we hervatten zo snel mogelijk.",
+      "until": "Hervatten rond {{time}}"
     }
+  },
+  "kiosk": {
+    "upsell": {
+      "eyebrow": "Vergeet niet",
+      "title": "Wil je er iets bij?",
+      "subtitle": "Maak je bestelling compleet — één tik om toe te voegen.",
+      "skip": "Nee bedankt, verder",
+      "cart": {
+        "eyebrow": "Vergeet niet",
+        "title": "Maak het compleet"
+      }
+    },
+    "combo": {
+      "hero_eyebrow": "Maak je menu",
+      "hero_help": "Nog {{count}} keuze{{count, plural, one {} other {s}}} en je menu is compleet.",
+      "review_title": "Klaar om toe te voegen",
+      "review_base": "Hoofdgerecht",
+      "step_indicator": "Stap {{current}} / {{total}}",
+      "slot_required": "Kies er {{count}}",
+      "slot_optional": "Optioneel",
+      "included": "Inbegrepen",
+      "start": "Beginnen",
+      "next_review": "Bekijk en bevestig",
+      "skip": "Overslaan",
+      "next": "Volgende",
+      "add_meal": "Menu toevoegen"
+    }
+  },
+  "paused_hero": {
+    "title": "{{channel}} is tijdelijk uitgeschakeld",
+    "until": "Tot {{time}}",
+    "switch_to": "Verder met {{channel}}",
+    "try_later": "Probeer het later opnieuw."
   }
 }

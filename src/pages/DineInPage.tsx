@@ -4,6 +4,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { getCompanyMenu } from '@/actions/store';
 import { useMenuRefresh } from '@/hooks/useMenuRefresh';
+import { useIsTabletMode } from '@/hooks/useIsTabletMode';
+import { useModalBackClose } from '@/hooks/useModalBackClose';
 import { CartProvider, useCart } from '@/context/CartContext';
 import { StoreConfigProvider, useStoreConfig } from '@/context/StoreConfigContext';
 import { DINE_IN } from '@/config/constants';
@@ -24,6 +26,15 @@ function DineInContent() {
   // Customer QR phones get a single fetch — they leave the page within
   // minutes, no realtime needed.
   useMenuRefresh(storeId);
+
+  // Swallow Android hardware back on tablets — the only sanctioned exit
+  // from a seated table is the operator's 5-second long-press gesture in
+  // the TabletMenuApp shell. Without this, history.back() takes the
+  // guest back to TablePage and lets them re-pick a table mid-order.
+  // Modal handlers push later, so option/result modals still close on
+  // back via the LIFO stack in useModalBackClose.
+  const isTablet = useIsTabletMode();
+  useModalBackClose(isTablet, () => {});
   const { data: menu, isLoading: menuLoading } = useQuery({
     queryKey: ['menu', storeId, table, i18n.language],
     queryFn: () => getCompanyMenu(storeId!, table!),

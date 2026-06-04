@@ -102,23 +102,31 @@ export default function OrderCartPanel({
       {bothActive ? (
         <div className="px-5 pb-4">
           <div className="grid grid-cols-2 gap-2 p-1 bg-[var(--color-surface-2)] rounded-xl">
+            {/* Paused channels stay clickable on purpose — the customer
+                lands on the channel page, sees the paused hero with a
+                clear reason and a one-tap switch back to the other
+                channel. Disabling here would hide that path. The eta
+                label flips to "Tijdelijk niet beschikbaar" so the
+                channel's status is still obvious from the cart. */}
             <ToggleButton
               active={effectiveType === DELIVERY}
               onClick={() => onChangeType(DELIVERY)}
               icon="🚴"
               label={t('common.delivery', 'Delivery')}
-              eta={ds ? `${ds.duration_min || 20}-${ds.duration_max || 45} min` : ''}
-              disabled={deliveryPaused}
-              disabledLabel={t('pause.unavailable_short', 'Tijdelijk niet beschikbaar')}
+              eta={deliveryPaused
+                ? t('pause.unavailable_short', 'Tijdelijk niet beschikbaar')
+                : (ds ? `${ds.duration_min || 20}-${ds.duration_max || 45} min` : '')}
+              etaColor={deliveryPaused ? 'warn' : undefined}
             />
             <ToggleButton
               active={effectiveType === PICKUP}
               onClick={() => onChangeType(PICKUP)}
               icon="🛍️"
               label={t('common.pickup', 'Pickup')}
-              eta={ps ? `±${ps.duration || 20} min` : ''}
-              disabled={pickupPaused}
-              disabledLabel={t('pause.unavailable_short', 'Tijdelijk niet beschikbaar')}
+              eta={pickupPaused
+                ? t('pause.unavailable_short', 'Tijdelijk niet beschikbaar')
+                : (ps ? `±${ps.duration || 20} min` : '')}
+              etaColor={pickupPaused ? 'warn' : undefined}
             />
           </div>
         </div>
@@ -311,7 +319,7 @@ export default function OrderCartPanel({
           <button
             type="button"
             onClick={() => setPickerOpen(true)}
-            className="w-full text-sm font-semibold text-[var(--color-accent)] hover:underline py-2"
+            className="w-full text-sm font-semibold text-[var(--color-text)] underline underline-offset-2 hover:no-underline py-2"
           >
             {t('preorder.order_for_later', 'Order for later?')}
           </button>
@@ -348,7 +356,7 @@ export default function OrderCartPanel({
             currentChannelPaused ||
             undefined
           }
-          className="w-full h-12 rounded-xl font-bold text-base bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:grayscale flex items-center justify-center gap-2"
+          className="w-full h-12 rounded-xl font-bold text-base bg-[var(--color-text)] text-[var(--color-bg)] hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-not-allowed disabled:grayscale flex items-center justify-center gap-2"
         >
           {currentChannelPaused
             ? t('pause.unavailable_short', 'Tijdelijk niet beschikbaar')
@@ -412,38 +420,39 @@ function formatSlotInline(iso: string, locale: string, t: (k: string, def: strin
   }
 }
 
-function ToggleButton({ active, onClick, icon, label, eta, disabled, disabledLabel }: {
+function ToggleButton({ active, onClick, icon, label, eta, etaColor }: {
   active: boolean;
   onClick: () => void;
   icon: string;
   label: string;
   eta: string;
-  disabled?: boolean;
-  disabledLabel?: string;
+  /** `warn` paints the eta line orange — used to flag a paused channel
+   *  while keeping the button clickable. */
+  etaColor?: 'warn';
 }) {
   return (
     <button
       type="button"
-      onClick={disabled ? undefined : onClick}
-      disabled={disabled}
-      aria-disabled={disabled || undefined}
+      onClick={onClick}
       className={`relative flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-all ${
-        disabled
-          ? 'bg-transparent opacity-50 cursor-not-allowed'
-          : active
-            ? 'bg-[var(--color-bg)] ring-1 ring-[var(--color-accent)]'
-            : 'bg-transparent hover:bg-white/5'
+        active
+          ? 'bg-[var(--color-bg)] ring-1 ring-[var(--color-accent)]'
+          : 'bg-transparent hover:bg-white/5'
       }`}
     >
       <span className="text-lg" aria-hidden>{icon}</span>
       <span className="text-left min-w-0">
-        <span className={`block text-sm font-bold leading-tight ${active && !disabled ? 'text-[var(--color-accent)]' : 'text-[var(--color-text)]'}`}>
+        <span className="block text-sm font-bold leading-tight text-[var(--color-text)]">
           {label}
         </span>
-        {disabled ? (
-          <span className="block text-[11px] leading-tight text-orange-500 mt-0.5 truncate">{disabledLabel}</span>
-        ) : eta && (
-          <span className="block text-[11px] leading-tight text-[var(--color-muted)] mt-0.5">{eta}</span>
+        {eta && (
+          <span
+            className={`block text-[11px] leading-tight mt-0.5 truncate ${
+              etaColor === 'warn' ? 'text-orange-500' : 'text-[var(--color-muted)]'
+            }`}
+          >
+            {eta}
+          </span>
         )}
       </span>
     </button>

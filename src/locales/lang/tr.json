@@ -1,6 +1,6 @@
 {
   "common": {
-   "locale": {
+    "locale": {
       "tr": "Turkçe",
       "nl": "Nederlands",
       "en": "English",
@@ -83,7 +83,11 @@
     "welcome_personal": "Merhaba!",
     "hey": "Selam",
     "open": "Açık",
-    "back_to_website": "Web sitesine dön"
+    "back_to_website": "Web sitesine dön",
+    "back": "Geri",
+    "close": "Kapat",
+    "edit": "Düzenle",
+    "your_pick": "seçimin"
   },
   "checkout": {
     "title": "Ödeme",
@@ -114,7 +118,13 @@
       "sub": "Nasıl ödemek istersiniz?",
       "cash": "Nakit",
       "cash_on_delivery": "Teslimat sırasında nakit ödeyeceksiniz.",
-      "cash_on_pickup": "Sipariş aldığınızda nakit ödeyeceksiniz."
+      "cash_on_pickup": "Sipariş aldığınızda nakit ödeyeceksiniz.",
+      "bancontact_at_door": "Kapıda Bancontact",
+      "pin_at_pickup": "Gel-al'da PIN"
+    },
+    "min_order": {
+      "short": "Minimum sipariş tutarı {{min}} — {{missing}} daha ekleyin.",
+      "cta": "Min. {{min}} — {{missing}} ekleyin"
     }
   },
   "tracking": {
@@ -161,7 +171,10 @@
       "just_now": "az önce",
       "minutes_ago": "{{count}} dk önce",
       "hours_ago": "{{count}}s önce"
-    }
+    },
+    "awaiting_confirmation_title": "Restoranın onayı bekleniyor",
+    "awaiting_confirmation_sub": "Siparişiniz restorana gönderildi. Kabul edildiğinde onay alacaksınız.",
+    "cancelled_with_reason": "Restoran reddetti: {{reason}}"
   },
   "menu_only": {
     "allergens": "Alerjenler",
@@ -233,6 +246,9 @@
         "cancel": "İptal",
         "save": "Kaydet",
         "add": "Not Ekle"
+      },
+      "upsell": {
+        "title": "Unutmayın…"
       }
     },
     "note": "Not"
@@ -308,6 +324,57 @@
     "tracking": {
       "delivery_scheduled": "Scheduled for delivery at {{time}}",
       "pickup_scheduled": "Scheduled for pickup at {{time}}"
+    },
+    "or_schedule": "Veya planla"
+  },
+  "pause": {
+    "banner": {
+      "delivery_unavailable": "Teslimat şu anda kullanılamıyor",
+      "pickup_unavailable": "Gel-al şu anda kullanılamıyor",
+      "try_again_after": "{{time}} sonrasında tekrar deneyin.",
+      "try_delivery": "Teslimatı deneyin veya daha sonra tekrar gelin.",
+      "try_pickup": "Gel-al'ı deneyin veya daha sonra tekrar gelin."
+    },
+    "unavailable_short": "Geçici olarak kullanılamıyor"
+  },
+  "menu": {
+    "dinein_paused": {
+      "title": "Siparişler geçici olarak duraklatıldı",
+      "default_reason": "Mutfak biraz yoğun. Menüye göz atabilirsiniz — en kısa sürede devam edeceğiz.",
+      "until": "{{time}} civarında devam edecek"
     }
+  },
+  "kiosk": {
+    "upsell": {
+      "eyebrow": "Unutmayın",
+      "title": "Yanına bir şey ister misiniz?",
+      "subtitle": "Siparişinizi tamamlayın — eklemek için tek dokunuş.",
+      "skip": "Hayır teşekkürler, devam et",
+      "cart": {
+        "eyebrow": "Unutmayın",
+        "title": "Tamamlayın"
+      }
+    },
+    "combo": {
+      "hero_eyebrow": "Menünü oluştur",
+      "hero_help": "{{count}} seçim daha ve menünüz hazır.",
+      "review_title": "Eklemeye hazır",
+      "review_base": "Ana yemek",
+      "step_indicator": "Adım {{current}} / {{total}}",
+      "slot_required": "{{count}} seçin",
+      "slot_optional": "İsteğe bağlı",
+      "included": "Dahil",
+      "start": "Başla",
+      "next_review": "Gözden geçir ve onayla",
+      "skip": "Atla",
+      "next": "İleri",
+      "add_meal": "Menüyü ekle"
+    }
+  },
+  "paused_hero": {
+    "title": "{{channel}} geçici olarak kullanılamıyor",
+    "until": "{{time}}'a kadar",
+    "switch_to": "{{channel}} ile devam et",
+    "try_later": "Lütfen daha sonra tekrar deneyin."
   }
 }

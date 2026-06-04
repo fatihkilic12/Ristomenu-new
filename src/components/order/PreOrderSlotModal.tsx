@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import PreOrderSlotPicker from '@/components/order/PreOrderSlotPicker';
 import { useModalBackClose } from '@/hooks/useModalBackClose';
@@ -73,7 +74,7 @@ export default function PreOrderSlotModal({
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !required) {
+      if (e.key === 'Escape') {
         onClose();
       }
     };
@@ -81,11 +82,12 @@ export default function PreOrderSlotModal({
     return () => document.removeEventListener('keydown', onKey);
   }, [open, required, onClose]);
 
-  // Hardware-back / browser-back closes the modal — but only when the
-  // customer is allowed to dismiss it. In `required` mode (store closed
-  // for the chosen channel) we explicitly don't wire back, mirroring the
-  // Escape + backdrop-click suppression above.
-  useModalBackClose(open && !required, onClose);
+  // Hardware-back / browser-back closes the modal. Even in `required`
+  // mode (channel currently closed) — the customer can always step out
+  // to the cart or menu. The downstream checkout flow still refuses to
+  // submit without a slot, so the guarantee survives without trapping
+  // the user inside the modal.
+  useModalBackClose(open, onClose);
 
   // Lock body scroll while the modal is open. Matches the rest of the
   // storefront so the menu page behind doesn't jiggle.
@@ -99,7 +101,6 @@ export default function PreOrderSlotModal({
   if (!open) return null;
 
   const handleBackdropClick = () => {
-    if (required) return;
     onClose();
   };
 
@@ -128,9 +129,16 @@ export default function PreOrderSlotModal({
         'We will start your order right away unless you schedule it for later.',
       );
 
-  return (
+  // Portal to document.body — the modal was getting trapped inside the
+  // cart panel's <aside overflow-hidden> + sticky wrapper on the order
+  // page, which created a stacking context that pinned z-50 below the
+  // page header (z-40) and the sticky category-pill nav (z-20 in a
+  // sibling backdrop-filter ctx). Rendering directly on body guarantees
+  // viewport-level positioning and a top-level stacking context, so the
+  // close X and backdrop-click both work too.
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center"
       onClick={handleBackdropClick}
       role="dialog"
       aria-modal="true"
@@ -155,16 +163,18 @@ export default function PreOrderSlotModal({
             </h2>
             <p className="text-sm text-[var(--color-muted)] mt-1">{subtitle}</p>
           </div>
-          {!required && (
-            <button
-              type="button"
-              onClick={onClose}
-              className="shrink-0 w-9 h-9 -mt-1 -mr-1 rounded-full flex items-center justify-center text-xl text-[var(--color-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-2)] transition-colors"
-              aria-label={t('preorder.modal.close', 'Close')}
-            >
-              ×
-            </button>
-          )}
+          {/* Close X — always visible. The required-mode guarantee lives on
+              the Confirm button (disabled until a slot is picked), not on
+              trapping the user. Operators were getting stuck in here
+              without any way back to the menu / cart. */}
+          <button
+            type="button"
+            onClick={onClose}
+            className="shrink-0 w-9 h-9 -mt-1 -mr-1 rounded-full flex items-center justify-center text-xl text-[var(--color-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-2)] transition-colors"
+            aria-label={t('preorder.modal.close', 'Close')}
+          >
+            ×
+          </button>
         </div>
 
         {/* Body — the existing picker, in "full" mode so the radios are visible. */}
@@ -182,25 +192,24 @@ export default function PreOrderSlotModal({
         {/* Footer — confirm button. Disabled while no slot is picked (when
             required); otherwise always clickable (ASAP is a valid pick). */}
         <div className="px-5 sm:px-6 py-4 border-t border-[var(--color-border)] bg-[var(--color-surface-2)] rounded-b-2xl sm:rounded-b-2xl flex items-center justify-end gap-2">
-          {!required && (
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 h-11 rounded-xl text-sm font-semibold text-[var(--color-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface)] transition-colors"
-            >
-              {t('preorder.modal.close', 'Close')}
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 h-11 rounded-xl text-sm font-semibold text-[var(--color-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface)] transition-colors"
+          >
+            {t('preorder.modal.close', 'Close')}
+          </button>
           <button
             type="button"
             onClick={handleConfirm}
             disabled={confirmDisabled}
-            className="px-5 h-11 rounded-xl text-sm font-bold bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="px-5 h-11 rounded-xl text-sm font-bold bg-[var(--color-text)] text-[var(--color-bg)] hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {t('preorder.confirm', 'Confirm')}
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
