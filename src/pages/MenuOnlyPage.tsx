@@ -136,11 +136,10 @@ function MenuOnlyContent() {
     setOpenProduct(null);
   });
 
-  // Tier 2 — after 4min idle (longer than tier 1, so it fires only when
-  // tier 1's modal-close didn't get any new touches), scroll back to the
-  // first category. The IntersectionObserver picks up the new visibility
-  // and re-activates the first pill on its own; we also set it
-  // explicitly so the active state flips immediately.
+  // Tier 2 — after idle, scroll back to the first category. The
+  // IntersectionObserver picks up the new visibility and re-activates
+  // the first pill on its own; we also set it explicitly so the active
+  // state flips immediately.
   useIdleAction(isTablet, 4 * 60 * 1000, () => {
     setOpenProduct(null);
     const first = categories[0]?.id ?? null;
