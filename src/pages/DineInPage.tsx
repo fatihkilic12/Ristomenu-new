@@ -37,6 +37,22 @@ function DineInContent() {
   const isTablet = useIsTabletMode();
   useModalBackClose(isTablet, () => {});
 
+  // Browser-level fallback: park a sentinel history entry with the same
+  // URL on top of the current one and re-push it whenever popstate fires.
+  // The URL never changes, so react-router treats popstate as a no-op
+  // (no remount, no modal flash). Catches Chrome-on-tablet and the QR
+  // phone case, which the tablet:back event channel above doesn't cover.
+  useEffect(() => {
+    if (!storeId || !table) return;
+    const url = window.location.href;
+    window.history.pushState({ dineInTrap: true }, '', url);
+    const onPop = () => {
+      window.history.pushState({ dineInTrap: true }, '', url);
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, [storeId, table]);
+
   // 5-finger tap → bounce back to /table (the slug-picker / table-number
   // entry). Replaces the older long-press-corner gesture which staff kept
   // missing on the floor. Only armed in tablet mode so a customer on
