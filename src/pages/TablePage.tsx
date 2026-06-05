@@ -27,10 +27,14 @@ function TableContent() {
   const logo = getBranding(company).logo;
 
   return (
-    <div className="min-h-dvh bg-[#0a0a0a] flex flex-col items-center justify-center px-6 relative overflow-hidden">
-      {/* Ambient glow */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[500px] rounded-full opacity-[0.04] blur-[100px] bg-[var(--color-primary)] pointer-events-none" />
-
+    <div
+      className="min-h-dvh flex flex-col items-center justify-center px-6 relative overflow-hidden"
+      style={{
+        backgroundColor: '#0a0a0a',
+        backgroundImage:
+          'radial-gradient(circle at 50% 25%, color-mix(in srgb, var(--color-primary) 6%, transparent) 0%, transparent 55%)',
+      }}
+    >
       {/* Store name */}
       <div className="mb-10 text-center">
         {logo && (
@@ -55,12 +59,12 @@ function TableContent() {
             key={i}
             onClick={() => onKey(key)}
             disabled={key === ''}
-            className={`h-[56px] rounded-xl text-xl font-medium transition-all active:scale-95 ${
+            className={`h-[56px] rounded-xl text-xl font-medium transition-transform duration-75 active:scale-95 ${
               key === ''
                 ? 'invisible'
                 : key === '⌫'
-                  ? 'bg-white/5 text-white/50 hover:bg-white/10'
-                  : 'bg-white/[0.07] text-white hover:bg-white/[0.12] backdrop-blur-sm'
+                  ? 'bg-white/5 text-white/50'
+                  : 'bg-white/[0.07] text-white'
             }`}
           >
             {key}
@@ -72,7 +76,7 @@ function TableContent() {
       <button
         onClick={onSubmit}
         disabled={!value}
-        className="mt-8 w-full max-w-[280px] py-3.5 rounded-xl text-[15px] font-semibold text-white bg-[var(--color-primary)] disabled:opacity-20 transition-all active:scale-[0.98] hover:shadow-lg hover:shadow-[var(--color-primary)]/20"
+        className="mt-8 w-full max-w-[280px] py-3.5 rounded-xl text-[15px] font-semibold text-white bg-[var(--color-primary)] disabled:opacity-20 transition-transform duration-75 active:scale-[0.98]"
       >
         {t('common.continue', 'Continue')}
       </button>
