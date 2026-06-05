@@ -7,7 +7,6 @@ import { useMenuRefresh } from '@/hooks/useMenuRefresh';
 import { useModalBackClose } from '@/hooks/useModalBackClose';
 import { useIsTabletMode } from '@/hooks/useIsTabletMode';
 import { useIdleAction } from '@/hooks/useIdleAction';
-import { useIdleReload } from '@/hooks/useIdleReload';
 import { getAllergenIcon, getAllergenLabel } from '@/lib/allergens';
 import { StoreConfigProvider, useStoreConfig } from '@/context/StoreConfigContext';
 import { EURO, IMAGE_ADDRESS, IMAGE_SERVER_ADDRESS, PICKUP } from '@/config/constants';
@@ -151,17 +150,6 @@ function MenuOnlyContent() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   });
-
-  // Tier 3 (safety net) — 30-minute idle hard reload. After hours of
-  // continuous use, the Android WebView accumulates GPU layers, image
-  // cache, observer history, and inline style state that the soft
-  // tiers can't reach. Without this, tablets would gradually drift into
-  // a "scroll works but clicks don't register" stuck state and the only
-  // fix was force-closing the TabletMenuApp. 30 minutes is long enough
-  // that an active dinner-rush session never hits it (tier 2 keeps
-  // resetting), short enough that the overnight idle clears
-  // accumulated state before the next morning's service.
-  useIdleReload(isTablet, 30 * 60 * 1000);
 
   if (configLoading) {
     return (
