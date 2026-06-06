@@ -13,31 +13,42 @@ export default function StoreFooter({ className = '' }: Props) {
   const b = getBranding(company);
 
   const hasSocial = !!(b.website_url || b.instagram_url || b.facebook_url);
-  if (!b.footer_text && !hasSocial) return null;
+  const hasContent = !!b.footer_text || hasSocial;
 
   return (
     <footer
-      className={`px-6 py-7 border-t border-[var(--color-border)] text-[var(--color-muted)] ${className}`}
+      className={`px-6 ${hasContent ? 'py-7 border-t border-[var(--color-border)]' : 'py-2'} text-[var(--color-muted)] ${className}`}
     >
-      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-        {b.footer_text && (
-          <p className="text-xs sm:text-sm text-center sm:text-left max-w-2xl">
-            {b.footer_text}
-          </p>
-        )}
-        {hasSocial && (
-          <div className="flex items-center gap-2">
-            {b.website_url && (
-              <SocialLink href={b.website_url} label="Website" icon={<GlobeIcon />} />
-            )}
-            {b.instagram_url && (
-              <SocialLink href={b.instagram_url} label="Instagram" icon={<InstagramIcon />} />
-            )}
-            {b.facebook_url && (
-              <SocialLink href={b.facebook_url} label="Facebook" icon={<FacebookIcon />} />
-            )}
-          </div>
-        )}
+      {hasContent && (
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          {b.footer_text && (
+            <p className="text-xs sm:text-sm text-center sm:text-left max-w-2xl">
+              {b.footer_text}
+            </p>
+          )}
+          {hasSocial && (
+            <div className="flex items-center gap-2">
+              {b.website_url && (
+                <SocialLink href={b.website_url} label="Website" icon={<GlobeIcon />} />
+              )}
+              {b.instagram_url && (
+                <SocialLink href={b.instagram_url} label="Instagram" icon={<InstagramIcon />} />
+              )}
+              {b.facebook_url && (
+                <SocialLink href={b.facebook_url} label="Facebook" icon={<FacebookIcon />} />
+              )}
+            </div>
+          )}
+        </div>
+      )}
+      {/* Build identifier — tiny + low-opacity so customers don't see
+          it but the operator can read it off a stuck tablet to know
+          which deploy is running. Format: `commit · YYYY-MM-DD`. The
+          values come from vite.config.ts's define block, baked in at
+          build time. Always rendered, even when the store didn't
+          configure any other footer content. */}
+      <div className="max-w-7xl mx-auto mt-1 text-center text-[10px] leading-none opacity-30 select-text">
+        {__APP_COMMIT__} · {__APP_BUILD_DATE__}
       </div>
     </footer>
   );
