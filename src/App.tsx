@@ -15,16 +15,25 @@ import MenuOnlyPage from '@/pages/MenuOnlyPage';
 import PrivacyPage from '@/pages/PrivacyPage';
 import TermsPage from '@/pages/TermsPage';
 import {useReloadAfterStandby} from '@/hooks/useReloadAfterStandby';
+import {useTapSynthesisWatchdog} from '@/hooks/useTapSynthesisWatchdog';
 
-// Reloads the storefront when an Android tablet wakes from a >10 min
-// standby. After long sleep the Chrome WebView's gesture engine lands
-// in a state where touch events fire but click synthesis is broken
-// (scroll works, taps don't). Reloading gives it a fresh JS context.
-// Customer phones / shorter screen-offs are unaffected — see the hook
-// for the rationale. Must live inside <BrowserRouter> because
-// useIsTabletMode reads the `?tablet=1` query param via useSearchParams.
-function TabletStandbyGuard() {
+// Two layers of stuck-tablet recovery for Android WebView:
+//
+//   1. useReloadAfterStandby — preemptive. If the WebView was hidden
+//      long enough that its gesture engine likely corrupted (>10 min),
+//      reload on resume before the customer even tries to tap.
+//
+//   2. useTapSynthesisWatchdog — symptom-driven. Detects the actual
+//      "tap fired, click never bubbled" pattern and reloads. Catches
+//      the cases the standby heuristic misses (short standby, no
+//      standby at all, memory pressure, etc.).
+//
+// Both gated on tablet mode (?tablet=1) so customer phones never
+// reload themselves. Must live inside <BrowserRouter> — useIsTabletMode
+// reads the query param via useSearchParams.
+function TabletStuckGuard() {
   useReloadAfterStandby();
+  useTapSynthesisWatchdog();
   return null;
 }
 
@@ -44,7 +53,7 @@ export default function App() {
     <I18nextProvider i18n={i18n}>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <TabletStandbyGuard />
+        <TabletStuckGuard />
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
