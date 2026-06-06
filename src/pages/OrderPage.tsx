@@ -9,7 +9,6 @@ import { CartProvider, useCart } from '@/context/CartContext';
 import { StoreConfigProvider, useStoreConfig } from '@/context/StoreConfigContext';
 import { DELIVERY, PICKUP, EURO } from '@/config/constants';
 import { COMPANY_CHECKOUT } from '@/config/paths';
-import { collectMenuImageUrls, precacheImages } from '@/lib/imageCache';
 import { getBranding } from '@/lib/branding';
 import LanguageSelector from '@/components/shared/LanguageSelector';
 import StoreFooter from '@/components/shared/StoreFooter';
@@ -84,11 +83,6 @@ function OrderContent() {
     queryFn: () => getDeliveryMenu(storeId!, effectiveType),
     enabled: !!storeId && !configLoading,
   });
-
-  // Warm the image cache for offline resilience.
-  useEffect(() => {
-    if (menu) precacheImages(collectMenuImageUrls(menu));
-  }, [menu]);
 
   // Hardware/browser-back hijack: customers reach order.<store>.be from the
   // restaurant's own website. When they press back we want them on

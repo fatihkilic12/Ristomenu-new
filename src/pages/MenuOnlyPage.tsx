@@ -10,7 +10,6 @@ import { useIdleAction } from '@/hooks/useIdleAction';
 import { getAllergenIcon, getAllergenLabel } from '@/lib/allergens';
 import { StoreConfigProvider, useStoreConfig } from '@/context/StoreConfigContext';
 import { EURO, IMAGE_ADDRESS, IMAGE_SERVER_ADDRESS, PICKUP } from '@/config/constants';
-import { collectMenuImageUrls, precacheImages } from '@/lib/imageCache';
 import { getBranding } from '@/lib/branding';
 import { vibrate } from '@/hooks/useLongPress';
 import LanguageSelector from '@/components/shared/LanguageSelector';
@@ -73,12 +72,6 @@ function MenuOnlyContent() {
     }
   }, [categories, activeCategory]);
 
-  // Once the menu is loaded, warm the image cache so the menu stays usable if
-  // the restaurant's Wi-Fi drops mid-browse.
-  useEffect(() => {
-    if (menu) precacheImages(collectMenuImageUrls(menu));
-  }, [menu]);
-
   // IntersectionObserver — same flicker-free scroll-to-category as the other menus
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -129,17 +122,16 @@ function MenuOnlyContent() {
     window.scrollTo({ top, behavior: 'smooth' });
   }, [branding.show_category_photos, branding.title_size, categories]);
 
-  // Tier 1 — after 60s idle, just dismiss any open product modal so the
-  // next customer doesn't walk up to mid-product chrome blocking the
-  // page. Scroll + active category stay where they were.
-  useIdleAction(isTablet, 60 * 1000, () => {
-    setOpenProduct(null);
-  });
-
-  // Tier 2 — after idle, scroll back to the first category. The
-  // IntersectionObserver picks up the new visibility and re-activates
-  // the first pill on its own; we also set it explicitly so the active
-  // state flips immediately.
+  // After 4 min idle, scroll back to the first category AND close any
+  // open product modal so the next customer doesn't walk up to mid-
+  // product chrome blocking the page. The previous Tier 1 (separate
+  // 60s timer that closed only the modal) was removed — each
+  // useIdleAction adds 5 capture-phase window listeners
+  // (touchstart/mousedown/wheel/scroll/keydown), and stripping one of
+  // the two tiers halves that overhead on a tablet that runs for hours.
+  // Both behaviors collapse cleanly into Tier 2: a 4 min absence is
+  // long enough to assume "previous customer left", which is the only
+  // case where auto-closing the modal mattered.
   useIdleAction(isTablet, 4 * 60 * 1000, () => {
     setOpenProduct(null);
     const first = categories[0]?.id ?? null;

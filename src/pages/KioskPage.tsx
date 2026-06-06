@@ -8,7 +8,6 @@ import { CartProvider, useCart } from '@/context/CartContext';
 import { StoreConfigProvider, useStoreConfig } from '@/context/StoreConfigContext';
 import { KIOSK, ADD, EDIT, EURO } from '@/config/constants';
 import { useIdleTimer } from '@/hooks/useIdleTimer';
-import { collectMenuImageUrls, precacheImages } from '@/lib/imageCache';
 import { getBranding } from '@/lib/branding';
 import LanguageSelector from '@/components/shared/LanguageSelector';
 import KioskCategoryNav from '@/components/kiosk/KioskCategoryNav';
@@ -239,11 +238,6 @@ function KioskMenu({ customerName, onReset }: { customerName: string; onReset: (
     queryFn: () => getKioskMenu(storeId!),
     enabled: !!storeId,
   });
-
-  // Pre-cache product images so a brief Wi-Fi blip doesn't stall the kiosk.
-  useEffect(() => {
-    if (menu) precacheImages(collectMenuImageUrls(menu));
-  }, [menu]);
 
   const categories = menu?.menu?.categories || [];
   const products = menu?.menu?.products || [];
