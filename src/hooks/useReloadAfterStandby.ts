@@ -1,4 +1,5 @@
 import {useEffect, useRef} from 'react';
+import {saveBeforeReload} from '@/lib/tabletReloadState';
 import {useIsTabletMode} from './useIsTabletMode';
 
 // After Android tablets come out of standby, Chrome WebView's gesture
@@ -46,6 +47,10 @@ export function useReloadAfterStandby(thresholdMs: number = DEFAULT_THRESHOLD_MS
                 hiddenAtRef.current = null;
 
                 if (sleptFor >= thresholdMs) {
+                    // Stash scroll position so the customer (or the
+                    // next one) lands back at the same spot post-reload
+                    // — see tabletReloadState for the rationale.
+                    saveBeforeReload();
                     // Hard reload — bypass the React render path and give
                     // the WebView a brand-new JS context. The brief blank
                     // screen is preferable to staff staring at a tablet

@@ -14,8 +14,10 @@ import OrderTrackingPage from '@/pages/OrderTrackingPage';
 import MenuOnlyPage from '@/pages/MenuOnlyPage';
 import PrivacyPage from '@/pages/PrivacyPage';
 import TermsPage from '@/pages/TermsPage';
+import {useEffect} from 'react';
 import {useReloadAfterStandby} from '@/hooks/useReloadAfterStandby';
 import {useTapSynthesisWatchdog} from '@/hooks/useTapSynthesisWatchdog';
+import {tryRestoreAfterReload} from '@/lib/tabletReloadState';
 
 // Two layers of stuck-tablet recovery for Android WebView:
 //
@@ -34,6 +36,11 @@ import {useTapSynthesisWatchdog} from '@/hooks/useTapSynthesisWatchdog';
 function TabletStuckGuard() {
   useReloadAfterStandby();
   useTapSynthesisWatchdog();
+  // After a watchdog- or standby-reload, scroll the customer back to
+  // roughly where they were so the recovery feels like a fast refresh
+  // instead of "the page jumped to the top". Idempotent — runs once on
+  // mount, no-ops if there's no saved state.
+  useEffect(() => { tryRestoreAfterReload(); }, []);
   return null;
 }
 

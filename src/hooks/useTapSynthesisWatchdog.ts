@@ -1,5 +1,6 @@
 import {useEffect} from 'react';
 import {API_SERVER_ADDRESS} from '@/config/constants';
+import {saveBeforeReload} from '@/lib/tabletReloadState';
 import {useIsTabletMode} from './useIsTabletMode';
 
 // Definitive fix for the "scroll works but taps don't" stuck state on
@@ -139,6 +140,11 @@ export function useTapSynthesisWatchdog() {
                         // let a failure here delay the reload that
                         // actually fixes the user's stuck tablet.
                     }
+                    // Stash where the customer was so they don't land
+                    // back at the top of the menu after the recovery
+                    // reload — TabletStuckGuard reads this and scrolls
+                    // back to roughly the same spot once data lands.
+                    saveBeforeReload();
                     window.location.reload();
                 }
             }, CLICK_AFTER_TAP_TIMEOUT_MS);
