@@ -28,13 +28,22 @@ import {useIsTabletMode} from './useIsTabletMode';
 //
 // Mounted at App level, gated on tablet mode so customer phones can
 // never accidentally reload themselves.
-const TAP_MAX_MOVEMENT_PX = 12;
+// More lenient than the original 12px — Android Chrome WebView doesn't
+// always deliver fine-grained touchmove events on slow scrolls, so a
+// real scroll could end with `movedTooFar=false` if the only delivered
+// touchmoves landed within 12px of the start. 22px gives more headroom
+// without making a real "fat finger that wobbled" tap miss.
+const TAP_MAX_MOVEMENT_PX = 22;
 const TAP_MAX_DURATION_MS = 350;
 const CLICK_AFTER_TAP_TIMEOUT_MS = 400;
-// Two consecutive failed taps before reload. One could be the customer
-// tapping empty space below the page bounds (rare but possible). Two
-// in a row is well past coincidence — that's the bug.
-const STUCK_THRESHOLD = 2;
+// Three consecutive failed taps before reload (was two). The watchdog
+// also now bails on touchend if the page scrolled at all during the
+// gesture, so the residual false-positive shape was "rapid taps in
+// empty space that the WebView genuinely couldn't synthesise clicks
+// for" — a third confirmation costs the customer ~400ms of extra
+// latency on a real stuck state but eliminates entire classes of
+// "I just scrolled and the page reloaded" complaints.
+const STUCK_THRESHOLD = 3;
 
 export function useTapSynthesisWatchdog() {
     const isTablet = useIsTabletMode();
@@ -45,7 +54,9 @@ export function useTapSynthesisWatchdog() {
         let touchStartTime = 0;
         let touchStartX = 0;
         let touchStartY = 0;
+        let touchStartScrollY = 0;
         let movedTooFar = false;
+        let scrolledDuringTouch = false;
         let pendingTapCheckTimer: number | null = null;
         let failedTapCount = 0;
         let waitingForClick = false;
@@ -67,7 +78,23 @@ export function useTapSynthesisWatchdog() {
             touchStartTime = Date.now();
             touchStartX = e.touches[0].clientX;
             touchStartY = e.touches[0].clientY;
+            touchStartScrollY = window.scrollY;
             movedTooFar = false;
+            scrolledDuringTouch = false;
+        };
+
+        // Strongest possible "this was a scroll, not a tap" signal: the
+        // page actually scrolled while the finger was down. Watching the
+        // scroll event directly catches cases where Android WebView
+        // didn't deliver enough granular touchmoves for the movement
+        // detector to trip — fast-flick scrolls in particular.
+        const onScroll = () => {
+            // Only matters if a touch is in progress; otherwise this is
+            // either programmatic scroll or post-touch inertial scroll,
+            // neither of which should affect tap detection.
+            if (touchStartTime !== 0) {
+                scrolledDuringTouch = true;
+            }
         };
 
         const onTouchMove = (e: TouchEvent) => {
@@ -84,11 +111,26 @@ export function useTapSynthesisWatchdog() {
         };
 
         const onTouchEnd = () => {
-            // Filter out scrolls/swipes (moved too far) and long-presses
-            // (held too long) — those legitimately don't synthesise a
-            // click event and would create false positives.
+            // Mark the gesture as done — onScroll's "touch in progress?"
+            // check uses this to ignore inertial scroll after release.
+            const endTime = Date.now();
+            const elapsed = endTime - touchStartTime;
+            const startTimeForCheck = touchStartTime;
+            touchStartTime = 0;
+
+            // Filter out scrolls/swipes (moved too far, OR page actually
+            // scrolled, OR window.scrollY shifted from where it was at
+            // touchstart) and long-presses (held too long). Each of
+            // these legitimately doesn't synthesise a click event and
+            // would otherwise create false positives. The scrollY-delta
+            // check is the most reliable on Android Chrome WebView —
+            // touchmove granularity isn't guaranteed but a real scroll
+            // always moves the scrollY value.
             if (movedTooFar) return;
-            if (Date.now() - touchStartTime > TAP_MAX_DURATION_MS) return;
+            if (scrolledDuringTouch) return;
+            if (window.scrollY !== touchStartScrollY) return;
+            if (startTimeForCheck === 0) return;
+            if (elapsed > TAP_MAX_DURATION_MS) return;
 
             // Genuine tap candidate. Set a watchdog: if no click event
             // bubbles through document within the timeout, count this as
@@ -166,6 +208,7 @@ export function useTapSynthesisWatchdog() {
         document.addEventListener('touchmove', onTouchMove, {passive: true, capture: true});
         document.addEventListener('touchend', onTouchEnd, {passive: true, capture: true});
         document.addEventListener('click', onClick, {passive: true, capture: true});
+        window.addEventListener('scroll', onScroll, {passive: true, capture: true});
 
         return () => {
             cancelPendingCheck();
@@ -173,6 +216,7 @@ export function useTapSynthesisWatchdog() {
             document.removeEventListener('touchmove', onTouchMove, {capture: true} as any);
             document.removeEventListener('touchend', onTouchEnd, {capture: true} as any);
             document.removeEventListener('click', onClick, {capture: true} as any);
+            window.removeEventListener('scroll', onScroll, {capture: true} as any);
         };
     }, [isTablet]);
 }
