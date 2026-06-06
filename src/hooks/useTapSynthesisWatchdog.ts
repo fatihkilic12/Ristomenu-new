@@ -1,4 +1,5 @@
 import {useEffect} from 'react';
+import {API_SERVER_ADDRESS} from '@/config/constants';
 import {useIsTabletMode} from './useIsTabletMode';
 
 // Definitive fix for the "scroll works but taps don't" stuck state on
@@ -98,10 +99,46 @@ export function useTapSynthesisWatchdog() {
                 waitingForClick = false;
                 failedTapCount++;
                 if (failedTapCount >= STUCK_THRESHOLD) {
-                    // Log so adb logcat shows why we bounced. Then bail.
-                    console.warn(
-                        `[tap-watchdog] ${failedTapCount} tap(s) without click — WebView gesture engine stuck, reloading`
-                    );
+                    // Log + beacon so adb logcat AND Cloud Run logs
+                    // both show why we bounced. sendBeacon is critical:
+                    // the page reloads on the next line, and a normal
+                    // fetch would be canceled before the request leaves
+                    // the device. The browser guarantees a beacon's
+                    // delivery across the unload/navigation boundary.
+                    const reason = `[tap-watchdog] ${failedTapCount} tap(s) without click — WebView gesture engine stuck, reloading`;
+                    console.warn(reason);
+                    try {
+                        // Derive the store slug from the current path so
+                        // the operator can filter logs per restaurant.
+                        // Pages on this storefront are all rooted at
+                        // /company/<slug>/... — fall back to '' if the
+                        // shape doesn't match (e.g. the landing page).
+                        const m = window.location.pathname.match(/^\/company\/([^/]+)/);
+                        const storeSlug = m ? m[1] : '';
+                        const payload = JSON.stringify({
+                            url: window.location.href,
+                            store_slug: storeSlug,
+                            consecutive_failed_taps: failedTapCount,
+                            reason,
+                            // Server stamps received_at itself, but ours
+                            // helps if there's clock skew worth seeing.
+                            client_timestamp: new Date().toISOString(),
+                        });
+                        // text/plain side-steps a CORS preflight that
+                        // application/json would force on cross-origin
+                        // beacons (Cloud Run is a different origin than
+                        // menu.menuwela.com). Django's DRF JSONParser
+                        // still parses the body — it sniffs JSON.
+                        const blob = new Blob([payload], {type: 'text/plain;charset=utf-8'});
+                        navigator.sendBeacon?.(
+                            `${API_SERVER_ADDRESS}/tablets/stuck-event/`,
+                            blob,
+                        );
+                    } catch {
+                        // Beacon is best-effort observability — never
+                        // let a failure here delay the reload that
+                        // actually fixes the user's stuck tablet.
+                    }
                     window.location.reload();
                 }
             }, CLICK_AFTER_TAP_TIMEOUT_MS);
