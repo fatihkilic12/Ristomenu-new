@@ -67,6 +67,11 @@ function MenuOnlyContent() {
 
   const categories = menu?.menu?.categories || [];
   const products = menu?.menu?.products || [];
+  // Option groups + their items live at menu.options. The product
+  // payload only carries the group IDs it uses (product.options =
+  // [89, 86, ...]); ProductInfoModal looks the full definitions up
+  // here so it can render "Pita — Houmous +€3.00" rows.
+  const optionGroups = menu?.menu?.options || [];
 
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
   const [openProduct, setOpenProduct] = useState<Record<string, any> | null>(null);
@@ -382,6 +387,7 @@ function MenuOnlyContent() {
       {openProduct && (
         <ProductInfoModal
           product={openProduct}
+          optionGroups={optionGroups}
           showAllergens={branding.show_allergens}
           onClose={() => setOpenProduct(null)}
         />
@@ -392,8 +398,9 @@ function MenuOnlyContent() {
   );
 }
 
-function ProductInfoModal({ product, showAllergens, onClose }: {
+function ProductInfoModal({ product, optionGroups, showAllergens, onClose }: {
   product: Record<string, any>;
+  optionGroups: Array<Record<string, any>>;
   showAllergens: boolean;
   onClose: () => void;
 }) {
@@ -401,6 +408,16 @@ function ProductInfoModal({ product, showAllergens, onClose }: {
   const rawUri = product.uri || (product.image ? IMAGE_ADDRESS(product.image) : null);
   const imgUrl = rawUri && rawUri.startsWith('/') ? `${IMAGE_SERVER_ADDRESS}${rawUri}` : rawUri;
   const basePrice = product.price != null ? (product.price / 100).toFixed(2) : null;
+
+  // Resolve full group definitions from the IDs the product carries.
+  // The menu-only display is read-only so we render everything inline;
+  // no chooser, no quantity controls, no max/min enforcement — just
+  // "here's what comes with this dish, and what each add-on costs".
+  // Hidden / sold-out items are filtered out so the wall menu doesn't
+  // advertise things the kitchen can't actually do.
+  const productOptionGroups = (product.options || [])
+    .map((gid: number) => optionGroups.find((g) => g.id === gid))
+    .filter(Boolean) as Array<Record<string, any>>;
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -457,34 +474,102 @@ function ProductInfoModal({ product, showAllergens, onClose }: {
               <p className="text-base text-gray-500 leading-relaxed mt-3">{product.description}</p>
             )}
 
-            {showAllergens && product.allergens?.length > 0 && (
-              <div className="mt-5">
-                <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
-                  {t('menu_only.allergens', 'Allergens')}
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {product.allergens.map((a: string) => {
-                    const label = getAllergenLabel(a, t);
-                    return (
-                      <span
-                        key={a}
-                        title={label}
-                        className="inline-flex items-center gap-1 text-[13px] px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 font-medium"
-                      >
-                        <span aria-hidden>{getAllergenIcon(a)}</span>
-                        <span>{label}</span>
-                      </span>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+            {/* Allergens + alcohol pill sit AFTER the description: the
+                description usually frames what the dish is, allergens
+                add the "watch out" caveat, and option groups (last)
+                are what the customer actually picks from. Reordering
+                lands them sandwiched between the prose and the choices. */}
+            {(showAllergens && product.allergens?.length > 0) ||
+            product.is_hard_alcohol ||
+            product.is_soft_alcohol ? (
+              <div className="mt-5 space-y-3">
+                {showAllergens && product.allergens?.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
+                      {t('menu_only.allergens', 'Allergens')}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {product.allergens.map((a: string) => {
+                        const label = getAllergenLabel(a, t);
+                        return (
+                          <span
+                            key={a}
+                            title={label}
+                            className="inline-flex items-center gap-1 text-[13px] px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 font-medium"
+                          >
+                            <span aria-hidden>{getAllergenIcon(a)}</span>
+                            <span>{label}</span>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
-            {(product.is_hard_alcohol || product.is_soft_alcohol) && (
-              <div className="mt-3">
-                <span className="text-xs px-2.5 py-1 rounded-full bg-red-50 text-red-600 border border-red-200 font-bold">
-                  {product.is_hard_alcohol ? '18+' : '16+'}
-                </span>
+                {(product.is_hard_alcohol || product.is_soft_alcohol) && (
+                  <div>
+                    <span className="text-xs px-2.5 py-1 rounded-full bg-red-50 text-red-600 border border-red-200 font-bold">
+                      {product.is_hard_alcohol ? '18+' : '16+'}
+                    </span>
+                  </div>
+                )}
+              </div>
+            ) : null}
+
+            {productOptionGroups.length > 0 && (
+              <div className="mt-6 space-y-6">
+                {productOptionGroups.map((group) => {
+                  const visibleItems = (group.items || []).filter(
+                    (it: Record<string, any>) => !it.is_hidden && !it.is_sold_out,
+                  );
+                  if (visibleItems.length === 0) return null;
+                  return (
+                    <div key={group.id}>
+                      {/* Section heading, not a label: real type-size
+                          so the eye registers it as content delimiter,
+                          not a chip caption. Sentence-case avoids the
+                          shouty CAPS feel that competed with the
+                          allergen header above. */}
+                      <h3 className="text-base font-bold text-gray-900 capitalize mb-2.5">
+                        {group.name}
+                      </h3>
+                      {/* Plain rows: name left, price right when there
+                          is one. Stops short of suggesting interaction
+                          (no checkbox/radio) because the menu-only view
+                          doesn't take orders. Items priced at 0 just
+                          render the name — no €0/"Gratis"/"inbegrepen"
+                          marker. The customer can't act on this view
+                          anyway; the empty right side of free-item rows
+                          actually helps the eye find the paid options
+                          faster (they stand out as the visually loaded
+                          ones). The outer modal wraps this block in
+                          `overflow-y-auto flex-1`, so a product with 50+
+                          items just makes the modal scrollable (sticky
+                          footer + close button stay pinned). No per-
+                          list cap on purpose. */}
+                      <ul className="divide-y divide-gray-100 border border-gray-100 rounded-xl overflow-hidden bg-white">
+                        {visibleItems.map((item: Record<string, any>) => {
+                          const price = typeof item.price === 'number' && item.price > 0
+                            ? `+${EURO}${(item.price / 100).toFixed(2)}`
+                            : null;
+                          return (
+                            <li
+                              key={item.id}
+                              className="flex items-center justify-between gap-3 px-4 py-3"
+                            >
+                              <span className="text-base text-gray-900 capitalize leading-snug">{item.name}</span>
+                              {price && (
+                                <span className="text-base font-semibold text-[var(--color-primary)] shrink-0">
+                                  {price}
+                                </span>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
