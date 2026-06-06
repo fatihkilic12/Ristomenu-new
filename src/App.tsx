@@ -14,6 +14,19 @@ import OrderTrackingPage from '@/pages/OrderTrackingPage';
 import MenuOnlyPage from '@/pages/MenuOnlyPage';
 import PrivacyPage from '@/pages/PrivacyPage';
 import TermsPage from '@/pages/TermsPage';
+import {useReloadAfterStandby} from '@/hooks/useReloadAfterStandby';
+
+// Reloads the storefront when an Android tablet wakes from a >10 min
+// standby. After long sleep the Chrome WebView's gesture engine lands
+// in a state where touch events fire but click synthesis is broken
+// (scroll works, taps don't). Reloading gives it a fresh JS context.
+// Customer phones / shorter screen-offs are unaffected — see the hook
+// for the rationale. Must live inside <BrowserRouter> because
+// useIsTabletMode reads the `?tablet=1` query param via useSearchParams.
+function TabletStandbyGuard() {
+  useReloadAfterStandby();
+  return null;
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,6 +44,7 @@ export default function App() {
     <I18nextProvider i18n={i18n}>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
+        <TabletStandbyGuard />
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
