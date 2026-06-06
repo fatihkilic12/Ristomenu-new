@@ -20,6 +20,15 @@ import ProductCard from '@/components/shared/ProductCard';
 import CompactProductCard from '@/components/shared/CompactProductCard';
 import ListProductCard from '@/components/shared/ListProductCard';
 
+// Master switch for the idle-driven auto-close + auto-scroll-back-to-
+// first-category behaviour on tablets. Set true to re-enable. Disabled
+// while we test whether either the useIdleAction window listeners or
+// the smooth-scroll-on-resume race were contributing to the stuck-tap
+// state. When false, useIdleAction returns immediately — no listeners,
+// no timer, no scroll. Flip back to true once we've ruled this out or
+// confirmed and built a different fix.
+const ENABLE_IDLE_ACTIONS = false;
+
 function safeHostname(url: string): string | null {
   try {
     const u = new URL(url.startsWith('http') ? url : `https://${url}`);
@@ -122,17 +131,17 @@ function MenuOnlyContent() {
     window.scrollTo({ top, behavior: 'smooth' });
   }, [branding.show_category_photos, branding.title_size, categories]);
 
-  // After 4 min idle, scroll back to the first category AND close any
-  // open product modal so the next customer doesn't walk up to mid-
-  // product chrome blocking the page. The previous Tier 1 (separate
-  // 60s timer that closed only the modal) was removed — each
-  // useIdleAction adds 5 capture-phase window listeners
-  // (touchstart/mousedown/wheel/scroll/keydown), and stripping one of
-  // the two tiers halves that overhead on a tablet that runs for hours.
-  // Both behaviors collapse cleanly into Tier 2: a 4 min absence is
-  // long enough to assume "previous customer left", which is the only
-  // case where auto-closing the modal mattered.
-  useIdleAction(isTablet, 4 * 60 * 1000, () => {
+  // After 4 min idle, close any open product modal AND scroll back to
+  // the first category so the next customer doesn't walk up to mid-
+  // product chrome blocking the page.
+  //
+  // DISABLED while we investigate the stuck-tablet issue. Flip
+  // ENABLE_IDLE_ACTIONS back to true to re-enable. When disabled,
+  // useIdleAction returns immediately — no window listeners are
+  // registered, no timer runs, the body of the callback never
+  // executes. Confirm on a healthy tablet that auto-close + auto-
+  // scroll-back are working before flipping back to true.
+  useIdleAction(ENABLE_IDLE_ACTIONS && isTablet, 4 * 60 * 1000, () => {
     setOpenProduct(null);
     const first = categories[0]?.id ?? null;
     if (first != null) {
