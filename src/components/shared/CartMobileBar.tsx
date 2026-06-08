@@ -60,7 +60,7 @@ export default function CartMobileBar({ menu, onEdit, onConfirm }: Props) {
             <div className="flex justify-center pt-2 pb-1 shrink-0">
               <div className="w-10 h-1 bg-gray-300 rounded-full" />
             </div>
-            <div className="flex-1 min-h-0">
+            <div className="flex-1 min-h-0 flex flex-col">
               <CartSidebar menu={menu} onEdit={(item) => { setOpen(false); onEdit(item); }} onConfirm={() => { setOpen(false); onConfirm(); }} />
             </div>
           </div>

@@ -506,7 +506,7 @@ export default function MenuView({ menu, menuLoading, onOrderConfirm }: Props) {
         {/* Desktop cart sidebar — hidden while dine-in is paused so customers
             can't even start a doomed order. */}
         {!dineInPaused && (
-          <div className="hidden lg:block w-72 shrink-0 sticky top-14 h-[calc(100dvh-3.5rem)] border-l border-[var(--color-border)]">
+          <div className="hidden lg:flex flex-col w-72 shrink-0 sticky top-14 h-[calc(100dvh-3.5rem)] border-l border-[var(--color-border)]">
             <CartSidebar menu={menu} onEdit={onProductEditClick} onConfirm={onOrderConfirm} />
           </div>
         )}

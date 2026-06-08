@@ -45,14 +45,16 @@ export default function CartSidebar({ menu, onEdit, onConfirm }: Props) {
   const subtotal = cart.reduce((sum, item) => sum + getPrice(item), 0);
 
   return (
-    <div className="h-full flex flex-col bg-white">
-      <div className="p-4 border-b border-[var(--color-border)]">
+    <div className="flex-1 min-h-0 flex flex-col bg-white">
+      <div className="shrink-0 p-4 border-b border-[var(--color-border)]">
         <h2 className="font-bold text-xl">{t('restaurants.cart.title', 'Your order')}</h2>
         <span className="text-base text-[var(--color-muted)]">{itemCount} {itemCount === 1 ? t('common.item', 'item') : t('common.items', 'items')}</span>
       </div>
 
-      {/* Items */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-2">
+      {/* Items — min-h-0 lets flex-1 actually shrink so overflow-y-auto
+          triggers when the cart is taller than the column. Without it the
+          scroll container grows to fit and pushes the footer offscreen. */}
+      <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-2">
         {cart.length === 0 && (
           <p className="text-center text-[var(--color-muted)] text-base py-8">{t('restaurants.cart.empty', 'Your cart is empty')}</p>
         )}
@@ -117,11 +119,11 @@ export default function CartSidebar({ menu, onEdit, onConfirm }: Props) {
       {/* Upsell suggestions — hidden when the cart is empty (handled inside
           the component since suggestions also disappear once everything is
           already in the cart). */}
-      {cart.length > 0 && <CartUpsellRail menu={menu}/>}
+      {cart.length > 0 && <div className="shrink-0"><CartUpsellRail menu={menu}/></div>}
 
       {/* Note */}
       {allow_notes && (
-        <div className="px-3 py-2 border-t border-[var(--color-border)]">
+        <div className="shrink-0 px-3 py-2 border-t border-[var(--color-border)]">
           <input
             type="text"
             value={note}
@@ -133,7 +135,7 @@ export default function CartSidebar({ menu, onEdit, onConfirm }: Props) {
       )}
 
       {/* Footer */}
-      <div className="p-3 border-t border-[var(--color-border)]">
+      <div className="shrink-0 p-3 border-t border-[var(--color-border)]">
         <div className="flex justify-between mb-3">
           <span className="text-base font-medium">{t('restaurants.cart.subtotal', 'Subtotal')}</span>
           <span className="text-base font-bold">{EURO}{(subtotal / 100).toFixed(2)}</span>
