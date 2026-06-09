@@ -53,22 +53,77 @@ function DineInContent() {
   }, [storeId, table]);
 
   // 5-finger tap → bounce back to /table (the slug-picker / table-number
-  // entry). Replaces the older long-press-corner gesture which staff kept
-  // missing on the floor. Only armed in tablet mode so a customer on
-  // their phone can't accidentally jump back. We listen on capture so
-  // the gesture wins over any product-card tap underneath.
+  // entry). Replaces the older long-press-corner gesture which staff
+  // kept missing on the floor. Only armed in tablet mode so a customer
+  // on their phone can't accidentally jump back.
+  //
+  // Two safeguards layered on top of the raw gesture, because a single
+  // 5-finger tap kept firing accidentally when a customer set the
+  // tablet down or rested a hand on it:
+  //
+  //   1. The gesture must repeat THREE times within 5 seconds. A
+  //      single accidental touch resets the streak after the window.
+  //   2. After the third tap we request camera permission. The OS-
+  //      level prompt is the "are you sure?" gate — staff with the
+  //      tablet configured grants once, customers tapping by accident
+  //      can't dismiss the streak and the prompt. The granted stream
+  //      is closed immediately; we don't actually need a frame.
+  //
+  // Only after both clear do we reset the cart's localStorage entry
+  // and navigate. The explicit `localStorage.removeItem` is belt-and-
+  // braces — CartProvider's save effect would write an empty state
+  // anyway, but removing the key means a brand-new session for the
+  // next customer instead of "we know the cart is empty".
   useEffect(() => {
     if (!isTablet || !storeId) return;
+    let tapCount = 0;
+    let firstTapAt = 0;
+    let triggering = false;
+    const WINDOW_MS = 5000;
+    const REQUIRED_TAPS = 3;
+
+    const reset = () => { tapCount = 0; firstTapAt = 0; };
+
+    const runResetFlow = async () => {
+      if (triggering) return;
+      triggering = true;
+      try {
+        // Camera permission as the consent gate. Wrapped in try/catch
+        // because getUserMedia rejects on denial, on insecure context,
+        // and when no camera is connected — all three should silently
+        // abandon the reset, not crash the page.
+        const stream = await navigator.mediaDevices?.getUserMedia({video: true});
+        stream?.getTracks().forEach(t => t.stop());
+      } catch {
+        triggering = false;
+        return;
+      }
+      try {
+        resetCart();
+        localStorage.removeItem(`cart-${storeId}`);
+      } catch {/* noop */}
+      navigate(`/company/${storeId}/table`);
+    };
+
     const onTouchStart = (e: TouchEvent) => {
-      if (e.touches && e.touches.length >= 5) {
-        e.preventDefault();
-        e.stopPropagation();
-        navigate(`/company/${storeId}/table`);
+      if (!e.touches || e.touches.length < 5) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const now = Date.now();
+      if (now - firstTapAt > WINDOW_MS) {
+        tapCount = 1;
+        firstTapAt = now;
+      } else {
+        tapCount += 1;
+      }
+      if (tapCount >= REQUIRED_TAPS) {
+        reset();
+        void runResetFlow();
       }
     };
     window.addEventListener('touchstart', onTouchStart, { passive: false, capture: true });
     return () => window.removeEventListener('touchstart', onTouchStart, { capture: true } as any);
-  }, [isTablet, storeId, navigate]);
+  }, [isTablet, storeId, navigate, resetCart]);
   const { data: menu, isLoading: menuLoading } = useQuery({
     queryKey: ['menu', storeId, table, i18n.language],
     queryFn: () => getCompanyMenu(storeId!, table!),
