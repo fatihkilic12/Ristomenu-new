@@ -2,7 +2,18 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useCart } from '@/context/CartContext';
-import { DELIVERY, PICKUP, EURO } from '@/config/constants';
+import { DELIVERY, PICKUP, EURO, IMAGE_ADDRESS, IMAGE_SERVER_ADDRESS } from '@/config/constants';
+
+// Same image resolver CartSidebar / KioskCartPage use — small enough to
+// duplicate inline rather than lift to a shared lib. product.uri wins
+// (the API already builds the absolute CDN URL); fall back to the
+// numeric image FK through IMAGE_ADDRESS only when uri is missing.
+function itemImage(item: any): string | null {
+  const product = item.product_data || {};
+  const raw = product.uri || (product.image ? IMAGE_ADDRESS(product.image) : null);
+  if (!raw) return null;
+  return raw.startsWith('/') ? `${IMAGE_SERVER_ADDRESS}${raw}` : raw;
+}
 import { isChannelPaused } from '@/lib/pause';
 import { getEffectiveMinOrder } from '@/lib/minOrder';
 import { getPreOrderSlots } from '@/actions/store';
@@ -189,20 +200,39 @@ export default function OrderCartPanel({
                 .join(', ');
               const isLast = item.quantity === 1;
 
+              const img = itemImage(item);
               return (
                 <div key={item.id} className="py-3 first:pt-1">
-                  {/* Title + options (clickable to edit) */}
+                  {/* Title + options (clickable to edit). Thumbnail
+                      added so customers can visually pick out the item
+                      instead of re-reading every line — especially
+                      helpful on long delivery orders. shrink-0 fixed
+                      size so a long product name can't crowd the
+                      picture out. */}
                   <button
                     type="button"
                     onClick={() => onEdit(item)}
-                    className="w-full text-left"
+                    className="w-full flex items-start gap-3 text-left"
                   >
-                    <p className="text-sm font-semibold text-[var(--color-text)] leading-tight line-clamp-2 capitalize">
-                      {item.product_data?.name || `#${item.product}`}
-                    </p>
-                    {optionLabels && (
-                      <p className="text-xs text-[var(--color-muted)] line-clamp-1 mt-0.5">{optionLabels}</p>
-                    )}
+                    <div className="shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-[var(--color-surface-2)] ring-1 ring-inset ring-[var(--color-border)]">
+                      {img ? (
+                        <img src={img} alt="" loading="lazy" className="w-full h-full object-cover" />
+                      ) : (
+                        <svg className="w-full h-full p-2.5 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                          <path d="M3 2v7a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V2" />
+                          <path d="M6 11v11" />
+                          <path d="M19 15V2a4 4 0 0 0-4 4v6a2 2 0 0 0 2 2h2v8" />
+                        </svg>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-[var(--color-text)] leading-tight line-clamp-2 capitalize">
+                        {item.product_data?.name || `#${item.product}`}
+                      </p>
+                      {optionLabels && (
+                        <p className="text-xs text-[var(--color-muted)] line-clamp-1 mt-0.5">{optionLabels}</p>
+                      )}
+                    </div>
                   </button>
 
                   {/* Price + horizontal qty stepper */}

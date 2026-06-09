@@ -2,17 +2,33 @@ import { useState } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useStoreConfig } from '@/context/StoreConfigContext';
 import { useTranslation } from 'react-i18next';
-import { EURO } from '@/config/constants';
+import { EURO, IMAGE_ADDRESS, IMAGE_SERVER_ADDRESS } from '@/config/constants';
 import { getBranding } from '@/lib/branding';
 import CartUpsellRail from '@/components/order/CartUpsellRail';
+
+// Resolve the same image URL we render on the product card so the
+// cart row carries the visual the customer just tapped on. Mirrors
+// KioskCartPage's helper — kept inline because the cart already lives
+// in shared/ and we don't want a one-line lib for this.
+function itemImage(item: any): string | null {
+  const product = item.product_data || {};
+  const raw = product.uri || (product.image ? IMAGE_ADDRESS(product.image) : null);
+  if (!raw) return null;
+  return raw.startsWith('/') ? `${IMAGE_SERVER_ADDRESS}${raw}` : raw;
+}
 
 type Props = {
   menu: Record<string, any> | null;
   onEdit: (item: any) => void;
   onConfirm: () => void;
+  // Optional close handler — when set we render an X in the header
+  // top-right. The mobile drawer passes it through so customers who
+  // don't know they can tap the backdrop have a visible escape; the
+  // desktop sidebar mounts inline next to the menu and leaves it off.
+  onClose?: () => void;
 };
 
-export default function CartSidebar({ menu, onEdit, onConfirm }: Props) {
+export default function CartSidebar({ menu, onEdit, onConfirm, onClose }: Props) {
   const { cart, note, setNote, updateCart, deleteFromCart, itemCount } = useCart();
   const { company } = useStoreConfig();
   const { allow_notes } = getBranding(company);
@@ -46,9 +62,24 @@ export default function CartSidebar({ menu, onEdit, onConfirm }: Props) {
 
   return (
     <div className="flex-1 min-h-0 flex flex-col bg-white">
-      <div className="shrink-0 p-4 border-b border-[var(--color-border)]">
-        <h2 className="font-bold text-xl">{t('restaurants.cart.title', 'Your order')}</h2>
-        <span className="text-base text-[var(--color-muted)]">{itemCount} {itemCount === 1 ? t('common.item', 'item') : t('common.items', 'items')}</span>
+      <div className="shrink-0 p-4 border-b border-[var(--color-border)] flex items-start justify-between gap-3">
+        <div>
+          <h2 className="font-bold text-xl">{t('restaurants.cart.title', 'Your order')}</h2>
+          <span className="text-base text-[var(--color-muted)]">{itemCount} {itemCount === 1 ? t('common.item', 'item') : t('common.items', 'items')}</span>
+        </div>
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="shrink-0 -mr-1 -mt-1 w-10 h-10 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors"
+            aria-label={t('common.close', 'Close')}
+          >
+            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        )}
       </div>
 
       {/* Items — min-h-0 lets flex-1 actually shrink so overflow-y-auto
@@ -71,18 +102,38 @@ export default function CartSidebar({ menu, onEdit, onConfirm }: Props) {
             .join(', ');
           const isLast = item.quantity === 1;
 
+          const img = itemImage(item);
+
           return (
             <div key={item.id} className="py-2 first:pt-1 px-1 border-b last:border-b-0 border-[var(--color-border)]">
-              <button type="button" onClick={() => onEdit(item)} className="w-full text-left">
-                <p className="text-base font-semibold leading-tight line-clamp-2">
-                  {item.product_data?.name || `#${item.product}`}
-                </p>
-                {optionLabels && (
-                  <p className="text-sm text-[var(--color-muted)] line-clamp-1 mt-0.5">{optionLabels}</p>
-                )}
-                {item.note && (
-                  <p className="text-sm text-[var(--color-muted)] line-clamp-1 mt-0.5 italic">{item.note}</p>
-                )}
+              <button type="button" onClick={() => onEdit(item)} className="w-full flex items-start gap-3 text-left">
+                {/* Thumbnail — same image the customer tapped on the
+                    product card. Gives the cart row a visual anchor so
+                    customers can spot "the burger I added" at a glance
+                    instead of re-reading every line. shrink-0 + fixed
+                    w/h so a long name doesn't crush the picture. */}
+                <div className="shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-gray-100 ring-1 ring-inset ring-gray-200">
+                  {img ? (
+                    <img src={img} alt="" loading="lazy" className="w-full h-full object-cover" />
+                  ) : (
+                    <svg className="w-full h-full p-3 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <path d="M3 2v7a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V2" />
+                      <path d="M6 11v11" />
+                      <path d="M19 15V2a4 4 0 0 0-4 4v6a2 2 0 0 0 2 2h2v8" />
+                    </svg>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-base font-semibold leading-tight line-clamp-2 capitalize">
+                    {item.product_data?.name || `#${item.product}`}
+                  </p>
+                  {optionLabels && (
+                    <p className="text-sm text-[var(--color-muted)] line-clamp-1 mt-0.5">{optionLabels}</p>
+                  )}
+                  {item.note && (
+                    <p className="text-sm text-[var(--color-muted)] line-clamp-1 mt-0.5 italic">{item.note}</p>
+                  )}
+                </div>
               </button>
               <div className="flex items-center justify-between gap-3 mt-2">
                 <span className="text-base font-bold">{EURO}{(getPrice(item) / 100).toFixed(2)}</span>

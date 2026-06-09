@@ -37,15 +37,28 @@ export default function CartMobileBar({ menu, onEdit, onConfirm }: Props) {
 
   return (
     <>
-      {/* Floating bar */}
+      {/* Floating bar — green + explicit cart icon. Customer testing
+          showed people skipped the bar because the brand-coloured
+          background blended with other primary-coloured CTAs on the
+          menu, and the bare number badge read as a notification dot
+          rather than a basket count. emerald-500 is the universal
+          "checkout / confirm" green and the icon makes the intent
+          unambiguous regardless of language. */}
       <div className="fixed bottom-0 left-0 right-0 z-40 p-3 lg:hidden">
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="w-full flex items-center justify-between py-3.5 px-5 rounded-2xl text-white bg-[var(--color-primary)] shadow-xl shadow-black/20"
+          className="w-full flex items-center justify-between py-3.5 px-5 rounded-2xl text-white bg-emerald-600 active:bg-emerald-700 shadow-xl shadow-black/20"
         >
-          <span className="bg-white/20 rounded-full w-6 h-6 flex items-center justify-center text-[13px] font-bold">
-            {itemCount}
+          <span className="relative inline-flex items-center justify-center w-8 h-8">
+            <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <circle cx="9" cy="21" r="1" />
+              <circle cx="20" cy="21" r="1" />
+              <path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6" />
+            </svg>
+            <span className="absolute -top-1.5 -right-2 bg-white text-emerald-700 rounded-full min-w-5 h-5 px-1.5 flex items-center justify-center text-[11px] font-bold leading-none">
+              {itemCount}
+            </span>
           </span>
           <span className="font-semibold text-[15px]">{t('common.view_order', 'View order')}</span>
           <span className="font-bold text-[15px]">{EURO}{(subtotal / 100).toFixed(2)}</span>
@@ -61,7 +74,12 @@ export default function CartMobileBar({ menu, onEdit, onConfirm }: Props) {
               <div className="w-10 h-1 bg-gray-300 rounded-full" />
             </div>
             <div className="flex-1 min-h-0 flex flex-col">
-              <CartSidebar menu={menu} onEdit={(item) => { setOpen(false); onEdit(item); }} onConfirm={() => { setOpen(false); onConfirm(); }} />
+              <CartSidebar
+                menu={menu}
+                onEdit={(item) => { setOpen(false); onEdit(item); }}
+                onConfirm={() => { setOpen(false); onConfirm(); }}
+                onClose={() => setOpen(false)}
+              />
             </div>
           </div>
         </div>

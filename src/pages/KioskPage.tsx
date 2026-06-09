@@ -409,16 +409,27 @@ function KioskMenu({ customerName, onReset }: { customerName: string; onReset: (
         </div>
       </div>
 
-      {/* Sticky bottom cart bar */}
+      {/* Sticky bottom cart bar — green + explicit cart icon. Same
+          rationale as CartMobileBar: kiosk customers were skipping the
+          bottom bar entirely because the brand-coloured background read
+          as "another menu option" rather than "checkout". Green + the
+          basket symbol forces the cart affordance. */}
       {cart.length > 0 && (
         <button
           type="button"
           onClick={() => setView('cart')}
-          className="absolute bottom-0 left-0 right-0 z-20 bg-[var(--color-primary)] text-white px-7 py-7 flex items-center justify-between gap-5 shadow-[0_-8px_30px_rgba(0,0,0,0.12)] active:bg-[var(--color-primary-hover)] transition-colors kiosk-anim-fade-in-up"
+          className="absolute bottom-0 left-0 right-0 z-20 bg-emerald-600 text-white px-7 py-7 flex items-center justify-between gap-5 shadow-[0_-8px_30px_rgba(0,0,0,0.12)] active:bg-emerald-700 transition-colors kiosk-anim-fade-in-up"
         >
           <span className="flex items-center gap-4">
-            <span className="w-16 h-16 rounded-2xl bg-white/15 flex items-center justify-center text-2xl font-extrabold">
-              {itemCount}
+            <span className="relative inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/15">
+              <svg className="w-9 h-9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <circle cx="9" cy="21" r="1" />
+                <circle cx="20" cy="21" r="1" />
+                <path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6" />
+              </svg>
+              <span className="absolute -top-2 -right-2 bg-white text-emerald-700 rounded-full min-w-7 h-7 px-2 flex items-center justify-center text-base font-extrabold leading-none ring-2 ring-emerald-600">
+                {itemCount}
+              </span>
             </span>
             <span className="font-extrabold text-2xl">
               {t('common.view_order', 'View order')}
