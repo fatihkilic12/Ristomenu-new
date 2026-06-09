@@ -48,7 +48,7 @@ export default function CartMobileBar({ menu, onEdit, onConfirm }: Props) {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="w-full flex items-center justify-between py-3.5 px-5 rounded-2xl text-white bg-emerald-600 active:bg-emerald-700 shadow-xl shadow-black/20"
+          className="w-full flex items-center justify-between py-3.5 px-5 rounded-2xl text-white bg-green-500 active:bg-green-600 shadow-xl shadow-black/20"
         >
           <span className="relative inline-flex items-center justify-center w-8 h-8">
             <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -56,7 +56,7 @@ export default function CartMobileBar({ menu, onEdit, onConfirm }: Props) {
               <circle cx="20" cy="21" r="1" />
               <path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6" />
             </svg>
-            <span className="absolute -top-1.5 -right-2 bg-white text-emerald-700 rounded-full min-w-5 h-5 px-1.5 flex items-center justify-center text-[11px] font-bold leading-none">
+            <span className="absolute -top-1.5 -right-2 bg-white text-green-700 rounded-full min-w-5 h-5 px-1.5 flex items-center justify-center text-[11px] font-bold leading-none">
               {itemCount}
             </span>
           </span>
