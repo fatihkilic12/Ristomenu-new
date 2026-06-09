@@ -10,7 +10,7 @@ import { KIOSK, ADD, EDIT, EURO } from '@/config/constants';
 import { useIdleTimer } from '@/hooks/useIdleTimer';
 import { getBranding } from '@/lib/branding';
 import LanguageSelector from '@/components/shared/LanguageSelector';
-import KioskCategoryNav from '@/components/kiosk/KioskCategoryNav';
+import KioskCategorySidebar from '@/components/kiosk/KioskCategorySidebar';
 import KioskProductCard from '@/components/kiosk/KioskProductCard';
 import KioskProductDetail, { type ProductDetailParams } from '@/components/kiosk/KioskProductDetail';
 import KioskCartPage from '@/components/kiosk/KioskCartPage';
@@ -369,39 +369,44 @@ function KioskMenu({ customerName, onReset }: { customerName: string; onReset: (
         </div>
       </header>
 
-      {/* Category strip */}
-      <KioskCategoryNav categories={categories} activeId={activeCategory} onSelect={scrollToCategory} />
+      {/* Body — vertical sidebar (categories) + 2-col product grid.
+          McDonald's kiosk pattern: the customer's eye line stays in
+          the same column band, only scanning down the products on the
+          right while the sidebar provides peripheral context. No head
+          movement across the full screen width. */}
+      <div className="flex-1 min-h-0 flex">
+        <KioskCategorySidebar categories={categories} activeId={activeCategory} onSelect={scrollToCategory} />
 
-      {/* Products list */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 pt-7 pb-44">
-        {categories.map((cat: Record<string, any>) => {
-          const catProducts = products.filter((p: any) => p.category === cat.id);
-          if (catProducts.length === 0) return null;
-          return (
-            <div
-              key={cat.id}
-              ref={el => { categoryRefs.current[cat.id] = el; }}
-              data-category={cat.id}
-              className="mb-10"
-            >
-              <h2 className="text-4xl font-extrabold mb-5 px-2 text-gray-900 capitalize">{cat.name}</h2>
-              <div className="grid grid-cols-2 gap-5">
-                {catProducts.map((product: Record<string, any>) => (
-                  <CartCountWrapper key={product.id} productId={product.id}>
-                    {(cartCount) => (
-                      <KioskProductCard
-                        product={product}
-                        onClick={() => onProductClick(product)}
-                        cartCount={cartCount}
-                        showImages={showImages}
-                      />
-                    )}
-                  </CartCountWrapper>
-                ))}
+        <div ref={scrollRef} className="flex-1 overflow-y-auto px-7 pt-7 pb-44">
+          {categories.map((cat: Record<string, any>) => {
+            const catProducts = products.filter((p: any) => p.category === cat.id);
+            if (catProducts.length === 0) return null;
+            return (
+              <div
+                key={cat.id}
+                ref={el => { categoryRefs.current[cat.id] = el; }}
+                data-category={cat.id}
+                className="mb-10"
+              >
+                <h2 className="text-4xl font-extrabold mb-5 px-2 text-gray-900 capitalize">{cat.name}</h2>
+                <div className="grid grid-cols-2 gap-5">
+                  {catProducts.map((product: Record<string, any>) => (
+                    <CartCountWrapper key={product.id} productId={product.id}>
+                      {(cartCount) => (
+                        <KioskProductCard
+                          product={product}
+                          onClick={() => onProductClick(product)}
+                          cartCount={cartCount}
+                          showImages={showImages}
+                        />
+                      )}
+                    </CartCountWrapper>
+                  ))}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
       {/* Sticky bottom cart bar */}

@@ -149,24 +149,37 @@ export default function KioskProductDetail({ params, showAllergens = true, allow
   const imgUrl = rawUri && rawUri.startsWith('/') ? `${IMAGE_SERVER_ADDRESS}${rawUri}` : rawUri;
 
   return (
-    <div className="fixed inset-0 z-40 bg-[#fafafa] flex flex-col kiosk-anim-fade-in-up">
+    // Centered card instead of full-screen takeover. On a 21–32" kiosk
+    // the old full-screen detail meant the customer's eyes had to scan
+    // top→bottom across the whole display; a bounded card keeps the
+    // image, options and confirm CTA in roughly the same focal zone.
+    // Backdrop click closes; clicks inside the card don't.
+    <div
+      className="fixed inset-0 z-40 bg-black/55 flex items-center justify-center p-6 kiosk-anim-fade-in-up"
+      onClick={() => onClose()}
+    >
+      <div
+        className="relative bg-[#fafafa] w-full max-w-3xl max-h-[88vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden"
+        onClick={e => e.stopPropagation()}
+      >
       {/* Header */}
-      <div className="shrink-0 bg-white border-b border-gray-100 px-6 h-24 flex items-center gap-5 z-10">
+      <div className="shrink-0 bg-white border-b border-gray-100 px-6 h-20 flex items-center gap-4 z-10">
         <button
           type="button"
-          onClick={onClose}
-          className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center text-gray-700 active:bg-gray-200"
+          onClick={() => onClose()}
+          className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center text-gray-700 active:bg-gray-200"
         >
-          <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <line x1="19" y1="12" x2="5" y2="12" />
             <polyline points="12 19 5 12 12 5" />
           </svg>
         </button>
-        <h1 className="text-2xl font-bold truncate flex-1 capitalize">{product.name}</h1>
+        <h1 className="text-xl font-bold truncate flex-1 capitalize">{product.name}</h1>
       </div>
 
-      {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto pb-52">
+      {/* Scrollable content — bottom padding ~= sticky footer height so
+          the last option group isn't covered by the confirm bar. */}
+      <div className="flex-1 overflow-y-auto pb-32">
         {/* Hero image */}
         {imgUrl ? (
           <div className="relative w-full aspect-[4/3] bg-gray-100 overflow-hidden">
@@ -298,22 +311,22 @@ export default function KioskProductDetail({ params, showAllergens = true, allow
         </div>
       </div>
 
-      {/* Sticky footer */}
-      <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-5 shadow-[0_-4px_24px_rgba(0,0,0,0.04)]">
-        <div className="flex items-center gap-4">
+      {/* Sticky footer (within the modal card, NOT viewport) */}
+      <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 shadow-[0_-4px_24px_rgba(0,0,0,0.04)]">
+        <div className="flex items-center gap-3">
           <div className="flex items-center bg-gray-100 rounded-2xl shrink-0">
             <button
               type="button"
               onClick={() => setQuantity((q: number) => Math.max(1, q - 1))}
-              className="w-20 h-20 flex items-center justify-center text-3xl font-bold text-gray-600 active:bg-gray-200 rounded-l-2xl"
+              className="w-16 h-16 flex items-center justify-center text-2xl font-bold text-gray-600 active:bg-gray-200 rounded-l-2xl"
             >
               −
             </button>
-            <span className="w-14 text-center font-extrabold text-2xl tabular-nums">{quantity}</span>
+            <span className="w-12 text-center font-extrabold text-xl tabular-nums">{quantity}</span>
             <button
               type="button"
               onClick={() => setQuantity((q: number) => q + 1)}
-              className="w-20 h-20 flex items-center justify-center text-3xl font-bold text-gray-600 active:bg-gray-200 rounded-r-2xl"
+              className="w-16 h-16 flex items-center justify-center text-2xl font-bold text-gray-600 active:bg-gray-200 rounded-r-2xl"
             >
               +
             </button>
@@ -321,13 +334,14 @@ export default function KioskProductDetail({ params, showAllergens = true, allow
           <button
             type="button"
             onClick={handleConfirm}
-            className="flex-1 h-20 rounded-2xl font-extrabold text-2xl text-white bg-[var(--color-primary)] active:bg-[var(--color-primary-hover)] transition-colors flex items-center justify-center gap-3"
+            className="flex-1 h-16 rounded-2xl font-extrabold text-xl text-white bg-[var(--color-primary)] active:bg-[var(--color-primary-hover)] transition-colors flex items-center justify-center gap-3"
           >
             <span>{mode === EDIT ? t('common.update', 'Update') : t('common.add', 'Add')}</span>
             <span className="opacity-80">•</span>
             <span>{EURO}{(totalPrice / 100).toFixed(2)}</span>
           </button>
         </div>
+      </div>
       </div>
     </div>
   );
