@@ -60,25 +60,63 @@ function DineInContent() {
   // Single-tap kept firing accidentally — a customer setting the tablet
   // down, a hand resting across the screen — and dumped the current
   // session straight back to the slug picker. The 5-finger touch must
-  // repeat TWICE within a 5-second window before the reset fires. A
-  // stray touch starts a streak but expires after the window; an
-  // earlier 3-tap version felt too laborious for staff on the floor.
+  // repeat TWICE within a 5-second window before the reset fires.
   //
-  // On the second successful tap we wipe the cart's localStorage entry
-  // (belt-and-braces — CartProvider's save effect would write an empty
-  // state anyway, but explicit removeItem means a brand-new session
-  // for the next customer) and navigate.
+  // What counts as one "tap" is intentionally strict, because operators
+  // reported the menu getting stuck after a half-started gesture (5
+  // fingers down, never lifted) — Android sometimes keeps phantom
+  // touches around, so every subsequent single-finger press registered
+  // as length≥5 and completed the streak. Now a tap requires BOTH:
+  //   1. touchstart at peak ≥5 fingers
+  //   2. touchend with the touches list back to empty within 1.5s
+  // Incomplete gestures (palm leaning, dragging across the screen
+  // without lifting) never reach step 2, so they can't poison the
+  // streak. touchcancel resets too — covers the "Android killed the
+  // gesture" case the same way.
   useEffect(() => {
     if (!isTablet || !storeId) return;
     let tapCount = 0;
     let firstTapAt = 0;
+    // Per-gesture state (resets every time fingers fully lift)
+    let maxTouchesInGesture = 0;
+    let gestureStartedAt = 0;
     const WINDOW_MS = 5000;
     const REQUIRED_TAPS = 2;
+    const TAP_MAX_DURATION_MS = 1500;
+
+    const resetGesture = () => {
+      maxTouchesInGesture = 0;
+      gestureStartedAt = 0;
+    };
 
     const onTouchStart = (e: TouchEvent) => {
-      if (!e.touches || e.touches.length < 5) return;
-      e.preventDefault();
-      e.stopPropagation();
+      const len = e.touches?.length ?? 0;
+      if (len > maxTouchesInGesture) {
+        maxTouchesInGesture = len;
+        if (gestureStartedAt === 0) gestureStartedAt = Date.now();
+      }
+      // Still suppress propagation for ≥5-finger touchstart so a swipe
+      // doesn't open product cards underneath while the operator is
+      // mid-reset gesture.
+      if (len >= 5) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
+      // Only score the gesture when EVERY finger has been lifted.
+      // A partial lift (5 → 3 → 5 again) keeps the gesture open and
+      // can't complete a tap on its own.
+      if ((e.touches?.length ?? 0) > 0) return;
+
+      const wasFiveFingerTap =
+        maxTouchesInGesture >= 5 &&
+        gestureStartedAt > 0 &&
+        Date.now() - gestureStartedAt <= TAP_MAX_DURATION_MS;
+      resetGesture();
+      if (!wasFiveFingerTap) return;
+
       const now = Date.now();
       if (now - firstTapAt > WINDOW_MS) {
         tapCount = 1;
@@ -96,8 +134,23 @@ function DineInContent() {
         navigate(`/company/${storeId}/table`);
       }
     };
+
+    const onTouchCancel = () => {
+      // Android often fires touchcancel instead of touchend when the
+      // OS reclaims the gesture (system notification, accidental swipe
+      // off the screen edge). Treat it as a discarded gesture so a
+      // half-completed 5-finger touch doesn't carry into the next.
+      resetGesture();
+    };
+
     window.addEventListener('touchstart', onTouchStart, { passive: false, capture: true });
-    return () => window.removeEventListener('touchstart', onTouchStart, { capture: true } as any);
+    window.addEventListener('touchend', onTouchEnd, { passive: true, capture: true });
+    window.addEventListener('touchcancel', onTouchCancel, { passive: true, capture: true });
+    return () => {
+      window.removeEventListener('touchstart', onTouchStart, { capture: true } as any);
+      window.removeEventListener('touchend', onTouchEnd, { capture: true } as any);
+      window.removeEventListener('touchcancel', onTouchCancel, { capture: true } as any);
+    };
   }, [isTablet, storeId, navigate, resetCart]);
   const { data: menu, isLoading: menuLoading } = useQuery({
     queryKey: ['menu', storeId, table, i18n.language],
