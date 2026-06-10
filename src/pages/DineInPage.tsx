@@ -152,10 +152,26 @@ function DineInContent() {
       window.removeEventListener('touchcancel', onTouchCancel, { capture: true } as any);
     };
   }, [isTablet, storeId, navigate, resetCart]);
+  // Override the global QueryClient defaults (staleTime: 60s,
+  // refetchOnWindowFocus: false). Customers stay on the dine-in page
+  // for the whole meal, the operator hides products live during
+  // service, and the global defaults meant the menu went up to a
+  // minute behind reality — and `refetchOnWindowFocus: false` killed
+  // even the tab-back-to-foreground refetch.
+  //
+  // staleTime: 0 + refetchOnMount: 'always' forces a network round-trip
+  // every time we mount, but the server's ETag handshake returns 304 in
+  // ~10ms when nothing's changed (no body), so the cost of always
+  // asking is small. Cache-Control on the server is also down to
+  // max-age=0, so the browser participates in the same revalidation
+  // instead of holding a 60s-stale copy.
   const { data: menu, isLoading: menuLoading } = useQuery({
     queryKey: ['menu', storeId, table, i18n.language],
     queryFn: () => getCompanyMenu(storeId!, table!),
     enabled: !!storeId && !!table,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 
   const handleConfirm = async () => {
