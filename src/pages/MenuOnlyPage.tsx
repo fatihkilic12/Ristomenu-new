@@ -2,14 +2,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { getDeliveryMenu } from '@/actions/store';
+import { getMenuOnly } from '@/actions/store';
 import { useMenuRefresh } from '@/hooks/useMenuRefresh';
 import { useModalBackClose } from '@/hooks/useModalBackClose';
 import { useIsTabletMode } from '@/hooks/useIsTabletMode';
 import { useIdleAction } from '@/hooks/useIdleAction';
 import { getAllergenIcon, getAllergenLabel } from '@/lib/allergens';
 import { StoreConfigProvider, useStoreConfig } from '@/context/StoreConfigContext';
-import { EURO, IMAGE_ADDRESS, IMAGE_SERVER_ADDRESS, PICKUP } from '@/config/constants';
+import { EURO, IMAGE_ADDRESS, IMAGE_SERVER_ADDRESS } from '@/config/constants';
 import { getBranding } from '@/lib/branding';
 import { vibrate } from '@/hooks/useLongPress';
 import LanguageSelector from '@/components/shared/LanguageSelector';
@@ -47,9 +47,11 @@ function MenuOnlyContent() {
   const websiteHostname = websiteUrl ? safeHostname(websiteUrl) : null;
   const goToWebsite = () => { if (websiteUrl) window.location.href = websiteUrl; };
 
-  // We re-use the delivery/pickup menu endpoint (it returns the full catalog).
-  // Nothing is ever submitted from this page. Tablets get realtime
-  // menu_updated events via Pusher; customer phones don't.
+  // Browse-only menu endpoint — same filter as dine-in (everything the
+  // operator hasn't hidden_dine_in / marked unavailable), no table
+  // binding, no pickup/delivery channel hides. Nothing is ever
+  // submitted from this page. Tablets get realtime menu_updated events
+  // via Pusher; customer phones don't.
   useMenuRefresh(storeId);
 
   // Tablet-only between-customer cleanup (?tablet=1 sessionStorage flag).
@@ -61,7 +63,7 @@ function MenuOnlyContent() {
   const isTablet = useIsTabletMode();
   const { data: menu, isLoading } = useQuery({
     queryKey: ['menu-only', storeId, i18n.language],
-    queryFn: () => getDeliveryMenu(storeId!, PICKUP),
+    queryFn: () => getMenuOnly(storeId!),
     enabled: !!storeId && !configLoading,
   });
 

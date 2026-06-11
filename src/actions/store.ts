@@ -70,6 +70,12 @@ export const getDeliveryMenu = (id: string, type = 'delivery') =>
 export const getKioskMenu = (id: string) =>
   cachedGet<any>(`/api/v2/store/${id}/kiosk/menu/`);
 
+// Browse-only menu for the public /menu/ page — same filter as dine-in
+// (is_hidden_dine_in, dine-in availability) without binding to a table.
+// Hiding a product from pickup no longer makes it vanish here.
+export const getMenuOnly = (id: string) =>
+  cachedGet<any>(`/api/v2/store/${id}/menu-only/`);
+
 export const getStoreConfig = (id: string) =>
   cachedGet<any>(`/api/v2/store/${id}/config/`);
 
