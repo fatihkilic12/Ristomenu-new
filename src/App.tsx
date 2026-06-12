@@ -12,6 +12,7 @@ import OrderPage from '@/pages/OrderPage';
 import CheckoutPage from '@/pages/CheckoutPage';
 import OrderTrackingPage from '@/pages/OrderTrackingPage';
 import MenuOnlyPage from '@/pages/MenuOnlyPage';
+import MenuLitePage from '@/pages/MenuLitePage';
 import PrivacyPage from '@/pages/PrivacyPage';
 import TermsPage from '@/pages/TermsPage';
 import {useEffect} from 'react';
@@ -73,6 +74,12 @@ export default function App() {
           <Route path="/company/:storeId/order/track/:secretKey" element={<OrderTrackingPage />} />
           {/* Static `menu` route must come before the dynamic `:table` catch-all */}
           <Route path="/company/:storeId/menu" element={<MenuOnlyPage />} />
+          {/* Lite-mode browse menu for under-powered tablets — stripped
+              of observers, modals, branding CSS, and the Pusher refresh
+              loop that makes MenuOnlyPage choke on older Android
+              devices. Operator points the slow tablet's URL bar here
+              manually. Same /menu-only/ endpoint, different render. */}
+          <Route path="/company/:storeId/menu-lite" element={<MenuLitePage />} />
           {/* TabletMenuApp's "Disable Order" switch points at this path —
               treat it as the same browse-only surface as /menu so wall-
               mounted tablets and permanent-display devices both work
