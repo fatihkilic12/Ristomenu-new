@@ -29,7 +29,7 @@ type Props = {
 };
 
 export default function CartSidebar({ menu, onEdit, onConfirm, onClose }: Props) {
-  const { cart, note, setNote, updateCart, deleteFromCart, itemCount } = useCart();
+  const { cart, note, setNote, updateCart, deleteFromCart, itemCount, isSubmitting } = useCart();
   const { company } = useStoreConfig();
   const { allow_notes } = getBranding(company);
   const { t } = useTranslation();
@@ -204,26 +204,54 @@ export default function CartSidebar({ menu, onEdit, onConfirm, onClose }: Props)
 
       {confirming && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-          <div className="fixed inset-0 bg-black/50" onClick={() => setConfirming(false)} />
+          {/* Backdrop is non-dismissible while submitting — a stray tap
+              outside the modal mid-submit shouldn't close it; the user
+              would lose the spinner feedback and assume the order
+              didn't go through. */}
+          <div
+            className="fixed inset-0 bg-black/50"
+            onClick={() => { if (!isSubmitting) setConfirming(false); }}
+          />
           <div className="relative z-10 bg-white rounded-2xl w-full max-w-sm p-8 text-center">
             <div className="w-20 h-20 rounded-full bg-[var(--color-primary)]/10 flex items-center justify-center mx-auto mb-5">
-              <svg className="w-9 h-9 text-[var(--color-primary)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" /><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" /></svg>
+              {isSubmitting ? (
+                <div className="w-9 h-9 border-[3px] border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <svg className="w-9 h-9 text-[var(--color-primary)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" /><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" /></svg>
+              )}
             </div>
-            <h2 className="text-xl font-bold mb-2">{t('restaurants.cart.place_order', 'Place this order?')}</h2>
+            <h2 className="text-xl font-bold mb-2">
+              {isSubmitting
+                ? t('restaurants.cart.placing', 'Bestelling wordt verstuurd…')
+                : t('restaurants.cart.place_order', 'Place this order?')}
+            </h2>
             <p className="text-base text-gray-500 mb-7">
               {itemCount} {itemCount === 1 ? t('common.item', 'item') : t('common.items', 'items')} — {EURO}{(subtotal / 100).toFixed(2)}
             </p>
             <button
               type="button"
-              onClick={() => { setConfirming(false); onConfirm(); }}
-              className="w-full py-3.5 rounded-xl text-base font-semibold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] transition-colors mb-2"
+              // Keep the modal open during submit so the spinner +
+              // disabled state stays visible until the parent (Dine-In /
+              // Kiosk / Checkout) flips to the result modal. The
+              // CartContext also coalesces overlapping calls, so a tap
+              // that beats the disabled prop still won't fire twice
+              // — this is belt-and-braces.
+              onClick={() => { if (!isSubmitting) onConfirm(); }}
+              disabled={isSubmitting}
+              className="w-full py-3.5 rounded-xl text-base font-semibold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] transition-colors mb-2 disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
             >
-              {t('restaurants.cart.ok', 'Confirm')}
+              {isSubmitting && (
+                <span className="w-4 h-4 border-2 border-white/80 border-t-transparent rounded-full animate-spin" aria-hidden />
+              )}
+              {isSubmitting
+                ? t('restaurants.cart.placing_short', 'Bezig…')
+                : t('restaurants.cart.ok', 'Confirm')}
             </button>
             <button
               type="button"
               onClick={() => setConfirming(false)}
-              className="w-full py-3 rounded-xl text-base font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
+              disabled={isSubmitting}
+              className="w-full py-3 rounded-xl text-base font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {t('restaurants.cart.cancel', 'Cancel')}
             </button>

@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { placeOrder } from '@/actions/order';
 
@@ -26,6 +26,12 @@ type CartContextType = {
   resetCart: () => void;
   setNote: (note: string) => void;
   submitOrder: (extra?: Record<string, any>) => Promise<any>;
+  /** True while a submitOrder call is in flight. Drives the disabled +
+   * spinner state on every confirm button so a second tap can't fire a
+   * second POS order. The CartContext also coalesces overlapping calls
+   * at the function level — re-tap returns the same in-flight promise
+   * instead of placing a duplicate order. */
+  isSubmitting: boolean;
   total: number;
   itemCount: number;
 };
@@ -106,7 +112,25 @@ export function CartProvider({ storeId, table, orderType, customerName, children
     setCartState(prev => ({ ...prev, desiredTime: iso }));
   }, []);
 
+  // Coalesce overlapping submitOrder calls. Operators reported orders
+  // landing on the POS twice — symptom was a customer double-tapping
+  // the "Confirm" button in the cart modal (or, on mobile, closing the
+  // drawer mid-submit, re-opening, and tapping again). With no guard
+  // each tap fired a fresh placeOrder request and the POS adapter
+  // accepted both. We keep a ref to the in-flight promise here AND
+  // expose `isSubmitting` so every UI confirm button can show a
+  // disabled / spinner state — belt-and-braces against fast taps that
+  // beat React's re-render.
+  const inFlightRef = useRef<Promise<any> | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const submitOrder = useCallback(async (extra?: Record<string, any>) => {
+    if (inFlightRef.current) {
+      // Re-entry while submitting — return the existing promise so the
+      // caller still resolves at the same time the first call does
+      // without firing a second backend request.
+      return inFlightRef.current;
+    }
     const items = cart.items.map(i => ({
       product: i.product,
       quantity: i.quantity,
@@ -126,7 +150,14 @@ export function CartProvider({ storeId, table, orderType, customerName, children
     // ship the empty string.
     if (cart.desiredTime) payload.desired_time = cart.desiredTime;
     if (extra) Object.assign(payload, extra);
-    return placeOrder(storeId, payload);
+
+    setIsSubmitting(true);
+    const promise = placeOrder(storeId, payload).finally(() => {
+      inFlightRef.current = null;
+      setIsSubmitting(false);
+    });
+    inFlightRef.current = promise;
+    return promise;
   }, [cart, storeId, table, orderType, customerName]);
 
   const total = useMemo(() => cart.items.reduce((s, i) => s + i.quantity, 0), [cart.items]);
@@ -137,9 +168,10 @@ export function CartProvider({ storeId, table, orderType, customerName, children
     desiredTime: cart.desiredTime ?? null,
     setDesiredTime,
     addToCart, updateCart, deleteFromCart, resetCart, setNote, submitOrder,
+    isSubmitting,
     total: 0, // Calculated from prices in menu context
     itemCount: total,
-  }), [cart, addToCart, updateCart, deleteFromCart, resetCart, setNote, setDesiredTime, submitOrder, total]);
+  }), [cart, addToCart, updateCart, deleteFromCart, resetCart, setNote, setDesiredTime, submitOrder, isSubmitting, total]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

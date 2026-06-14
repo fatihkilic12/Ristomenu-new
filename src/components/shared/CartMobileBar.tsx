@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useCart } from '@/context/CartContext';
 import { EURO } from '@/config/constants';
@@ -28,10 +28,22 @@ function calcSubtotal(cart: any[], menu: any): number {
 }
 
 export default function CartMobileBar({ menu, onEdit, onConfirm }: Props) {
-  const { cart, itemCount } = useCart();
+  const { cart, itemCount, isSubmitting } = useCart();
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const subtotal = useMemo(() => calcSubtotal(cart, menu), [cart, menu]);
+
+  // Auto-close the drawer once the cart drains (parent calls resetCart
+  // on a successful submit). Done here instead of the previous eager
+  // `setOpen(false)` on confirm so the drawer + confirm dialog stay
+  // open during the submit window — the spinner + disabled-button
+  // feedback in CartSidebar's modal only works when the modal stays
+  // mounted. After the order succeeds the cart empties → drawer
+  // collapses; if the order fails it stays open so the customer can
+  // adjust and retry.
+  useEffect(() => {
+    if (cart.length === 0 && open) setOpen(false);
+  }, [cart.length, open]);
 
   if (cart.length === 0) return null;
 
@@ -68,7 +80,12 @@ export default function CartMobileBar({ menu, onEdit, onConfirm }: Props) {
       {/* Slide-up drawer */}
       {open && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setOpen(false)} />
+          {/* Non-dismissible backdrop during submit — same rationale as
+              the confirm-modal backdrop in CartSidebar. */}
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => { if (!isSubmitting) setOpen(false); }}
+          />
           <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl overflow-hidden flex flex-col" style={{ maxHeight: '85dvh' }}>
             <div className="flex justify-center pt-2 pb-1 shrink-0">
               <div className="w-10 h-1 bg-gray-300 rounded-full" />
@@ -77,7 +94,12 @@ export default function CartMobileBar({ menu, onEdit, onConfirm }: Props) {
               <CartSidebar
                 menu={menu}
                 onEdit={(item) => { setOpen(false); onEdit(item); }}
-                onConfirm={() => { setOpen(false); onConfirm(); }}
+                // Don't close the drawer eagerly — CartSidebar's
+                // "Place this order?" confirm modal stays open during
+                // submit and shows a spinner. The useEffect above
+                // collapses the drawer when the cart empties on
+                // success.
+                onConfirm={onConfirm}
                 onClose={() => setOpen(false)}
               />
             </div>
