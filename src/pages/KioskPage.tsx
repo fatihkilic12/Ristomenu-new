@@ -524,6 +524,17 @@ export default function KioskPage() {
     setCustomerName('');
   }, []);
 
+  // Wipe the persisted kiosk cart whenever the kiosk lands on the idle
+  // screen — handles: initial mount after a refresh / crash, the back
+  // button out of name_entry, the idle-timer reset, and the manual
+  // "Order again" tap on the confirmation screen. Customer N+1 should
+  // never see anything customer N left behind.
+  useEffect(() => {
+    if (state === 'idle' && storeId) {
+      try { localStorage.removeItem(`cart-${storeId}`); } catch { /* private mode */ }
+    }
+  }, [state, storeId]);
+
   if (!storeId) return null;
 
   return (
