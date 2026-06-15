@@ -1,5 +1,5 @@
 import { memo, useEffect, useRef } from 'react';
-import { IMAGE_ADDRESS, IMAGE_SERVER_ADDRESS } from '@/config/constants';
+import { absoluteMediaUrl } from '@/lib/branding';
 
 type Props = {
   categories: Record<string, any>[];
@@ -7,10 +7,10 @@ type Props = {
   onSelect: (id: number) => void;
 };
 
+// See KioskCategorySidebar — Category.image from the menu API is a URL
+// path string, not an ID, so absoluteMediaUrl is the right resolver.
 function categoryImage(cat: Record<string, any>): string | null {
-  const raw = cat.uri || (cat.image ? IMAGE_ADDRESS(cat.image) : null);
-  if (!raw) return null;
-  return raw.startsWith('/') ? `${IMAGE_SERVER_ADDRESS}${raw}` : raw;
+  return absoluteMediaUrl(cat.image);
 }
 
 export default memo(function KioskCategoryNav({ categories, activeId, onSelect }: Props) {

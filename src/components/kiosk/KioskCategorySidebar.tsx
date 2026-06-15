@@ -1,5 +1,5 @@
 import { memo, useEffect, useRef } from 'react';
-import { IMAGE_ADDRESS, IMAGE_SERVER_ADDRESS } from '@/config/constants';
+import { absoluteMediaUrl } from '@/lib/branding';
 
 // McDonald's-style vertical sidebar: categories stack down the left edge
 // of the kiosk surface, products live in a 2-column grid on the right.
@@ -12,10 +12,11 @@ type Props = {
   onSelect: (id: number) => void;
 };
 
+// The storefront menu's Category.image is a URL string (the resolved
+// .url on the FK target), not a numeric ID — so absoluteMediaUrl is
+// the right call here, not IMAGE_ADDRESS(id) which is for products.
 function categoryImage(cat: Record<string, any>): string | null {
-  const raw = cat.uri || (cat.image ? IMAGE_ADDRESS(cat.image) : null);
-  if (!raw) return null;
-  return raw.startsWith('/') ? `${IMAGE_SERVER_ADDRESS}${raw}` : raw;
+  return absoluteMediaUrl(cat.image);
 }
 
 export default memo(function KioskCategorySidebar({ categories, activeId, onSelect }: Props) {
