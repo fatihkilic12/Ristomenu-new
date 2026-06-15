@@ -42,13 +42,19 @@ const THEME_TOKENS: Record<KioskTheme, {
     surface: 'bg-white/10 backdrop-blur-md border border-white/20',
   },
   light: {
-    bg: 'radial-gradient(ellipse at top, #ffffff 0%, #f1f5f9 60%, #e2e8f0 100%)',
+    // Warm off-white with a soft brand-leaning lavender wash at the
+    // bottom — pure-white-on-white reads sterile, but a tinted base
+    // anchors the radial-blob layer on top so the screen doesn't
+    // feel like a blank document.
+    bg: 'radial-gradient(ellipse 110% 80% at 50% 0%, #ffffff 0%, #fafafb 35%, #f1f1f5 65%, #ede9fe 100%)',
     body: 'text-slate-900',
     muted: 'text-slate-500',
     inputBg: 'bg-white text-slate-900',
     inputText: '',
     inputPlaceholder: 'placeholder:text-slate-400',
-    surface: 'bg-white/80 backdrop-blur-md border border-slate-200 shadow-sm',
+    // Tap-target surface: stronger soft shadow + brand-tinted ring so
+    // it sits clearly above the canvas without breaking the airy feel.
+    surface: 'bg-white/90 backdrop-blur-md border border-slate-200/80 shadow-[0_8px_30px_-12px_rgba(99,102,241,0.25)]',
   },
 };
 
@@ -84,26 +90,28 @@ function KioskIdle({ company, theme, onStart }: { company: any; theme: KioskThem
       style={{ background: tokens.bg }}
       onClick={onStart}
     >
-      {/* Animated background blobs */}
+      {/* Animated background blobs — light mode uses pastel pigments at
+          ~35% so they actually register against the off-white canvas;
+          15% washed straight out. Dark mode keeps the saturated palette. */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div
-          className={`absolute -top-32 -left-32 w-[420px] h-[420px] rounded-full blur-3xl kiosk-anim-blob ${theme === 'light' ? 'opacity-20' : 'opacity-30'}`}
+          className={`absolute -top-32 -left-32 w-[420px] h-[420px] rounded-full blur-3xl kiosk-anim-blob ${theme === 'light' ? 'opacity-40' : 'opacity-30'}`}
           style={{ background: 'var(--color-primary, #6366f1)' }}
         />
         <div
-          className={`absolute top-1/3 -right-40 w-[480px] h-[480px] rounded-full blur-3xl kiosk-anim-blob ${theme === 'light' ? 'opacity-15' : 'opacity-20'}`}
-          style={{ background: theme === 'light' ? '#c4b5fd' : '#a855f7', animationDelay: '-4s' }}
+          className={`absolute top-1/3 -right-40 w-[480px] h-[480px] rounded-full blur-3xl kiosk-anim-blob ${theme === 'light' ? 'opacity-35' : 'opacity-20'}`}
+          style={{ background: theme === 'light' ? '#c7d2fe' : '#a855f7', animationDelay: '-4s' }}
         />
         <div
-          className={`absolute -bottom-32 left-1/4 w-[380px] h-[380px] rounded-full blur-3xl kiosk-anim-blob ${theme === 'light' ? 'opacity-15' : 'opacity-25'}`}
-          style={{ background: theme === 'light' ? '#fbcfe8' : '#ec4899', animationDelay: '-8s' }}
+          className={`absolute -bottom-32 left-1/4 w-[380px] h-[380px] rounded-full blur-3xl kiosk-anim-blob ${theme === 'light' ? 'opacity-35' : 'opacity-25'}`}
+          style={{ background: theme === 'light' ? '#fce7f3' : '#ec4899', animationDelay: '-8s' }}
         />
       </div>
 
       {/* Top bar */}
       <div className="relative z-10 w-full flex justify-end">
         <div onClick={e => e.stopPropagation()}>
-          <LanguageSelector languages={company?.languages || []} defaultLang={company?.default_lang} variant={theme === 'light' ? 'light' : 'dark'} />
+          <LanguageSelector languages={company?.languages || []} defaultLang={company?.default_lang} variant={theme === 'light' ? 'light' : 'dark'} size="lg" />
         </div>
       </div>
 
@@ -206,7 +214,7 @@ function KioskNameEntry({ company, theme, onSubmit, onBack }: { company: any; th
             <polyline points="12 19 5 12 12 5" />
           </svg>
         </button>
-        <LanguageSelector languages={company?.languages || []} defaultLang={company?.default_lang} variant={theme === 'light' ? 'light' : 'dark'} />
+        <LanguageSelector languages={company?.languages || []} defaultLang={company?.default_lang} variant={theme === 'light' ? 'light' : 'dark'} size="lg" />
       </div>
 
       {/* Centered content */}
@@ -398,7 +406,7 @@ function KioskMenu({ customerName, onReset }: { customerName: string; onReset: (
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <LanguageSelector languages={company?.languages || []} defaultLang={company?.default_lang} variant="dark" />
+          <LanguageSelector languages={company?.languages || []} defaultLang={company?.default_lang} variant="dark" size="lg" />
         </div>
       </header>
 
