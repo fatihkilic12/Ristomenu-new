@@ -19,11 +19,44 @@ import KioskUpsellModal from '@/components/kiosk/KioskUpsellModal';
 
 type KioskState = 'idle' | 'name_entry' | 'ordering';
 type View = 'menu' | 'product' | 'cart';
+type KioskTheme = 'dark' | 'light';
+
+// Theme tokens used by KioskIdle + KioskNameEntry. The header brand
+// color and the primary CTA color come from the operator's branding
+// vars (--color-primary / --color-header) regardless of theme — these
+// only swap the background canvas + body text colour so a wide range
+// of brand palettes look intentional on both themes.
+const THEME_TOKENS: Record<KioskTheme, {
+  bg: string;
+  body: string; muted: string;
+  inputBg: string; inputText: string; inputPlaceholder: string;
+  surface: string;
+}> = {
+  dark: {
+    bg: 'radial-gradient(ellipse at top, #1e1b4b 0%, #0f0f1e 60%, #050510 100%)',
+    body: 'text-white',
+    muted: 'text-white/70',
+    inputBg: 'bg-white text-black',
+    inputText: '',
+    inputPlaceholder: 'placeholder:text-gray-300',
+    surface: 'bg-white/10 backdrop-blur-md border border-white/20',
+  },
+  light: {
+    bg: 'radial-gradient(ellipse at top, #ffffff 0%, #f1f5f9 60%, #e2e8f0 100%)',
+    body: 'text-slate-900',
+    muted: 'text-slate-500',
+    inputBg: 'bg-white text-slate-900',
+    inputText: '',
+    inputPlaceholder: 'placeholder:text-slate-400',
+    surface: 'bg-white/80 backdrop-blur-md border border-slate-200 shadow-sm',
+  },
+};
 
 /* ─── Idle / Welcome Screen ───────────────────── */
-function KioskIdle({ company, onStart }: { company: any; onStart: () => void }) {
+function KioskIdle({ company, theme, onStart }: { company: any; theme: KioskTheme; onStart: () => void }) {
   const { t, i18n } = useTranslation();
   const logo = getBranding(company).logo;
+  const tokens = THEME_TOKENS[theme];
 
   // Cycle the welcome word through the available languages — start with current UI lang
   const phrases = useMemo(() => {
@@ -47,47 +80,46 @@ function KioskIdle({ company, onStart }: { company: any; onStart: () => void }) 
 
   return (
     <div
-      className="theme-kiosk min-h-dvh flex flex-col items-center justify-between px-8 py-10 relative cursor-pointer select-none overflow-hidden"
-      style={{ background: 'radial-gradient(ellipse at top, #1e1b4b 0%, #0f0f1e 60%, #050510 100%)' }}
+      className={`theme-kiosk min-h-dvh flex flex-col items-center justify-between px-8 py-10 relative cursor-pointer select-none overflow-hidden ${tokens.body}`}
+      style={{ background: tokens.bg }}
       onClick={onStart}
     >
       {/* Animated background blobs */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div
-          className="absolute -top-32 -left-32 w-[420px] h-[420px] rounded-full opacity-30 blur-3xl kiosk-anim-blob"
+          className={`absolute -top-32 -left-32 w-[420px] h-[420px] rounded-full blur-3xl kiosk-anim-blob ${theme === 'light' ? 'opacity-20' : 'opacity-30'}`}
           style={{ background: 'var(--color-primary, #6366f1)' }}
         />
         <div
-          className="absolute top-1/3 -right-40 w-[480px] h-[480px] rounded-full opacity-20 blur-3xl kiosk-anim-blob"
-          style={{ background: '#a855f7', animationDelay: '-4s' }}
+          className={`absolute top-1/3 -right-40 w-[480px] h-[480px] rounded-full blur-3xl kiosk-anim-blob ${theme === 'light' ? 'opacity-15' : 'opacity-20'}`}
+          style={{ background: theme === 'light' ? '#c4b5fd' : '#a855f7', animationDelay: '-4s' }}
         />
         <div
-          className="absolute -bottom-32 left-1/4 w-[380px] h-[380px] rounded-full opacity-25 blur-3xl kiosk-anim-blob"
-          style={{ background: '#ec4899', animationDelay: '-8s' }}
+          className={`absolute -bottom-32 left-1/4 w-[380px] h-[380px] rounded-full blur-3xl kiosk-anim-blob ${theme === 'light' ? 'opacity-15' : 'opacity-25'}`}
+          style={{ background: theme === 'light' ? '#fbcfe8' : '#ec4899', animationDelay: '-8s' }}
         />
       </div>
 
       {/* Top bar */}
       <div className="relative z-10 w-full flex justify-end">
         <div onClick={e => e.stopPropagation()}>
-          <LanguageSelector languages={company?.languages || []} defaultLang={company?.default_lang} variant="dark" />
+          <LanguageSelector languages={company?.languages || []} defaultLang={company?.default_lang} variant={theme === 'light' ? 'light' : 'dark'} />
         </div>
       </div>
 
       {/* Center hero */}
       <div className="relative z-10 flex flex-col items-center gap-16 text-center">
-        {/* Logo with halo + float */}
+        {/* Logo with halo + float — smaller than the original, the
+            text below is what does the wayfinding anyway. */}
         <div className="relative">
-          <span className="absolute inset-0 rounded-[2.5rem] kiosk-anim-pulse-ring" style={{ background: 'rgba(255,255,255,0.12)' }} />
-          <span className="absolute inset-0 rounded-[2.5rem] kiosk-anim-pulse-ring" style={{ background: 'rgba(255,255,255,0.08)', animationDelay: '-1.2s' }} />
           {logo ? (
             <img
               src={logo}
               alt=""
-              className="relative w-72 h-72 object-cover rounded-[2.5rem] shadow-2xl kiosk-anim-float ring-4 ring-white/10"
+              className="relative max-h-44 max-w-sm w-auto object-contain drop-shadow-xl kiosk-anim-float"
             />
           ) : (
-            <div className="relative w-72 h-72 rounded-[2.5rem] bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-sm flex items-center justify-center text-9xl shadow-2xl kiosk-anim-float ring-4 ring-white/10">
+            <div className={`relative w-44 h-44 rounded-[2rem] backdrop-blur-sm flex items-center justify-center text-7xl shadow-2xl kiosk-anim-float ring-4 ${theme === 'light' ? 'bg-slate-100 ring-slate-200' : 'bg-white/10 ring-white/10'}`}>
               🍔
             </div>
           )}
@@ -95,7 +127,7 @@ function KioskIdle({ company, onStart }: { company: any; onStart: () => void }) 
 
         {/* Order CTA - cycling languages (primary) */}
         <div className="relative">
-          <div className="text-white text-8xl font-black tracking-tight kiosk-anim-pulse-soft leading-none">
+          <div className={`text-8xl font-black tracking-tight kiosk-anim-pulse-soft leading-none ${tokens.body}`}>
             <span key={phraseIdx} className="inline-block kiosk-anim-fade-in-up">
               {phrases[phraseIdx]}
             </span>
@@ -104,14 +136,14 @@ function KioskIdle({ company, onStart }: { company: any; onStart: () => void }) 
 
         {/* Store name + welcome (secondary) */}
         <div className="kiosk-anim-fade-in-up">
-          <p className="text-white/60 text-2xl uppercase tracking-[0.3em] font-bold mb-3">
+          <p className={`text-2xl uppercase tracking-[0.3em] font-bold mb-3 ${tokens.muted}`}>
             {t('common.welcome_to', 'Welcome to')}
           </p>
-          <h1 className="text-white text-5xl font-extrabold tracking-tight leading-none capitalize">
+          <h1 className={`text-5xl font-extrabold tracking-tight leading-none capitalize ${tokens.body}`}>
             {company?.name || t('common.welcome', 'Welcome')}
           </h1>
           {getBranding(company).welcome_message && (
-            <p className="text-white/70 text-xl mt-5 max-w-2xl mx-auto leading-relaxed">
+            <p className={`text-xl mt-5 max-w-2xl mx-auto leading-relaxed ${tokens.muted}`}>
               {getBranding(company).welcome_message}
             </p>
           )}
@@ -120,7 +152,7 @@ function KioskIdle({ company, onStart }: { company: any; onStart: () => void }) 
 
       {/* Bottom CTA */}
       <div className="relative z-10 flex flex-col items-center gap-5 kiosk-anim-tap">
-        <div className="px-16 py-8 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-3xl font-bold flex items-center gap-4 shadow-2xl">
+        <div className={`px-16 py-8 rounded-full ${tokens.surface} ${tokens.body} text-3xl font-bold flex items-center gap-4 shadow-2xl`}>
           <span className="text-4xl">👆</span>
           <span>{t('common.tap_to_start', 'Tap anywhere to start')}</span>
         </div>
@@ -128,7 +160,7 @@ function KioskIdle({ company, onStart }: { company: any; onStart: () => void }) 
           {[0, 1, 2].map(i => (
             <span
               key={i}
-              className="w-3 h-3 rounded-full bg-white/40 kiosk-anim-pulse-soft"
+              className={`w-3 h-3 rounded-full kiosk-anim-pulse-soft ${theme === 'light' ? 'bg-slate-400/60' : 'bg-white/40'}`}
               style={{ animationDelay: `${-i * 0.4}s` }}
             />
           ))}
@@ -139,25 +171,26 @@ function KioskIdle({ company, onStart }: { company: any; onStart: () => void }) 
 }
 
 /* ─── Name Entry Screen ───────────────────────── */
-function KioskNameEntry({ company, onSubmit, onBack }: { company: any; onSubmit: (name: string) => void; onBack: () => void }) {
+function KioskNameEntry({ company, theme, onSubmit, onBack }: { company: any; theme: KioskTheme; onSubmit: (name: string) => void; onBack: () => void }) {
   const { t } = useTranslation();
   const [name, setName] = useState('');
   const logo = getBranding(company).logo;
+  const tokens = THEME_TOKENS[theme];
 
   return (
     <div
-      className="theme-kiosk min-h-dvh flex flex-col px-6 py-8 relative overflow-hidden"
-      style={{ background: 'radial-gradient(ellipse at top, #1e1b4b 0%, #0f0f1e 60%, #050510 100%)' }}
+      className={`theme-kiosk min-h-dvh flex flex-col px-6 py-8 relative overflow-hidden ${tokens.body}`}
+      style={{ background: tokens.bg }}
     >
       {/* Background blobs */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div
-          className="absolute -top-40 -right-32 w-[420px] h-[420px] rounded-full opacity-25 blur-3xl kiosk-anim-blob"
-          style={{ background: '#6366f1' }}
+          className={`absolute -top-40 -right-32 w-[420px] h-[420px] rounded-full blur-3xl kiosk-anim-blob ${theme === 'light' ? 'opacity-15' : 'opacity-25'}`}
+          style={{ background: theme === 'light' ? 'var(--color-primary, #6366f1)' : '#6366f1' }}
         />
         <div
-          className="absolute -bottom-40 -left-32 w-[420px] h-[420px] rounded-full opacity-20 blur-3xl kiosk-anim-blob"
-          style={{ background: '#ec4899', animationDelay: '-6s' }}
+          className={`absolute -bottom-40 -left-32 w-[420px] h-[420px] rounded-full blur-3xl kiosk-anim-blob ${theme === 'light' ? 'opacity-15' : 'opacity-20'}`}
+          style={{ background: theme === 'light' ? '#fbcfe8' : '#ec4899', animationDelay: '-6s' }}
         />
       </div>
 
@@ -166,25 +199,25 @@ function KioskNameEntry({ company, onSubmit, onBack }: { company: any; onSubmit:
         <button
           type="button"
           onClick={onBack}
-          className="w-20 h-20 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 flex items-center justify-center text-white active:bg-white/20"
+          className={`w-20 h-20 rounded-2xl flex items-center justify-center ${tokens.surface} ${tokens.body} ${theme === 'light' ? 'active:bg-slate-100' : 'active:bg-white/20'}`}
         >
           <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <line x1="19" y1="12" x2="5" y2="12" />
             <polyline points="12 19 5 12 12 5" />
           </svg>
         </button>
-        <LanguageSelector languages={company?.languages || []} defaultLang={company?.default_lang} variant="dark" />
+        <LanguageSelector languages={company?.languages || []} defaultLang={company?.default_lang} variant={theme === 'light' ? 'light' : 'dark'} />
       </div>
 
       {/* Centered content */}
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center kiosk-anim-fade-in-up">
         {logo && (
-          <img src={logo} alt="" className="h-40 w-40 object-cover rounded-3xl mb-10 shadow-2xl ring-4 ring-white/10" />
+          <img src={logo} alt="" className="max-h-40 max-w-xs w-auto object-contain mb-10 drop-shadow-xl" />
         )}
-        <h1 className="text-white text-6xl font-extrabold text-center leading-tight">
+        <h1 className={`text-6xl font-extrabold text-center leading-tight ${tokens.body}`}>
           👋 {t('common.welcome_personal', 'Hey there!')}
         </h1>
-        <p className="text-white/70 text-2xl text-center mt-5 max-w-2xl leading-relaxed">
+        <p className={`text-2xl text-center mt-5 max-w-2xl leading-relaxed ${tokens.muted}`}>
           {t('common.enter_name', 'Enter your name to start ordering')}
         </p>
 
@@ -197,7 +230,7 @@ function KioskNameEntry({ company, onSubmit, onBack }: { company: any; onSubmit:
             placeholder={t('common.your_name', 'Your name')}
             autoFocus
             maxLength={32}
-            className="w-full px-8 py-8 rounded-3xl text-4xl font-bold text-center bg-white text-black focus:outline-none focus:ring-4 focus:ring-white/30 placeholder:text-gray-300 shadow-2xl"
+            className={`w-full px-8 py-8 rounded-3xl text-4xl font-bold text-center ${tokens.inputBg} ${tokens.inputPlaceholder} focus:outline-none focus:ring-4 ${theme === 'light' ? 'focus:ring-slate-300 shadow-md' : 'focus:ring-white/30 shadow-2xl'}`}
           />
 
           <button
@@ -357,7 +390,7 @@ function KioskMenu({ customerName, onReset }: { customerName: string; onReset: (
       <header className="shrink-0 bg-[var(--color-header)] text-[var(--color-header-text)] px-7 h-28 flex items-center justify-between shadow-md z-10">
         <div className="flex items-center gap-4 min-w-0">
           {branding.logo && (
-            <img src={branding.logo} alt={company?.name} className="w-16 h-16 rounded-2xl object-cover ring-2 ring-white/10" />
+            <img src={branding.logo} alt={company?.name} className="max-h-16 max-w-[140px] w-auto object-contain" />
           )}
           <div className="min-w-0">
             <p className="text-base opacity-70 leading-none">👋 {t('common.hey', 'Hi')}</p>
@@ -541,13 +574,18 @@ export default function KioskPage() {
     <StoreConfigProvider storeId={storeId}>
       <KioskConfigWrapper>
         {(company) => {
+          // Operator picks 'dark' (default) or 'light' in the Portal
+          // kiosk tab; falls back to dark for stores that haven't
+          // touched the setting since the field was added.
+          const theme: KioskTheme = (company?.kiosk_settings?.theme === 'light') ? 'light' : 'dark';
           if (state === 'idle') {
-            return <KioskIdle company={company} onStart={() => setState('name_entry')} />;
+            return <KioskIdle company={company} theme={theme} onStart={() => setState('name_entry')} />;
           }
           if (state === 'name_entry') {
             return (
               <KioskNameEntry
                 company={company}
+                theme={theme}
                 onSubmit={(name) => { setCustomerName(name); setState('ordering'); }}
                 onBack={() => setState('idle')}
               />

@@ -34,7 +34,7 @@ function itemImage(item: any): string | null {
 }
 
 export default function KioskCartPage({ menu, onEdit, onConfirm, onClose, allowNotes = true, customerName }: Props) {
-  const { cart, note, setNote, deleteFromCart, updateCart, addToCart, itemCount } = useCart();
+  const { cart, note, setNote, deleteFromCart, updateCart, addToCart, itemCount, isSubmitting } = useCart();
   const { t } = useTranslation();
   const [confirming, setConfirming] = useState(false);
 
@@ -265,37 +265,70 @@ export default function KioskCartPage({ menu, onEdit, onConfirm, onClose, allowN
             <span className="text-3xl font-extrabold">{EURO}{(subtotal / 100).toFixed(2)}</span>
           </div>
 
-          {!confirming ? (
+          <button
+            type="button"
+            onClick={() => setConfirming(true)}
+            className="w-full h-20 rounded-2xl font-extrabold text-2xl text-white bg-[var(--color-primary)] active:bg-[var(--color-primary-hover)]"
+          >
+            {t('restaurants.cart.confirm', 'Confirm order')}
+          </button>
+        </div>
+      )}
+
+      {/* Centered confirm modal — same pattern as CartSidebar / DineInPage:
+          backdrop is non-dismissible while submitting (a stray tap mid-flight
+          would hide the spinner and the customer assumes the order failed),
+          the OK button shows a spinner + disabled state, and the parent
+          (KioskMenu) flips to <KioskOrderConfirmation/> once the promise
+          resolves so the modal disappears together with the cart screen. */}
+      {confirming && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center px-8">
+          <div
+            className="fixed inset-0 bg-black/60"
+            onClick={() => { if (!isSubmitting) setConfirming(false); }}
+          />
+          <div className="relative z-10 bg-white rounded-[2rem] w-full max-w-2xl p-12 text-center shadow-2xl kiosk-anim-fade-in-up">
+            <div className="w-32 h-32 rounded-full bg-[var(--color-primary)]/10 flex items-center justify-center mx-auto mb-7">
+              {isSubmitting ? (
+                <div className="w-14 h-14 border-[4px] border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <svg className="w-14 h-14 text-[var(--color-primary)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <circle cx="9" cy="21" r="1" />
+                  <circle cx="20" cy="21" r="1" />
+                  <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                </svg>
+              )}
+            </div>
+            <h2 className="text-4xl font-extrabold mb-3">
+              {isSubmitting
+                ? t('restaurants.cart.placing', 'Bestelling wordt verstuurd…')
+                : t('restaurants.cart.place_order', 'Place this order?')}
+            </h2>
+            <p className="text-2xl text-gray-500 mb-9">
+              {itemCount} {itemCount === 1 ? t('common.item', 'item') : t('common.items', 'items')} — {EURO}{(subtotal / 100).toFixed(2)}
+            </p>
             <button
               type="button"
-              onClick={() => setConfirming(true)}
-              className="w-full h-20 rounded-2xl font-extrabold text-2xl text-white bg-[var(--color-primary)] active:bg-[var(--color-primary-hover)]"
+              onClick={() => { if (!isSubmitting) onConfirm(); }}
+              disabled={isSubmitting}
+              className="w-full h-20 rounded-2xl font-extrabold text-2xl text-white bg-[var(--color-primary)] active:bg-[var(--color-primary-hover)] mb-3 disabled:opacity-60 inline-flex items-center justify-center gap-3"
             >
-              {t('restaurants.cart.confirm', 'Confirm order')}
+              {isSubmitting && (
+                <span className="w-6 h-6 border-[3px] border-white/80 border-t-transparent rounded-full animate-spin" aria-hidden />
+              )}
+              {isSubmitting
+                ? t('restaurants.cart.placing_short', 'Bezig…')
+                : t('restaurants.cart.ok', 'Confirm')}
             </button>
-          ) : (
-            <div className="space-y-3">
-              <p className="text-center text-xl text-gray-500">
-                {t('restaurants.cart.place_order', 'Place this order?')}
-              </p>
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setConfirming(false)}
-                  className="flex-1 h-20 rounded-2xl font-bold text-xl text-gray-700 bg-gray-100 active:bg-gray-200"
-                >
-                  {t('restaurants.cart.cancel', 'Cancel')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setConfirming(false); onConfirm(); }}
-                  className="flex-[2] h-20 rounded-2xl font-extrabold text-xl text-white bg-green-600 active:bg-green-700"
-                >
-                  ✓ {t('restaurants.cart.ok', 'Confirm')} — {EURO}{(subtotal / 100).toFixed(2)}
-                </button>
-              </div>
-            </div>
-          )}
+            <button
+              type="button"
+              onClick={() => setConfirming(false)}
+              disabled={isSubmitting}
+              className="w-full h-16 rounded-2xl font-bold text-xl text-gray-700 bg-gray-100 active:bg-gray-200 disabled:opacity-40"
+            >
+              {t('restaurants.cart.cancel', 'Cancel')}
+            </button>
+          </div>
         </div>
       )}
     </div>
