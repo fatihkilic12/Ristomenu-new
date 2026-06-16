@@ -52,19 +52,21 @@ function TableContent() {
         )}
       </div>
 
-      {/* Numpad */}
-      <div className="grid grid-cols-3 gap-2.5 w-full max-w-[280px]">
+      {/* Numpad — larger touch targets so guests can tap accurately
+          without leaning in. h-[72px] + text-2xl is the same size as
+          the kiosk keypad. */}
+      <div className="grid grid-cols-3 gap-3 w-full max-w-[340px]">
         {keys.map((key, i) => (
           <button
             key={i}
             onClick={() => onKey(key)}
             disabled={key === ''}
-            className={`h-[56px] rounded-xl text-xl font-medium transition-transform duration-75 active:scale-95 ${
+            className={`h-[72px] rounded-2xl text-2xl font-medium transition-transform duration-75 active:scale-95 ${
               key === ''
                 ? 'invisible'
                 : key === '⌫'
-                  ? 'bg-white/5 text-white/50'
-                  : 'bg-white/[0.07] text-white'
+                  ? 'bg-white/5 text-white/60'
+                  : 'bg-white/[0.10] text-white'
             }`}
           >
             {key}
@@ -72,13 +74,18 @@ function TableContent() {
         ))}
       </div>
 
-      {/* Submit */}
+      {/* Submit — fills white with brand-primary glow + text so it
+          stays visible against the near-black canvas even when the
+          operator's brand primary is itself near-black (Mevlana's
+          palette). Using brand-primary as a *fill* on the previous
+          version made the button blend into the canvas. */}
       <button
         onClick={onSubmit}
         disabled={!value}
-        className="mt-8 w-full max-w-[280px] py-3.5 rounded-xl text-[15px] font-semibold text-white bg-[var(--color-primary)] disabled:opacity-20 transition-transform duration-75 active:scale-[0.98]"
+        className="mt-10 w-full max-w-[340px] h-[72px] rounded-2xl text-lg font-bold bg-white text-black shadow-[0_10px_30px_-6px_rgba(255,255,255,0.25)] disabled:bg-white/15 disabled:text-white/40 disabled:shadow-none transition-transform duration-75 active:scale-[0.98] flex items-center justify-center gap-3"
       >
-        {t('common.continue', 'Continue')}
+        <span>{t('common.continue', 'Doorgaan')}</span>
+        <span aria-hidden className="text-xl leading-none">→</span>
       </button>
     </div>
   );
