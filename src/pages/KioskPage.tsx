@@ -116,7 +116,7 @@ function KioskIdle({ company, theme, onStart }: { company: any; theme: KioskThem
       </div>
 
       {/* Center hero */}
-      <div className="relative z-10 flex flex-col items-center gap-16 text-center">
+      <div className="relative z-10 flex flex-col items-center gap-10 text-center">
         {/* Logo with halo + float — smaller than the original, the
             text below is what does the wayfinding anyway. */}
         <div className="relative">
@@ -394,15 +394,20 @@ function KioskMenu({ customerName, onReset }: { customerName: string; onReset: (
 
   return (
     <div className="h-dvh flex flex-col bg-[#fafafa] overflow-hidden">
-      {/* Header */}
-      <header className="shrink-0 bg-[var(--color-header)] text-[var(--color-header-text)] px-7 h-28 flex items-center justify-between shadow-md z-10">
-        <div className="flex items-center gap-4 min-w-0">
+      {/* Header — the just-typed customer name takes the hero slot.
+          They literally just confirmed it on the previous screen, so
+          seeing 'Hi <smol>name</smol>' would feel impersonal. Bigger
+          name = the screen recognises *them*. */}
+      <header className="shrink-0 bg-[var(--color-header)] text-[var(--color-header-text)] px-8 h-32 flex items-center justify-between shadow-md z-10">
+        <div className="flex items-center gap-5 min-w-0">
           {branding.logo && (
-            <img src={branding.logo} alt={company?.name} className="max-h-16 max-w-[140px] w-auto object-contain" />
+            <img src={branding.logo} alt={company?.name} className="max-h-20 max-w-[180px] w-auto object-contain" />
           )}
           <div className="min-w-0">
-            <p className="text-base opacity-70 leading-none">👋 {t('common.hey', 'Hi')}</p>
-            <p className="font-extrabold text-2xl leading-tight truncate mt-1.5 capitalize">{customerName}</p>
+            <p className="text-lg opacity-60 leading-none uppercase tracking-wider font-semibold">
+              👋 {t('common.hey', 'Hi')}
+            </p>
+            <p className="font-black text-4xl leading-tight truncate mt-2 capitalize">{customerName}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
