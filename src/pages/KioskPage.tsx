@@ -471,7 +471,12 @@ function KioskMenu({ customerName, menuTheme, onReset }: { customerName: string;
           right while the sidebar provides peripheral context. No head
           movement across the full screen width. */}
       <div className="flex-1 min-h-0 flex">
-        <KioskCategorySidebar categories={categories} activeId={activeCategory} onSelect={scrollToCategory} />
+        <KioskCategorySidebar
+          categories={categories}
+          activeId={activeCategory}
+          onSelect={scrollToCategory}
+          cartVisible={cart.length > 0}
+        />
 
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-7 pt-7 pb-44">
           {categories.map((cat: Record<string, any>) => {

@@ -17,6 +17,11 @@ type Props = {
   categories: Record<string, any>[];
   activeId: number | null;
   onSelect: (id: number) => void;
+  /** True when the sticky green cart bar is rendered at the bottom of
+   *  the menu — we add bottom padding equal to that bar's height so the
+   *  last category tiles stay scrollable to the user instead of sitting
+   *  permanently hidden behind it. */
+  cartVisible?: boolean;
 };
 
 // The storefront menu's Category.image is a URL string (the resolved
@@ -26,7 +31,7 @@ function categoryImage(cat: Record<string, any>): string | null {
   return absoluteMediaUrl(cat.image);
 }
 
-export default memo(function KioskCategorySidebar({ categories, activeId, onSelect }: Props) {
+export default memo(function KioskCategorySidebar({ categories, activeId, onSelect, cartVisible = false }: Props) {
   const activeRef = useRef<HTMLButtonElement>(null);
   const navRef = useRef<HTMLDivElement>(null);
 
@@ -43,7 +48,7 @@ export default memo(function KioskCategorySidebar({ categories, activeId, onSele
         borderColor: 'var(--kiosk-border)',
       }}
     >
-      <div className="flex flex-col gap-3 px-4 py-5">
+      <div className={`flex flex-col gap-3 px-4 pt-5 ${cartVisible ? 'pb-44' : 'pb-5'}`}>
         {categories.map((cat) => {
           const isActive = cat.id === activeId;
           const img = categoryImage(cat);
