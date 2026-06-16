@@ -255,8 +255,36 @@ function KioskNameEntry({ company, theme, onSubmit, onBack }: { company: any; th
   );
 }
 
+// CSS-var tokens for the menu shell — consumed by KioskCategorySidebar,
+// KioskProductCard, KioskCartPage etc. via var(--kiosk-*). Defined here
+// (not in THEME_TOKENS above) because the welcome theme and the menu
+// theme are independent fields — the operator might pick dark welcome
+// + light menu, or vice versa.
+const MENU_SHELL_VARS: Record<KioskTheme, Record<string, string>> = {
+  light: {
+    '--kiosk-shell-bg': '#fafafa',
+    '--kiosk-sidebar-bg': '#ffffff',
+    '--kiosk-card-bg': '#ffffff',
+    '--kiosk-card-shadow': '0 2px 10px rgba(0,0,0,0.04)',
+    '--kiosk-border': '#f3f4f6',
+    '--kiosk-text': '#111827',
+    '--kiosk-text-muted': '#6b7280',
+    '--kiosk-muted': '#d1d5db',
+  },
+  dark: {
+    '--kiosk-shell-bg': '#0b1220',
+    '--kiosk-sidebar-bg': '#111b2f',
+    '--kiosk-card-bg': '#1a2540',
+    '--kiosk-card-shadow': '0 4px 18px rgba(0,0,0,0.45)',
+    '--kiosk-border': 'rgba(255,255,255,0.06)',
+    '--kiosk-text': '#f1f5f9',
+    '--kiosk-text-muted': '#94a3b8',
+    '--kiosk-muted': '#475569',
+  },
+};
+
 /* ─── Kiosk Menu (vertical layout) ─────────────── */
-function KioskMenu({ customerName, onReset }: { customerName: string; onReset: () => void }) {
+function KioskMenu({ customerName, menuTheme, onReset }: { customerName: string; menuTheme: KioskTheme; onReset: () => void }) {
   const { storeId } = useParams<{ storeId: string }>();
   const { company } = useStoreConfig();
   const { i18n, t } = useTranslation();
@@ -393,7 +421,14 @@ function KioskMenu({ customerName, onReset }: { customerName: string; onReset: (
   }
 
   return (
-    <div className="h-dvh flex flex-col bg-[#fafafa] overflow-hidden">
+    <div
+      className="h-dvh flex flex-col overflow-hidden"
+      style={{
+        ...(MENU_SHELL_VARS[menuTheme] as React.CSSProperties),
+        background: 'var(--kiosk-shell-bg)',
+        color: 'var(--kiosk-text)',
+      }}
+    >
       {/* Header — the just-typed customer name takes the hero slot.
           They literally just confirmed it on the previous screen, so
           seeing 'Hi <smol>name</smol>' would feel impersonal. Bigger
@@ -434,7 +469,7 @@ function KioskMenu({ customerName, onReset }: { customerName: string; onReset: (
                 data-category={cat.id}
                 className="mb-10"
               >
-                <h2 className="text-4xl font-extrabold mb-5 px-2 text-gray-900 capitalize">{cat.name}</h2>
+                <h2 className="text-4xl font-extrabold mb-5 px-2 capitalize" style={{color: 'var(--kiosk-text)'}}>{cat.name}</h2>
                 <div className="grid grid-cols-2 gap-5">
                   {catProducts.map((product: Record<string, any>) => (
                     <CartCountWrapper key={product.id} productId={product.id}>
@@ -587,10 +622,13 @@ export default function KioskPage() {
     <StoreConfigProvider storeId={storeId}>
       <KioskConfigWrapper>
         {(company) => {
-          // Operator picks 'dark' (default) or 'light' in the Portal
-          // kiosk tab; falls back to dark for stores that haven't
-          // touched the setting since the field was added.
+          // Two independent fields on KioskSettings: `theme` drives the
+          // welcome / name-entry canvas, `menu_theme` drives the menu
+          // shell after the customer is in. Defaults match the model
+          // defaults (welcome=dark, menu=light) so stores that haven't
+          // touched either still get the existing look.
           const theme: KioskTheme = (company?.kiosk_settings?.theme === 'light') ? 'light' : 'dark';
+          const menuTheme: KioskTheme = (company?.kiosk_settings?.menu_theme === 'dark') ? 'dark' : 'light';
           if (state === 'idle') {
             return <KioskIdle company={company} theme={theme} onStart={() => setState('name_entry')} />;
           }
@@ -606,7 +644,7 @@ export default function KioskPage() {
           }
           return (
             <CartProvider storeId={storeId} orderType={KIOSK} customerName={customerName}>
-              <KioskMenu customerName={customerName} onReset={handleReset} />
+              <KioskMenu customerName={customerName} menuTheme={menuTheme} onReset={handleReset} />
             </CartProvider>
           );
         }}
