@@ -159,22 +159,34 @@ export default function KioskProductDetail({ params, showAllergens = true, allow
       onClick={() => onClose()}
     >
       <div
-        className="relative bg-[#fafafa] w-full max-w-3xl max-h-[88vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden"
+        className="relative w-full max-w-3xl max-h-[88vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden"
+        style={{ background: 'var(--kiosk-shell-bg)', color: 'var(--kiosk-text)' }}
         onClick={e => e.stopPropagation()}
       >
-      {/* Header */}
-      <div className="shrink-0 bg-white border-b border-gray-100 px-6 h-20 flex items-center gap-4 z-10">
+      {/* Header — reads card bg + border + text from the kiosk-shell
+          tokens set on KioskMenu's root. Light: white-on-light, dark:
+          deep slate-on-dark. Title was hardcoded text color before, so
+          on the dark theme it inherited the (dark) body color and
+          became unreadable against the dark card. */}
+      <div
+        className="shrink-0 border-b px-6 h-20 flex items-center gap-4 z-10"
+        style={{ background: 'var(--kiosk-card-bg)', borderColor: 'var(--kiosk-border)' }}
+      >
         <button
           type="button"
           onClick={() => onClose()}
-          className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center text-gray-700 active:bg-gray-200"
+          className="w-14 h-14 rounded-2xl flex items-center justify-center"
+          style={{
+            background: 'color-mix(in srgb, var(--kiosk-text) 8%, transparent)',
+            color: 'var(--kiosk-text)',
+          }}
         >
           <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <line x1="19" y1="12" x2="5" y2="12" />
             <polyline points="12 19 5 12 12 5" />
           </svg>
         </button>
-        <h1 className="text-xl font-bold truncate flex-1 capitalize">{product.name}</h1>
+        <h1 className="text-xl font-bold truncate flex-1 capitalize" style={{ color: 'var(--kiosk-text)' }}>{product.name}</h1>
       </div>
 
       {/* Scrollable content — bottom padding ~= sticky footer height so
@@ -182,7 +194,7 @@ export default function KioskProductDetail({ params, showAllergens = true, allow
       <div className="flex-1 overflow-y-auto pb-32">
         {/* Hero image */}
         {imgUrl ? (
-          <div className="relative w-full aspect-[4/3] bg-gray-100 overflow-hidden">
+          <div className="relative w-full aspect-[4/3] overflow-hidden" style={{ background: 'var(--kiosk-shell-bg)' }}>
             <img src={imgUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
           </div>
         ) : (
@@ -197,15 +209,19 @@ export default function KioskProductDetail({ params, showAllergens = true, allow
         {/* Title + description */}
         <div className="px-8 pt-8 pb-5">
           <div className="flex items-start justify-between gap-5">
-            <h1 className="text-4xl font-extrabold leading-tight capitalize">{product.name}</h1>
+            <h1 className="text-4xl font-extrabold leading-tight capitalize" style={{ color: 'var(--kiosk-text)' }}>{product.name}</h1>
             {product.price != null && (
-              <span className="text-3xl font-extrabold text-[var(--color-primary)] shrink-0">
+              // Use the shell text colour, not --color-primary — the
+              // operator's primary can be near-black, which on the
+              // dark theme reads as 'no price at all'. Same call we
+              // already made on the menu-grid card.
+              <span className="text-3xl font-extrabold shrink-0" style={{ color: 'var(--kiosk-text)' }}>
                 {EURO}{(product.price / 100).toFixed(2)}
               </span>
             )}
           </div>
           {product.description && (
-            <p className="text-xl text-gray-500 leading-relaxed mt-4">{product.description}</p>
+            <p className="text-xl leading-relaxed mt-4" style={{ color: 'var(--kiosk-text-muted)' }}>{product.description}</p>
           )}
           {showAllergens && product.allergens?.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-5">
@@ -238,13 +254,14 @@ export default function KioskProductDetail({ params, showAllergens = true, allow
                 key={group.id}
                 data-option-group={group.id}
                 className={`mt-7 first:mt-3 rounded-3xl border-2 p-7 transition-colors ${
-                  errored ? 'border-red-300 bg-red-50/40' : 'border-transparent bg-white'
+                  errored ? 'border-red-300 bg-red-50/40' : 'border-transparent'
                 }`}
+                style={errored ? undefined : { background: 'var(--kiosk-card-bg)' }}
               >
                 <div className="flex justify-between items-center mb-5">
                   <div>
-                    <h3 className="font-bold text-2xl">{group.name}</h3>
-                    <p className="text-base text-gray-500 mt-1">
+                    <h3 className="font-bold text-2xl" style={{ color: 'var(--kiosk-text)' }}>{group.name}</h3>
+                    <p className="text-base mt-1" style={{ color: 'var(--kiosk-text-muted)' }}>
                       {isRequired
                         ? t('restaurants.options.choose_from', { min: group.min, max: group.max, defaultValue: `Choose ${group.min}–${group.max}` })
                         : t('restaurants.options.choose_max', { max: group.max, defaultValue: `Choose up to ${group.max}` })}
@@ -268,23 +285,35 @@ export default function KioskProductDetail({ params, showAllergens = true, allow
                         key={opt.id}
                         type="button"
                         onClick={() => toggleOption(group.id, opt.id, group)}
-                        className={`w-full flex items-center gap-5 p-5 rounded-2xl border-2 transition-all min-h-20 ${
-                          isSelected
-                            ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/5'
-                            : 'border-gray-100 bg-gray-50/60 active:bg-gray-100'
-                        }`}
+                        className="w-full flex items-center gap-5 p-5 rounded-2xl border-2 transition-all min-h-20"
+                        style={isSelected ? {
+                          borderColor: 'var(--color-primary)',
+                          background: 'color-mix(in srgb, var(--color-primary) 12%, var(--kiosk-shell-bg))',
+                          color: 'var(--kiosk-text)',
+                        } : {
+                          borderColor: 'var(--kiosk-border)',
+                          background: 'var(--kiosk-shell-bg)',
+                          color: 'var(--kiosk-text)',
+                        }}
                       >
-                        <span className={`w-8 h-8 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                          isSelected ? 'border-[var(--color-primary)] bg-[var(--color-primary)]' : 'border-gray-300 bg-white'
-                        }`}>
+                        <span
+                          className="w-8 h-8 rounded-full border-2 flex items-center justify-center shrink-0"
+                          style={isSelected ? {
+                            borderColor: 'var(--color-primary)',
+                            background: 'var(--color-primary)',
+                          } : {
+                            borderColor: 'var(--kiosk-muted)',
+                            background: 'var(--kiosk-card-bg)',
+                          }}
+                        >
                           {isSelected && <span className="text-white text-base font-bold">✓</span>}
                         </span>
                         <span className="text-xl flex-1 text-left font-medium capitalize">{opt.name}</span>
                         {optPrice > 0 && (
-                          <span className="text-lg font-semibold text-gray-600">+{EURO}{optPrice.toFixed(2)}</span>
+                          <span className="text-lg font-semibold" style={{ color: 'var(--kiosk-text-muted)' }}>+{EURO}{optPrice.toFixed(2)}</span>
                         )}
                         {optPrice === 0 && (
-                          <span className="text-base text-gray-300 font-medium">{t('common.free', 'Free')}</span>
+                          <span className="text-base font-medium" style={{ color: 'var(--kiosk-muted)' }}>{t('common.free', 'Free')}</span>
                         )}
                       </button>
                     );
@@ -296,15 +325,20 @@ export default function KioskProductDetail({ params, showAllergens = true, allow
 
           {/* Note */}
           {allowNotes && (
-            <div className="mt-7 rounded-3xl bg-white p-7">
-              <label className="text-lg font-bold block mb-3">{t('restaurants.note', 'Note')}</label>
+            <div className="mt-7 rounded-3xl p-7" style={{ background: 'var(--kiosk-card-bg)' }}>
+              <label className="text-lg font-bold block mb-3" style={{ color: 'var(--kiosk-text)' }}>{t('restaurants.note', 'Note')}</label>
               <input
                 type="text"
                 value={note}
                 onChange={e => setNote(e.target.value)}
                 placeholder={t('common.special_requests', 'Special requests...')}
                 maxLength={160}
-                className="w-full px-5 py-5 border-2 border-gray-100 rounded-2xl text-xl focus:outline-none focus:border-[var(--color-primary)] bg-gray-50"
+                className="w-full px-5 py-5 border-2 rounded-2xl text-xl focus:outline-none focus:border-[var(--color-primary)]"
+                style={{
+                  background: 'var(--kiosk-shell-bg)',
+                  borderColor: 'var(--kiosk-border)',
+                  color: 'var(--kiosk-text)',
+                }}
               />
             </div>
           )}
@@ -312,21 +346,26 @@ export default function KioskProductDetail({ params, showAllergens = true, allow
       </div>
 
       {/* Sticky footer (within the modal card, NOT viewport) */}
-      <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 shadow-[0_-4px_24px_rgba(0,0,0,0.04)]">
+      <div
+        className="absolute bottom-0 left-0 right-0 border-t p-4 shadow-[0_-4px_24px_rgba(0,0,0,0.04)]"
+        style={{ background: 'var(--kiosk-card-bg)', borderColor: 'var(--kiosk-border)' }}
+      >
         <div className="flex items-center gap-3">
-          <div className="flex items-center bg-gray-100 rounded-2xl shrink-0">
+          <div className="flex items-center rounded-2xl shrink-0" style={{ background: 'var(--kiosk-shell-bg)' }}>
             <button
               type="button"
               onClick={() => setQuantity((q: number) => Math.max(1, q - 1))}
-              className="w-16 h-16 flex items-center justify-center text-2xl font-bold text-gray-600 active:bg-gray-200 rounded-l-2xl"
+              className="w-16 h-16 flex items-center justify-center text-2xl font-bold rounded-l-2xl"
+              style={{ color: 'var(--kiosk-text)' }}
             >
               −
             </button>
-            <span className="w-12 text-center font-extrabold text-xl tabular-nums">{quantity}</span>
+            <span className="w-12 text-center font-extrabold text-xl tabular-nums" style={{ color: 'var(--kiosk-text)' }}>{quantity}</span>
             <button
               type="button"
               onClick={() => setQuantity((q: number) => q + 1)}
-              className="w-16 h-16 flex items-center justify-center text-2xl font-bold text-gray-600 active:bg-gray-200 rounded-r-2xl"
+              className="w-16 h-16 flex items-center justify-center text-2xl font-bold rounded-r-2xl"
+              style={{ color: 'var(--kiosk-text)' }}
             >
               +
             </button>
