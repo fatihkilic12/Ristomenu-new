@@ -135,9 +135,13 @@ export default function KioskCartPage({ menu, onEdit, onConfirm, onClose, allowN
                   onClick={() => onEdit(item)}
                   className="flex-1 min-w-0 text-left active:opacity-70 py-1"
                 >
-                  <h3 className="font-bold text-xl leading-tight line-clamp-2 capitalize">{item.product_data?.name || `#${item.product}`}</h3>
+                  <h3 className="font-bold text-2xl leading-tight line-clamp-2 capitalize">{item.product_data?.name || `#${item.product}`}</h3>
                   {item.options && Object.keys(item.options).length > 0 && (
-                    <p className="text-base text-gray-500 line-clamp-2 mt-1.5">
+                    // Selected option labels — was text-base on a big
+                    // kiosk screen which read like fine print. Bumped to
+                    // text-xl + darker grey for legibility from arm's
+                    // length.
+                    <p className="text-xl text-gray-600 line-clamp-3 mt-2 leading-snug">
                       {Object.keys(item.options).map(optId => {
                         for (const group of (item.options_data || [])) {
                           const opt = group.items?.find((i: any) => i.id === Number(optId));
@@ -147,8 +151,8 @@ export default function KioskCartPage({ menu, onEdit, onConfirm, onClose, allowN
                       }).filter(Boolean).join(', ')}
                     </p>
                   )}
-                  {item.note && <p className="text-sm text-gray-400 line-clamp-1 mt-1">"{item.note}"</p>}
-                  <span className="font-extrabold text-xl mt-2 block">{EURO}{(getItemPrice(item, menu) / 100).toFixed(2)}</span>
+                  {item.note && <p className="text-base text-gray-500 line-clamp-2 mt-1.5 italic">"{item.note}"</p>}
+                  <span className="font-extrabold text-2xl mt-3 block">{EURO}{(getItemPrice(item, menu) / 100).toFixed(2)}</span>
                 </button>
                 <div className="flex flex-col items-center justify-between shrink-0">
                   <button

@@ -82,11 +82,16 @@ export default function LanguageSelector({ languages, defaultLang, variant = 'li
         <span className={codeCls}>{currentLang}</span>
       </button>
 
-      {/* Dropdown */}
+      {/* Dropdown — z-[100] to clear focused inputs and full-bleed
+          backdrops (a focused <input> with autoFocus on the kiosk
+          name-entry screen sat above the previous z-50 dropdown and
+          stole the language taps). Items use onMouseDown so the
+          language change fires *before* the input's blur swallows
+          the click on iOS-style WebViews. */}
       {open && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className={`absolute right-0 top-full z-50 shadow-2xl overflow-hidden ${dropdownCls} ${
+          <div className="fixed inset-0 z-[99]" onClick={() => setOpen(false)} />
+          <div className={`absolute right-0 top-full z-[100] shadow-2xl overflow-hidden ${dropdownCls} ${
             isDark ? 'bg-[#1e293b] border border-white/10' : 'bg-white border border-gray-200'
           }`}>
             {available.map(lang => {
@@ -95,7 +100,8 @@ export default function LanguageSelector({ languages, defaultLang, variant = 'li
               return (
                 <button
                   key={lang}
-                  onClick={() => change(lang)}
+                  onMouseDown={(e) => { e.preventDefault(); change(lang); }}
+                  onClick={(e) => e.preventDefault()}
                   className={`w-full text-left transition-colors flex items-center ${itemCls} ${
                     isActive
                       ? isDark ? 'bg-white/10 text-white' : 'bg-gray-50 text-gray-900'
