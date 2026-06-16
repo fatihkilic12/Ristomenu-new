@@ -52,27 +52,21 @@ export default memo(function KioskCategorySidebar({ categories, activeId, onSele
               key={cat.id}
               ref={isActive ? activeRef : null}
               onClick={() => onSelect(cat.id)}
-              className={`relative flex flex-col items-center gap-2.5 rounded-2xl border-2 transition-all px-2 pt-4 pb-3 ${
-                isActive ? 'shadow-lg' : 'border-transparent'
-              }`}
-              style={isActive ? {
-                // Solid primary fill on the active tile — always visible
-                // because we don't rely on a /5 alpha tint that washes
-                // out on dark brand palettes. White text + ring for
-                // extra contrast against any primary color.
-                background: 'var(--color-primary)',
-                borderColor: 'var(--color-primary)',
-                color: '#fff',
-              } : {
-                background: 'var(--kiosk-card-bg)',
-                color: 'var(--kiosk-text)',
-              }}
+              className="relative flex flex-col items-center gap-2.5 rounded-2xl transition-all px-2 pt-4 pb-3"
+              style={{ background: 'var(--kiosk-card-bg)' }}
             >
+              {/* Photo carries the selection cue — primary-color ring +
+                  offset on active, neutral border otherwise. Matches the
+                  dine-in CategoryPhotoStrip pattern so the photo itself
+                  stays visible (the previous solid-primary fill flooded
+                  the whole tile and hid the actual category image). */}
               <div
                 className="w-20 h-20 rounded-2xl overflow-hidden flex items-center justify-center"
                 style={{
-                  background: isActive ? 'rgba(255,255,255,0.92)' : 'var(--kiosk-card-bg)',
-                  boxShadow: isActive ? 'inset 0 0 0 2px rgba(255,255,255,0.4)' : 'inset 0 0 0 1px var(--kiosk-border)',
+                  background: 'var(--kiosk-shell-bg)',
+                  boxShadow: isActive
+                    ? '0 0 0 3px var(--color-primary), 0 0 0 6px var(--kiosk-card-bg)'
+                    : 'inset 0 0 0 1px var(--kiosk-border)',
                 }}
               >
                 {img ? (
@@ -85,7 +79,10 @@ export default memo(function KioskCategorySidebar({ categories, activeId, onSele
                   </svg>
                 )}
               </div>
-              <span className="text-[15px] font-bold leading-tight text-center line-clamp-2">
+              <span
+                className="text-[15px] font-bold leading-tight text-center line-clamp-2"
+                style={{ color: isActive ? 'var(--color-primary)' : 'var(--kiosk-text)' }}
+              >
                 {cat.name}
               </span>
             </button>
