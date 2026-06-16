@@ -59,9 +59,12 @@ export default memo(function KioskCategorySidebar({ categories, activeId, onSele
                   offset on active, neutral border otherwise. Matches the
                   dine-in CategoryPhotoStrip pattern so the photo itself
                   stays visible (the previous solid-primary fill flooded
-                  the whole tile and hid the actual category image). */}
+                  the whole tile and hid the actual category image).
+                  w-full + aspect-square lets the photo fill the tile
+                  instead of sitting as an 80x80 stamp in an empty box —
+                  fixes the 'photo looks tiny for its container' report. */}
               <div
-                className="w-20 h-20 rounded-2xl overflow-hidden flex items-center justify-center"
+                className="w-full aspect-square rounded-2xl overflow-hidden flex items-center justify-center"
                 style={{
                   background: 'var(--kiosk-shell-bg)',
                   boxShadow: isActive
