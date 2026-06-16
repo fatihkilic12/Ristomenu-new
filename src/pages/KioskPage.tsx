@@ -410,7 +410,11 @@ function KioskMenu({ customerName, menuTheme, onReset }: { customerName: string;
   }, [resetCart, onReset]);
 
   // Idle timer - 3 min inactivity
-  useIdleTimer(handleOrderReset, 180_000);
+  // 30s idle reset — short enough that a forgotten kiosk in the middle
+  // of a busy floor stops broadcasting one customer's name/cart, long
+  // enough that someone actively browsing isn't punted away. Any tap
+  // resets the timer (useIdleTimer subscribes to pointer/scroll events).
+  useIdleTimer(handleOrderReset, 30_000);
 
   if (isLoading) {
     return (
@@ -436,7 +440,18 @@ function KioskMenu({ customerName, menuTheme, onReset }: { customerName: string;
       <header className="shrink-0 bg-[var(--color-header)] text-[var(--color-header-text)] px-8 h-32 flex items-center justify-between shadow-md z-10">
         <div className="flex items-center gap-5 min-w-0">
           {branding.logo && (
-            <img src={branding.logo} alt={company?.name} className="max-h-20 max-w-[180px] w-auto object-contain" />
+            // Tap-the-logo escape hatch: customers sometimes want to
+            // start over without waiting for the 30s idle reset
+            // (changed their mind, wrong name typed). Same handler the
+            // idle timer + confirmation screen use.
+            <button
+              type="button"
+              onClick={handleOrderReset}
+              aria-label={t('common.start_over', 'Opnieuw beginnen')}
+              className="shrink-0 active:scale-[0.97] transition-transform"
+            >
+              <img src={branding.logo} alt={company?.name} className="max-h-20 max-w-[180px] w-auto object-contain pointer-events-none" />
+            </button>
           )}
           <div className="min-w-0">
             <p className="text-lg opacity-60 leading-none uppercase tracking-wider font-semibold">
