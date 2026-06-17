@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import i18n from '@/locales';
 
 const LANG_CONFIG: Record<string, { label: string; flag: string }> = {
@@ -22,6 +23,13 @@ type Props = {
 export default function LanguageSelector({ languages, defaultLang, variant = 'light', size = 'md' }: Props) {
   const [currentLang, setCurrentLang] = useState(i18n.language);
   const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  // Anchor coords for the portalled dropdown. Measured on open from the
+  // trigger's bounding rect so the dropdown floats below it regardless
+  // of where in the page tree the selector lives. Kept in viewport
+  // coords (matches `position: fixed`) — the portal renders to
+  // document.body, so no offsetParent translation is needed.
+  const [anchor, setAnchor] = useState<{top: number; right: number} | null>(null);
 
   useEffect(() => {
     const handler = (lang: string) => setCurrentLang(lang);
@@ -67,11 +75,20 @@ export default function LanguageSelector({ languages, defaultLang, variant = 'li
   const itemCls = isLg ? 'px-6 py-5 text-xl gap-5' : 'px-4 py-3 text-sm gap-3';
   const itemFlagCls = isLg ? 'text-3xl leading-none' : 'text-xl leading-none';
 
+  const toggle = () => {
+    if (!open) {
+      const r = triggerRef.current?.getBoundingClientRect();
+      if (r) setAnchor({top: r.bottom, right: window.innerWidth - r.right});
+    }
+    setOpen(o => !o);
+  };
+
   return (
-    <div className="relative">
+    <>
       {/* Trigger — flag button */}
       <button
-        onClick={() => setOpen(!open)}
+        ref={triggerRef}
+        onClick={toggle}
         className={`flex items-center rounded-full font-medium transition-all ${triggerCls} ${
           isDark
             ? 'bg-white/10 hover:bg-white/20 text-white'
@@ -82,18 +99,21 @@ export default function LanguageSelector({ languages, defaultLang, variant = 'li
         <span className={codeCls}>{currentLang}</span>
       </button>
 
-      {/* Dropdown — z-[100] to clear focused inputs and full-bleed
-          backdrops (a focused <input> with autoFocus on the kiosk
-          name-entry screen sat above the previous z-50 dropdown and
-          stole the language taps). Items use onMouseDown so the
-          language change fires *before* the input's blur swallows
-          the click on iOS-style WebViews. */}
-      {open && (
+      {/* Dropdown is portalled to document.body so it can't be hit-test-
+          shadowed by a sibling stacking context (the kiosk name-entry
+          page had a same-z-10 sibling rendered after the top bar, so
+          the dropdown was visible but unclickable). Items use
+          onMouseDown so the language change fires *before* the input's
+          blur swallows the click on iOS-style WebViews. */}
+      {open && anchor && createPortal(
         <>
-          <div className="fixed inset-0 z-[99]" onClick={() => setOpen(false)} />
-          <div className={`absolute right-0 top-full z-[100] shadow-2xl overflow-hidden ${dropdownCls} ${
-            isDark ? 'bg-[#1e293b] border border-white/10' : 'bg-white border border-gray-200'
-          }`}>
+          <div className="fixed inset-0 z-[2147483646]" onClick={() => setOpen(false)} />
+          <div
+            className={`fixed z-[2147483647] shadow-2xl overflow-hidden ${dropdownCls} ${
+              isDark ? 'bg-[#1e293b] border border-white/10' : 'bg-white border border-gray-200'
+            }`}
+            style={{top: anchor.top, right: anchor.right}}
+          >
             {available.map(lang => {
               const config = LANG_CONFIG[lang];
               const isActive = lang === currentLang;
@@ -115,8 +135,9 @@ export default function LanguageSelector({ languages, defaultLang, variant = 'li
               );
             })}
           </div>
-        </>
+        </>,
+        document.body,
       )}
-    </div>
+    </>
   );
 }
