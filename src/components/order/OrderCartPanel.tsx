@@ -176,8 +176,12 @@ export default function OrderCartPanel({
         </div>
       )}
 
-      {/* Items */}
-      <div className="flex-1 overflow-y-auto px-5 pb-4">
+      {/* Items — `min-h-0` is the Flexbox dance that lets a flex-1 child
+          actually shrink + scroll instead of pushing siblings (totals +
+          checkout button) off-screen. Without it, the scrollable area
+          inherits the content's intrinsic height and the button disappears
+          below the fold once a few items pile up. */}
+      <div className="flex-1 min-h-0 overflow-y-auto px-5 pb-4">
         {cart.length === 0 ? (
           <div className="flex flex-col items-center text-center py-10 text-[var(--color-muted)]">
             <span className="text-5xl mb-3" aria-hidden>🛒</span>

@@ -477,7 +477,11 @@ function MobileCartBar({ effectiveType, bothActive, onChangeType, onConfirm, ds,
       {open && (
         <div className="lg:hidden fixed inset-0 z-40 flex items-end" onClick={() => setOpen(false)}>
           <div className="absolute inset-0 bg-black/50" />
-          <div className="relative w-full max-h-[80dvh] z-10" onClick={e => e.stopPropagation()}>
+          {/* h-[80dvh] (not max-h) so OrderCartPanel's `h-full` resolves to a
+              deterministic height. With max-h alone the parent sized to its
+              content, pushing the checkout button off-screen as soon as the
+              cart had a few items. */}
+          <div className="relative w-full h-[80dvh] z-10" onClick={e => e.stopPropagation()}>
             <OrderCartPanel
               menu={menu}
               storeConfig={storeConfig}
