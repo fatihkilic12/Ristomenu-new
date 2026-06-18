@@ -231,12 +231,22 @@ export default function CartSidebar({ menu, onEdit, onConfirm, onClose }: Props)
             <button
               type="button"
               // Keep the modal open during submit so the spinner +
-              // disabled state stays visible until the parent (Dine-In /
-              // Kiosk / Checkout) flips to the result modal. The
-              // CartContext also coalesces overlapping calls, so a tap
-              // that beats the disabled prop still won't fire twice
-              // — this is belt-and-braces.
-              onClick={() => { if (!isSubmitting) onConfirm(); }}
+              // disabled state stays visible. Once onConfirm() resolves
+              // we close the modal ourselves — the parent (DineInPage)
+              // stays mounted and opens its own success/error modal on
+              // top, so without this the confirm modal would linger
+              // behind the result and look like the order didn't go
+              // through. handleConfirm in the parent already swallows
+              // errors and routes them into its result state, so
+              // closing on both outcomes is correct.
+              onClick={async () => {
+                if (isSubmitting) return;
+                try {
+                  await onConfirm();
+                } finally {
+                  setConfirming(false);
+                }
+              }}
               disabled={isSubmitting}
               className="w-full py-3.5 rounded-xl text-base font-semibold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] transition-colors mb-2 disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
             >
