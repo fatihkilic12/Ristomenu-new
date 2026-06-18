@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { getKioskMenu } from '@/actions/store';
 import { useMenuRefresh } from '@/hooks/useMenuRefresh';
+import { useIsTabletMode } from '@/hooks/useIsTabletMode';
 import { CartProvider, useCart } from '@/context/CartContext';
 import { StoreConfigProvider, useStoreConfig } from '@/context/StoreConfigContext';
 import { KIOSK } from '@/config/constants';
@@ -93,14 +94,70 @@ function NameEntry({onSubmit, onCancel}: {onSubmit: (name: string) => void; onCa
     );
 }
 
-function KioskTableContent({customerName, onReset}: {customerName: string; onReset: () => void}) {
+function KioskTableContent({customerName, onReset, onExit}: {
+    customerName: string;
+    onReset: () => void;
+    onExit: () => void;
+}) {
     const {storeId} = useParams<{storeId: string}>();
     const {company} = useStoreConfig();
     const {t, i18n} = useTranslation();
     const {submitOrder, resetCart} = useCart();
     const [result, setResult] = useState<'success' | 'error' | 'closed' | null>(null);
+    const isTablet = useIsTabletMode();
 
     useMenuRefresh(storeId);
+
+    // Tablet recovery — same 5-finger-double-tap gesture as DineInPage so
+    // an operator can yank the tablet out of kiosk-fallback mode if the
+    // customer walks away or the device gets stuck mid-flow. Only armed
+    // in tablet mode (?tablet=1) so a customer on their own phone can't
+    // accidentally bail. Strict gesture: two completed 5-finger taps
+    // within 5 seconds, both inside 1.5s each — partial / phantom
+    // touches never poison the streak.
+    useEffect(() => {
+        if (!isTablet) return;
+        let tapCount = 0;
+        let firstTapAt = 0;
+        let maxTouchesInGesture = 0;
+        let gestureStartedAt = 0;
+        const WINDOW_MS = 5000;
+        const REQUIRED_TAPS = 2;
+        const TAP_MAX_DURATION_MS = 1500;
+        const resetGesture = () => {maxTouchesInGesture = 0; gestureStartedAt = 0;};
+
+        const onTouchStart = (e: TouchEvent) => {
+            const len = e.touches?.length ?? 0;
+            if (len > maxTouchesInGesture) {
+                maxTouchesInGesture = len;
+                if (gestureStartedAt === 0) gestureStartedAt = Date.now();
+            }
+            if (len >= 5) {e.preventDefault(); e.stopPropagation();}
+        };
+        const onTouchEnd = (e: TouchEvent) => {
+            if ((e.touches?.length ?? 0) > 0) return;
+            const wasFive = maxTouchesInGesture >= 5 && gestureStartedAt > 0
+                && Date.now() - gestureStartedAt <= TAP_MAX_DURATION_MS;
+            resetGesture();
+            if (!wasFive) return;
+            const now = Date.now();
+            if (now - firstTapAt > WINDOW_MS) {tapCount = 1; firstTapAt = now;}
+            else tapCount += 1;
+            if (tapCount >= REQUIRED_TAPS) {
+                tapCount = 0; firstTapAt = 0;
+                onExit();
+            }
+        };
+        const onTouchCancel = () => resetGesture();
+        window.addEventListener('touchstart', onTouchStart, {passive: false, capture: true});
+        window.addEventListener('touchend', onTouchEnd, {passive: true, capture: true});
+        window.addEventListener('touchcancel', onTouchCancel, {passive: true, capture: true});
+        return () => {
+            window.removeEventListener('touchstart', onTouchStart, {capture: true} as any);
+            window.removeEventListener('touchend', onTouchEnd, {capture: true} as any);
+            window.removeEventListener('touchcancel', onTouchCancel, {capture: true} as any);
+        };
+    }, [isTablet, onExit]);
 
     // Same revalidation strategy as DineInPage — operator may hide a
     // product mid-service and the customer must see the change on the
@@ -142,11 +199,19 @@ function KioskTableContent({customerName, onReset}: {customerName: string; onRes
     return (
         <div className="min-h-dvh bg-[#fafafa]">
             <header className="sticky top-0 z-50 bg-[var(--color-header)] text-[var(--color-header-text)] px-3 sm:px-4 h-20 grid grid-cols-3 items-center shadow-sm">
-                {/* Left: "→ Afhalen" pill + customer name. Replaces the
-                    dine-in table badge so kitchen + staff at-a-glance see
-                    this is a takeout customer using the dine-in tablet. */}
+                {/* Left: "→ Afhalen" pill + customer name. Tap reopens the
+                    name entry so a customer who mis-typed their name can
+                    correct it without bailing out of the order entirely.
+                    The dine-in QR equivalent has no such button — the
+                    table number can't be changed mid-order — so this
+                    pattern is unique to the kiosk-fallback flow. */}
                 <div className="justify-self-start min-w-0">
-                    <span className="inline-flex items-center gap-1.5 bg-white/10 px-3 py-2 rounded-full text-sm font-bold whitespace-nowrap max-w-full">
+                    <button
+                        type="button"
+                        onClick={onReset}
+                        className="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/15 active:bg-white/20 transition-colors px-3 py-2 rounded-full text-sm font-bold whitespace-nowrap max-w-full"
+                        aria-label={t('common.change_name', 'Naam wijzigen')}
+                    >
                         <span aria-hidden>→</span>
                         <span>{t('common.takeaway', 'Afhalen')}</span>
                         {customerName && (
@@ -155,7 +220,7 @@ function KioskTableContent({customerName, onReset}: {customerName: string; onRes
                                 <span className="truncate max-w-[120px]">{customerName}</span>
                             </>
                         )}
-                    </span>
+                    </button>
                 </div>
                 <div className="justify-self-center min-w-0">
                     {logo ? (
@@ -168,12 +233,33 @@ function KioskTableContent({customerName, onReset}: {customerName: string; onRes
                         <span className="font-bold text-lg capitalize">{company?.name}</span>
                     )}
                 </div>
-                <div className="justify-self-end">
+                <div className="justify-self-end flex items-center gap-2">
                     <LanguageSelector
                         languages={company?.languages || []}
                         defaultLang={company?.default_lang}
                         variant="dark"
                     />
+                    {/* Hard exit — back to /table. Confirmation prompt
+                        because tapping it dumps the cart. Visible on
+                        every screen size so the customer / operator
+                        always has an explicit way out instead of relying
+                        on the 5-finger tablet gesture (which only works
+                        in ?tablet=1 mode). */}
+                    <button
+                        type="button"
+                        onClick={() => {
+                            if (window.confirm(t('common.exit_kiosk_confirm', 'Bestelling annuleren en terug naar tafelkeuze?'))) {
+                                onExit();
+                            }
+                        }}
+                        className="w-10 h-10 rounded-full flex items-center justify-center text-current/80 hover:bg-white/10 active:bg-white/15 transition-colors"
+                        aria-label={t('common.exit', 'Sluiten')}
+                    >
+                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
                 </div>
             </header>
             <MenuView menu={menu} menuLoading={menuLoading} onOrderConfirm={handleConfirm}/>
@@ -218,8 +304,17 @@ function KioskTableBody() {
             <KioskTableContent
                 customerName={customerName}
                 onReset={() => {
+                    // Wipe the cart on every "edit name" tap so the new
+                    // identity doesn't inherit the previous draft of
+                    // items — saves operators from confused "but I
+                    // never ordered fries" complaints.
+                    try {storeId && localStorage.removeItem(`cart-${storeId}`);} catch {/* private mode */}
                     setCustomerName('');
                     setStage('name');
+                }}
+                onExit={() => {
+                    try {storeId && localStorage.removeItem(`cart-${storeId}`);} catch {/* private mode */}
+                    navigate(COMPANY_TABLE(storeId!));
                 }}
             />
         </CartProvider>
