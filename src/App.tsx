@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { I18nextProvider } from 'react-i18next';
 import i18n from '@/locales';
@@ -45,6 +45,22 @@ function TabletStuckGuard() {
   return null;
 }
 
+// React Router 6 doesn't reset the window scroll position on navigation,
+// so going from a long OrderPage cart straight to /checkout opened with
+// the viewport already at the bottom of the new page. Operator-reported:
+// the customer scrolled past the contact form on first paint and thought
+// the form didn't exist. Reset on every pathname change. Hash-anchor
+// navigation (#someid) is preserved so future deep-links still land at
+// their target, not the top.
+function ScrollToTopOnNav() {
+  const { pathname, hash } = useLocation();
+  useEffect(() => {
+    if (hash) return;
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [pathname, hash]);
+  return null;
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -62,6 +78,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <TabletStuckGuard />
+        <ScrollToTopOnNav />
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
