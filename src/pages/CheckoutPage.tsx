@@ -236,9 +236,11 @@ function CheckoutContent({ orderType }: { orderType: string }) {
       } else {
         // formatApiError handles all DRF error shapes: { detail: "str" },
         // { detail: ["a", "b"] }, and field-keyed { location: ..., payment_method: ... }.
-        // We prefer the concrete server message over a generic toast — the
-        // customer needs to know exactly what to fix.
-        setError(formatApiError(err, t('common.common_error', 'Something went wrong')));
+        // Pass `t` so the English server messages ("Delivery is not
+        // available in your area.", "Minimum order value is X EUR.",
+        // etc.) get translated to the customer's locale — see
+        // apiErrorTranslate.ts for the rule table.
+        setError(formatApiError(err, t('common.common_error', 'Something went wrong'), t));
       }
     } finally {
       setLoading(false);

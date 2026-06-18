@@ -21,7 +21,26 @@ function flatten(value: unknown): string {
   return String(value);
 }
 
-export function formatApiError(err: unknown, fallback: string): string {
+export function formatApiError(
+  err: unknown,
+  fallback: string,
+  // Optional translator. When supplied, every line of the server's reply
+  // is run through translateApiBlob so known English DRF messages
+  // ("Delivery is not available in your area.", "Minimum order value is
+  // X EUR.", …) come out in the customer's chosen language. Unknown
+  // messages are returned unchanged so we never blank the customer.
+  t?: (key: string, options?: any) => string,
+): string {
+  const raw = formatRawApiError(err, fallback);
+  if (!t || !raw) return raw;
+  // Lazy-require to keep the existing pure-string callers (e.g. tests)
+  // from pulling i18n machinery into their bundles.
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const {translateApiBlob} = require('./apiErrorTranslate') as typeof import('./apiErrorTranslate');
+  return translateApiBlob(raw, t);
+}
+
+function formatRawApiError(err: unknown, fallback: string): string {
   const data = (err as { response?: { data?: unknown } } | undefined)?.response?.data;
 
   if (data && typeof data === 'object') {
