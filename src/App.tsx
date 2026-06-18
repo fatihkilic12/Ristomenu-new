@@ -8,6 +8,7 @@ import LandingPage from '@/pages/LandingPage';
 import TablePage from '@/pages/TablePage';
 import DineInPage from '@/pages/DineInPage';
 import KioskPage from '@/pages/KioskPage';
+import KioskTablePage from '@/pages/KioskTablePage';
 import OrderPage from '@/pages/OrderPage';
 import CheckoutPage from '@/pages/CheckoutPage';
 import OrderTrackingPage from '@/pages/OrderTrackingPage';
@@ -86,6 +87,12 @@ export default function App() {
           <Route path="/company/:storeId" element={<LandingPage />} />
           <Route path="/company/:storeId/table" element={<TablePage />} />
           <Route path="/company/:storeId/kiosk" element={<KioskPage />} />
+          {/* Tablet-as-kiosk fallback — when the dedicated kiosk is busy,
+              operator points a normal dine-in tablet here. Same MenuView
+              as DineInPage but routes orders through `order_type=kiosk`
+              so the server assigns a kiosk-pool table. Static path so the
+              dynamic `:table` catch-all below doesn't swallow it. */}
+          <Route path="/company/:storeId/kiosk-table" element={<KioskTablePage />} />
           <Route path="/company/:storeId/order" element={<OrderPage />} />
           <Route path="/company/:storeId/order/checkout" element={<CheckoutPage />} />
           <Route path="/company/:storeId/order/track/:secretKey" element={<OrderTrackingPage />} />

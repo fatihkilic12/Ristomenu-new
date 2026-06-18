@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { COMPANY_MENU } from '@/config/paths';
+import { COMPANY_MENU, COMPANY_KIOSK_TABLE } from '@/config/paths';
 import { StoreConfigProvider, useStoreConfig } from '@/context/StoreConfigContext';
 import { getBranding } from '@/lib/branding';
 
@@ -86,6 +86,21 @@ function TableContent() {
       >
         <span>{t('common.continue', 'Doorgaan')}</span>
         <span aria-hidden className="text-xl leading-none">→</span>
+      </button>
+
+      {/* Kiosk-mode escape hatch — when the actual kiosk is too busy the
+          operator can repurpose any dine-in tablet as a takeaway kiosk.
+          Tap → name entry → dine-in menu UI but with order_type=kiosk on
+          submit so the server assigns a kiosk-pool table.
+          Rendered as a quiet secondary action under the primary numpad
+          flow so an actual seated guest doesn't get distracted by it. */}
+      <button
+        type="button"
+        onClick={() => storeId && navigate(COMPANY_KIOSK_TABLE(storeId))}
+        className="mt-6 w-full max-w-[340px] py-3 rounded-2xl text-sm font-semibold text-white/70 bg-white/5 hover:bg-white/10 transition-colors flex items-center justify-center gap-2"
+      >
+        <span aria-hidden>↗</span>
+        <span>{t('common.kiosk_takeaway', 'Bestel om mee te nemen')}</span>
       </button>
     </div>
   );
