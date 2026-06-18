@@ -195,7 +195,13 @@ function CheckoutContent({ orderType }: { orderType: string }) {
         order_type: orderType,
         email: details.email,
         info: { name: details.name, phone_number: details.phone, phone_country: 1 },
-        payment_method: paymentMethod !== 'cash' ? paymentMethod : undefined,
+        // Always forward the chosen method — even cash. The server stores
+        // the FK on Order.payment_method so the operator can see at order-
+        // detail time whether the courier collects cash, swipes bancontact
+        // at the door, or whether it's already settled online. The old
+        // `!== 'cash' ? … : undefined` hack dropped cash silently and the
+        // operator card showed nothing for those orders.
+        payment_method: paymentMethod,
         redirect_url: `${window.location.origin}/company/${storeId}/order/track/`,
       };
 
